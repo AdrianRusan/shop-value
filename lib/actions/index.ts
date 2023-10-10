@@ -7,6 +7,8 @@ export async function scrapeAndScoreProduct(productUrl: string) {
 
   try {
     const scrappedProduct = await scrapeEmagProduct(productUrl);
+
+    if (!scrappedProduct) return;
   } catch (error: any) {
     throw new Error(`Failed to create/update product: ${error.message}`);
   }
