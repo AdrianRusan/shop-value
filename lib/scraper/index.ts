@@ -26,7 +26,7 @@ export async function scrapeEmagProduct(url: string) {
     const $ = cheerio.load(response.data);
 
     const title = $('.page-title').text().trim();
-    const originalPriceString = $('.rrp-lp30d-content')
+    let originalPriceString = $('.rrp-lp30d-content')
       .text()
       .trim()
       .replace(/\D/g, '');
@@ -43,8 +43,8 @@ export async function scrapeEmagProduct(url: string) {
         .trim()
         .replace(/\D/g, '');
     } else {
-      (originalPrice = ''),
-        (currentPriceString = $('.pricing-block')
+      (originalPriceString = ''),
+        (currentPriceString = $('.pricing-block.product-new-price')
           .text()
           .trim()
           .replace(/\D/g, ''));

@@ -29,9 +29,9 @@ export async function scrapeAndScoreProduct(productUrl: string) {
       product = {
         ...scrapedProduct,
         priceHistory: updatedPriceHistory,
-        lowestPrice: getLowestPrice(updatedPriceHistory),
-        highestPrice: getHighestPrice(updatedPriceHistory),
-        averagePrice: getAveragePrice(updatedPriceHistory),
+        lowestPrice: getLowestPrice(updatedPriceHistory).toString(),
+        highestPrice: getHighestPrice(updatedPriceHistory).toString(),
+        averagePrice: getAveragePrice(updatedPriceHistory).toString(),
       };
     }
 
@@ -56,6 +56,36 @@ export async function getProductById(productId: string) {
     if (!product) return;
 
     return product;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getAllProducts() {
+  try {
+    connectToDB();
+
+    const products = await Product.find();
+
+    return products;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getSimilarProducts(productId: string) {
+  try {
+    connectToDB();
+
+    const currentProduct = await Product.findById(productId);
+
+    if (!currentProduct) return;
+
+    const similarProducts = await Product.find({
+      _id: { $ne: productId },
+    }).limit(3);
+
+    return similarProducts;
   } catch (error) {
     console.log(error);
   }
