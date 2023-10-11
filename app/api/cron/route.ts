@@ -1,33 +1,34 @@
-import Product from '@/lib/models/product.model';
-import { connectToDB } from '@/lib/mongoose';
-import { generateEmailBody, sendEmail } from '@/lib/nodemailer';
-import { scrapeEmagProduct } from '@/lib/scraper';
+import { NextResponse } from 'next/server';
+
 import {
   getAveragePrice,
   getEmailNotifType,
   getHighestPrice,
   getLowestPrice,
 } from '@/lib/utils';
-import { NextResponse } from 'next/server';
+import { connectToDB } from '@/lib/mongoose';
+import Product from '@/lib/models/product.model';
+import { scrapeEmagProduct } from '@/lib/scraper';
+import { generateEmailBody, sendEmail } from '@/lib/nodemailer';
 
 export const maxDuration = 10;
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     connectToDB();
 
     const products = await Product.find({});
 
-    if (!products) throw new Error('No products found');
+    if (!products) throw new Error('No products fetched');
 
     // 1. Scrape Latest Product Details & Update DB
     const updatedProducts = await Promise.all(
       products.map(async (currentProduct) => {
         const scrapedProduct = await scrapeEmagProduct(currentProduct.url);
 
-        if (!scrapedProduct) throw new Error('No product found');
+        if (!scrapedProduct) return;
 
         const updatedPriceHistory = [
           ...currentProduct.priceHistory,
@@ -44,8 +45,7 @@ export async function GET() {
 
         const updatedProduct = await Product.findOneAndUpdate(
           { url: product.url },
-          product,
-          { upsert: true, new: true }
+          product
         );
 
         // 2. CHECK EACH PRODDUCT'S STATUS & SEND EMAIL ACCORDINGLY
@@ -80,7 +80,7 @@ export async function GET() {
       message: 'Ok',
       data: updatedProducts,
     });
-  } catch (error) {
-    throw new Error(`Error in GET: ${error}`);
+  } catch (error: any) {
+    throw new Error(`Failed to get all products: ${error.message}`);
   }
 }
