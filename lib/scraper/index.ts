@@ -26,7 +26,7 @@ export async function scrapeEmagProduct(url: string) {
     const $ = cheerio.load(response.data);
 
     const title = $('.page-title').text().trim();
-    let originalPriceString = $('.rrp-lp30d-content')
+    let originalPriceString = $('p.rrp-lp30d span:nth-child(2)')
       .text()
       .trim()
       .replace(/\D/g, '');
@@ -43,14 +43,19 @@ export async function scrapeEmagProduct(url: string) {
         .trim()
         .replace(/\D/g, '');
     } else {
-      (originalPriceString = ''),
-        (currentPriceString = $('.pricing-block.product-new-price')
+      (originalPrice = 0),
+        (currentPriceString = $('.pricing-block p.product-new-price')
           .text()
           .trim()
           .replace(/\D/g, ''));
     }
 
     currentPrice = currentPriceString.slice(0, currentPriceString.length / 2);
+
+    console.log('originalPriceString' + originalPriceString);
+    console.log('currentPriceString ' + currentPriceString);
+    console.log('originalPrice ' + originalPrice);
+    console.log('currentPrice ' + currentPrice);
 
     const outOfStock =
       $('.stock-and-genius span.label').text().trim().toLowerCase() ===
@@ -64,36 +69,52 @@ export async function scrapeEmagProduct(url: string) {
       .slice(-3)
       .replace(/[-%]/g, '');
 
+    console.log('discountRate ' + discountRate);
+
     const description = $('#description-body').text().trim();
 
+    const recommendedScraped = $('.positive-reviews').text().trim();
+    const recommendedProduct = recommendedScraped.slice(
+      0,
+      Math.ceil(recommendedScraped.length / 2)
+    );
+
+    const starsScraped = $('.rating-text').text().trim();
+    const stars = Number(
+      starsScraped.slice(0, Math.ceil(starsScraped.length / 2)).split(' ')[0]
+    );
+
+    const reviewsCount = Number(
+      starsScraped
+        .slice(0, Math.ceil(starsScraped.length / 2))
+        .split('(')[1]
+        .split(' ')[0]
+    );
+
+    const category = $('ol.breadcrumb li:nth-child(3)').text().trim();
+
+    console.log('category ' + category);
+
+    console.log('Recommended Product: ' + recommendedProduct);
     // Construct data object with scraped information
     const data = {
       url,
       currency: currency || 'RON',
-      image,
+      image: image || '',
       title,
-      currentPrice:
-        (Number(currentPrice) / 100).toFixed(2) ||
-        (Number(originalPrice) / 100).toFixed(2),
-      originalPrice:
-        (Number(originalPrice) / 100).toFixed(2) ||
-        (Number(currentPrice) / 100).toFixed(2),
+      currentPrice: Number(currentPrice) / 100 || 0,
+      originalPrice: Number(originalPrice) / 100 || 0,
       priceHistory: [],
       discountRate: Number(discountRate),
-      category: 'category', // TBD
-      reviewsCount: 100, // TBD
-      stars: 4.5, // TBD
+      category: category || '',
+      reviewsCount: reviewsCount || 0,
+      stars: stars || 0,
       isOutOfStock: outOfStock,
-      description,
-      lowestPrice:
-        (Number(currentPrice) / 100).toFixed(2) ||
-        (Number(originalPrice) / 100).toFixed(2),
-      highestPrice:
-        (Number(originalPrice) / 100).toFixed(2) ||
-        (Number(currentPrice) / 100).toFixed(2),
-      averagePrice:
-        (Number(currentPrice) / 100).toFixed(2) ||
-        (Number(originalPrice) / 100).toFixed(2),
+      description: description || '',
+      recommendedProduct: recommendedProduct || '',
+      lowestPrice: Number(currentPrice) / 100 || 0,
+      highestPrice: Number(currentPrice) / 100 || 0,
+      averagePrice: Number(currentPrice) / 100 || 0,
     };
 
     return data;

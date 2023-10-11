@@ -1,7 +1,7 @@
+import Modal from "@/components/Modal";
 import PriceInfoCard from "@/components/PriceInfoCard";
 import ProductCard from "@/components/ProductCard";
 import { getProductById, getSimilarProducts } from "@/lib/actions";
-// import { formatNumberWithSuperscript } from "@/lib/utils";
 import { Product } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,18 +30,6 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
   if (!product) redirect('/')
 
   const similarProducts = await getSimilarProducts(id)
-
-  const formattedWholeCurrentPrice = formatNumberWithSuperscript(product.currentPrice).props.children[0]
-  const formattedDecimalCurrentPrice = formatNumberWithSuperscript(product.currentPrice).props.children[1].props.children;
-
-  const formattedWholeAveragePrice = formatNumberWithSuperscript(product.averagePrice).props.children[0]
-  const formattedDecimalAveragePrice = formatNumberWithSuperscript(product.averagePrice).props.children[1].props.children;
-
-  const formattedWholeHighestPrice = formatNumberWithSuperscript(product.highestPrice).props.children[0]
-  const formattedDecimalHighestPrice = formatNumberWithSuperscript(product.highestPrice).props.children[1].props.children;
-
-  const formattedWholeLowestPrice = formatNumberWithSuperscript(product.lowestPrice).props.children[0]
-  const formattedDecimalLowestPrice = formatNumberWithSuperscript(product.lowestPrice).props.children[1].props.children;
   
   return (
     <div className="product-container">
@@ -113,9 +101,11 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               <p className="text-[34px] text-secondary font-bold tracking-wide ">
                 {formatNumberWithSuperscript(product.currentPrice)} {product.currency}
               </p>
+              {product.originalPrice > 0 && (
               <p className="text-[21px] text-black opacity-50 line-through">
                 {formatNumberWithSuperscript(product.originalPrice)} {product.currency}
               </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-4">
@@ -128,7 +118,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                     height={16}
                   />
                   <p className="text-sm text-primary-orange font-semibold">
-                    {product.stars || 25}
+                    {product.stars.toFixed(2)} stars
                   </p>
                 </div>
 
@@ -139,14 +129,21 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                     width={16}
                     height={16}
                   />
-                  <p className="text-sm text-secondary font-semibold">
-                    {product.reviewsCount} Reviews
-                  </p>
+                  <button className="text-sm text-secondary font-semibold">
+                    <Link
+                      href={`${product.url}#reviews-section`}
+                      target="_blank"
+                    >
+                      {product.reviewsCount} Review{product.reviewsCount > 1 ? 's' : ''}
+                    </Link>
+                  </button>
                 </div>
               </div>
 
               <p className="text-sm text-black opacity-50">
-                <span className="text-primary-green font-semibold">93% </span> of buyers have recommended this.
+                <span className="text-primary-green font-semibold">
+                  {product.recommendedProduct}
+                </span>
               </p>
             </div>
           </div>
@@ -156,35 +153,31 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               <PriceInfoCard 
                 title="Current Price"
                 iconSrc="/assets/icons/price-tag.svg"
-                wholeValue={`${formattedWholeCurrentPrice}`}
-                decimalValue={`${formattedDecimalCurrentPrice}`}
+                value={formatNumberWithSuperscript(product.currentPrice)}
                 currency={product.currency}
               />
               <PriceInfoCard 
                 title="Average Price"
                 iconSrc="/assets/icons/chart.svg"
-                wholeValue={`${formattedWholeAveragePrice}`}
-                decimalValue={`${formattedDecimalAveragePrice}`}
+                value={formatNumberWithSuperscript(product.averagePrice)}
                 currency={product.currency}
               />
               <PriceInfoCard 
                 title="Highest Price"
                 iconSrc="/assets/icons/arrow-up.svg"
-                wholeValue={`${formattedWholeHighestPrice}`}
-                decimalValue={`${formattedDecimalHighestPrice}`}
+                value={formatNumberWithSuperscript(product.highestPrice)}
                 currency={product.currency}
               />
               <PriceInfoCard 
                 title="Lowest Price"
                 iconSrc="/assets/icons/arrow-down.svg"
-                wholeValue={`${formattedWholeLowestPrice}`}
-                decimalValue={`${formattedDecimalLowestPrice}`}
+                value={formatNumberWithSuperscript(product.lowestPrice)}
                 currency={product.currency}
               />
             </div>
           </div>
 
-          Modal
+          <Modal productId={id} />
         </div>
       </div>
 
@@ -222,7 +215,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             Similar Products
           </p>
 
-          <div className="flex flex-wrap gap-10 mt-7 w-full">
+          <div className="flex flex-wrap gap-8 mt-7 w-full">
             {similarProducts.map((product) => (
               <ProductCard 
                 key={product._id} 

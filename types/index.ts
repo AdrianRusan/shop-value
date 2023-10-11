@@ -20,6 +20,7 @@ export type Product = {
   averagePrice: number;
   discountRate: number;
   description: string;
+  recommendedProduct: string;
   category: string;
   reviewsCount: number;
   stars: number;

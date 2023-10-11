@@ -1,14 +1,14 @@
 import Image from "next/image";
+import { ReactNode } from "react";
 
 interface Props {
   title: string;
   iconSrc: string;
-  wholeValue: string;
-  decimalValue: string;
+  value: ReactNode;
   currency: string;
 }
 
-const PriceInfoCard = ({ title, iconSrc, wholeValue, decimalValue, currency }: Props) => {
+const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
   return (
     <div className='price-info_card'>
       <p className="text-base text-black-100">
@@ -22,7 +22,7 @@ const PriceInfoCard = ({ title, iconSrc, wholeValue, decimalValue, currency }: P
           height={24}
         />
         <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary">
-          {wholeValue} <sup>{decimalValue}</sup> {currency}
+          {value} {currency}
         </p>
       </div>
     </div>
