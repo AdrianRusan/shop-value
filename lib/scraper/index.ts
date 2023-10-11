@@ -50,18 +50,23 @@ export async function scrapeEmagProduct(url: string) {
     );
 
     const starsScraped = $('.rating-text').text().trim();
-    const stars = Number(
-      starsScraped.slice(0, Math.ceil(starsScraped.length / 2)).split(' ')[0]
-    );
+    let stars, reviewsCount;
 
-    const reviewsCount = Number(
-      starsScraped
-        .slice(0, Math.ceil(starsScraped.length / 2))
-        .split('(')[1]
-        .split(' ')[0]
-    );
+    if (starsScraped.length > 0) {
+      stars = Number(
+        starsScraped.slice(0, Math.ceil(starsScraped.length / 2)).split(' ')[0]
+      );
+
+      reviewsCount = Number(
+        starsScraped
+          .slice(0, Math.ceil(starsScraped.length / 2))
+          .split('(')[1]
+          .split(' ')[0]
+      );
+    }
 
     const category = $('ol.breadcrumb li:nth-child(3)').text().trim();
+    const biggerCategory = $('ol.breadcrumb li:nth-child(2)').text().trim();
 
     // Construct data object with scraped information
     const data = {
@@ -69,19 +74,20 @@ export async function scrapeEmagProduct(url: string) {
       currency: currency || 'RON',
       image: image || '',
       title,
-      currentPrice: Number(currentPrice) / 100 || 0,
-      originalPrice: Number(originalPrice) / 100 || 0,
+      currentPrice: Number(currentPrice) || 0,
+      originalPrice: Number(originalPrice) || 0,
       priceHistory: [],
       discountRate: Number(discountRate) || 0,
       category: category || '',
+      biggerCategory: biggerCategory || '',
       reviewsCount: reviewsCount || 0,
       stars: stars || 0,
       isOutOfStock: outOfStock,
       description: description || '',
       recommendedProduct: recommendedProduct || '',
-      lowestPrice: Number(currentPrice) / 100 || 0,
-      highestPrice: Number(currentPrice) / 100 || 0,
-      averagePrice: Number(currentPrice) / 100 || 0,
+      lowestPrice: Number(currentPrice) || 0,
+      highestPrice: Number(currentPrice) || 0,
+      averagePrice: Number(currentPrice) || 0,
     };
 
     return data;

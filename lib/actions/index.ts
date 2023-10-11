@@ -85,6 +85,7 @@ export async function getSimilarProducts(productId: string) {
 
     const similarProducts = await Product.find({
       _id: { $ne: productId },
+      biggerCategory: currentProduct.biggerCategory,
     }).limit(4);
 
     return similarProducts;

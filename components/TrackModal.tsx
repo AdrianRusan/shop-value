@@ -1,33 +1,38 @@
 'use client'
 
-import { useState, Fragment, FormEvent  } from 'react'
-import { Dialog } from '@headlessui/react'
-import { Transition } from '@headlessui/react'
-import Image from 'next/image'
-import { addUserEmailToProduct } from '@/lib/actions'
+import { useState, useEffect, Fragment, FormEvent } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import Image from 'next/image';
+import { addUserEmailToProduct } from '@/lib/actions';
 
 interface Props {
-  productId: string
+  productId: string;
 }
 
-const Modal = ({ productId }: Props ) => {
-  let [isOpen, setIsOpen] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [email, setEmail] = useState('')
+const TrackModal = ({ productId }: Props) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState('');
+
+  const openModal = () => setIsOpen(true);
+  const closeModal = () => setIsOpen(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(openModal, 2500);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
-    await addUserEmailToProduct(productId, email)
+    await addUserEmailToProduct(productId, email);
 
-    setIsSubmitting(false)
-    setEmail('')
-    closeModal()
-  }
-
-  const openModal = () => setIsOpen(true)
-  const closeModal = () => setIsOpen(false)
+    setIsSubmitting(false);
+    setEmail('');
+    closeModal();
+  };
 
   return (
     <>
@@ -50,10 +55,7 @@ const Modal = ({ productId }: Props ) => {
               <Dialog.Overlay className="fixed inset-0" />
             </Transition.Child>
 
-            <span
-              className='inline-block h-screen align-middle'
-              aria-hidden='true'
-            />
+            <span className='inline-block h-screen align-middle' aria-hidden='true' />
 
             <Transition.Child
               as={Fragment}
@@ -91,10 +93,7 @@ const Modal = ({ productId }: Props ) => {
                   </h4>
                   <p className='text-sm text-gray-600 mt-2'>Never miss a bargain again with our timely alerts!</p>
 
-                  <form 
-                    className='flex flex-col mt-5'
-                    onSubmit={handleSubmit}
-                  >
+                  <form className='flex flex-col mt-5' onSubmit={handleSubmit}>
                     <label htmlFor='email' className='text-sm font-medium text-gray-700'>
                       Email address
                     </label>
@@ -116,9 +115,9 @@ const Modal = ({ productId }: Props ) => {
                         className='dialog-input'
                       />
                     </div>
-                      <button type="submit" className='dialog-btn'>
-                        {isSubmitting ? 'Submitting...' : 'Track'}
-                      </button>
+                    <button type="submit" className='dialog-btn'>
+                      {isSubmitting ? 'Submitting...' : 'Track'}
+                    </button>
                   </form>
                 </div>
               </div>
@@ -127,7 +126,7 @@ const Modal = ({ productId }: Props ) => {
         </Dialog>
       </Transition>
     </>
-  )
-}
+  );
+};
 
-export default Modal
+export default TrackModal;

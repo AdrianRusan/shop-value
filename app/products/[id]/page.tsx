@@ -1,4 +1,4 @@
-import Modal from "@/components/Modal";
+import TrackModal from "@/components/TrackModal";
 import PriceInfoCard from "@/components/PriceInfoCard";
 import ProductCard from "@/components/ProductCard";
 import { getProductById, getSimilarProducts } from "@/lib/actions";
@@ -7,6 +7,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
+import ProductButtons from "@/components/ProductButtons";
+import ShareModal from "@/components/ShareModal";
 
 type Props = {
   params: {
@@ -20,7 +22,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
   if (!product) redirect('/')
 
   const similarProducts = await getSimilarProducts(id)
-  
+
   return (
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
@@ -66,21 +68,18 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
 
               <div className="p-2 bg-white-200 rounded-10">
                 <Image 
-                  src="/assets/icons/bookmark.svg"
-                  alt="bookmark"
+                  src='/assets/icons/bookmark.svg'
+                  alt='bookmark'
                   width={20}
                   height={20}
                 /> 
               </div>
 
-              <div className="p-2 bg-white-200 rounded-10">
-                <Image 
-                  src="/assets/icons/share.svg"
-                  alt="share"
-                  width={20}
-                  height={20}
-                /> 
+              <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
+                <ShareModal productId={id} />
               </div>
+
+              <ProductButtons src="/assets/icons/share.svg" alt="share" product={product} />
             </div>
           </div>
 
@@ -165,7 +164,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             </div>
           </div>
 
-          <Modal productId={id} />
+          <TrackModal productId={id} />
         </div>
       </div>
 

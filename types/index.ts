@@ -22,6 +22,7 @@ export type Product = {
   description: string;
   recommendedProduct: string;
   category: string;
+  biggerCategory: string;
   reviewsCount: number;
   stars: number;
   isOutOfStock: Boolean;
