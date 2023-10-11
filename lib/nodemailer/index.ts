@@ -105,6 +105,6 @@ export const sendEmail = async (
   transporter.sendMail(mailOptions, (error: any, info: any) => {
     if (error) return console.log(error);
 
-    console.log(`Email sent!`);
+    console.log(`Email sent: ${JSON.stringify(info)}`);
   });
 };

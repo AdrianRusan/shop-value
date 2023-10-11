@@ -6,23 +6,13 @@ import { Product } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import FormatPrices from "@/components/FormatPrices";
 
 type Props = {
   params: {
     id: string
   }
 }
-
-const formatNumberWithSuperscript = (num: Number) => {
-  const [wholePart, decimalPart] = num.toFixed(2).split('.');
-
-  return (
-    <>
-      {wholePart}
-      <sup>{decimalPart}</sup>
-    </>
-  );
-};
 
 const ProductDetails = async ({ params: { id }  } : Props) => {
   const product: Product = await getProductById(id);
@@ -75,7 +65,6 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               </div>
 
               <div className="p-2 bg-white-200 rounded-10">
-                {/* TBD - Implement functionality (like it, save it to local storage, etc) */}
                 <Image 
                   src="/assets/icons/bookmark.svg"
                   alt="bookmark"
@@ -85,7 +74,6 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               </div>
 
               <div className="p-2 bg-white-200 rounded-10">
-                {/* TBD - Implement functionality (like it, save it to local storage, etc) */}
                 <Image 
                   src="/assets/icons/share.svg"
                   alt="share"
@@ -99,11 +87,11 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
           <div className="product-info">
             <div className="flex flex-col gap-2">
               <p className="text-[34px] text-secondary font-bold tracking-wide ">
-                {formatNumberWithSuperscript(product.currentPrice)} {product.currency}
+                {<FormatPrices num={product.currentPrice}/>} {product.currency}
               </p>
               {product.originalPrice > 0 && (
               <p className="text-[21px] text-black opacity-50 line-through">
-                {formatNumberWithSuperscript(product.originalPrice)} {product.currency}
+                {<FormatPrices num={product.originalPrice}/>} {product.currency}
               </p>
               )}
             </div>
@@ -153,25 +141,25 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               <PriceInfoCard 
                 title="Current Price"
                 iconSrc="/assets/icons/price-tag.svg"
-                value={formatNumberWithSuperscript(product.currentPrice)}
+                value={<FormatPrices num={product.currentPrice}/>}
                 currency={product.currency}
               />
               <PriceInfoCard 
                 title="Average Price"
                 iconSrc="/assets/icons/chart.svg"
-                value={formatNumberWithSuperscript(product.averagePrice)}
+                value={<FormatPrices num={product.averagePrice}/>}
                 currency={product.currency}
               />
               <PriceInfoCard 
                 title="Highest Price"
                 iconSrc="/assets/icons/arrow-up.svg"
-                value={formatNumberWithSuperscript(product.highestPrice)}
+                value={<FormatPrices num={product.highestPrice}/>}
                 currency={product.currency}
               />
               <PriceInfoCard 
                 title="Lowest Price"
                 iconSrc="/assets/icons/arrow-down.svg"
-                value={formatNumberWithSuperscript(product.lowestPrice)}
+                value={<FormatPrices num={product.lowestPrice}/>}
                 currency={product.currency}
               />
             </div>
@@ -187,8 +175,12 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             Product Description
           </h3>
 
-          <div className="flex flex-col gap-4">
-            {product?.description?.split('\n')}
+          <div className="flex flex-col gap-4 whitespace-pre-line">
+            {product?.description.split("\n").map((paragraph) => (
+              <p key={paragraph}>
+                {paragraph}
+              </p>
+            ))}
           </div>
         </div>
 

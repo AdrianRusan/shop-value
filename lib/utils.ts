@@ -9,6 +9,39 @@ const Notification = {
 
 const THRESHOLD_PERCENTAGE = 40;
 
+export function extractPrices($: any) {
+  let originalPriceString = $('p.rrp-lp30d span:nth-child(2)')
+    .text()
+    .trim()
+    .replace(/\D/g, '');
+
+  let originalPrice, currentPriceString, currentPrice;
+
+  if (originalPriceString.length > 0) {
+    originalPrice = originalPriceString.slice(
+      0,
+      originalPriceString.length / 2
+    );
+    currentPriceString = $('p.product-new-price.has-deal')
+      .text()
+      .trim()
+      .replace(/\D/g, '');
+  } else {
+    (originalPrice = 0),
+      (currentPriceString = $('.pricing-block p.product-new-price')
+        .text()
+        .trim()
+        .replace(/\D/g, ''));
+  }
+
+  currentPrice = currentPriceString.slice(0, currentPriceString.length / 2);
+
+  return {
+    originalPrice: Number(originalPrice) / 100 || 0,
+    currentPrice: Number(currentPrice) / 100 || 0,
+  };
+}
+
 // Extracts and returns the price from a list of possible elements.
 export function extractPrice(...elements: any) {
   for (const element of elements) {

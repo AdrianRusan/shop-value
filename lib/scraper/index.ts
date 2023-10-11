@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { extractPrices } from '../utils';
 
 export async function scrapeEmagProduct(url: string) {
   if (!url) return;
@@ -26,36 +27,7 @@ export async function scrapeEmagProduct(url: string) {
     const $ = cheerio.load(response.data);
 
     const title = $('.page-title').text().trim();
-    let originalPriceString = $('p.rrp-lp30d span:nth-child(2)')
-      .text()
-      .trim()
-      .replace(/\D/g, '');
-
-    let originalPrice, currentPriceString, currentPrice;
-
-    if (originalPriceString.length > 0) {
-      originalPrice = originalPriceString.slice(
-        0,
-        originalPriceString.length / 2
-      );
-      currentPriceString = $('p.product-new-price.has-deal')
-        .text()
-        .trim()
-        .replace(/\D/g, '');
-    } else {
-      (originalPrice = 0),
-        (currentPriceString = $('.pricing-block p.product-new-price')
-          .text()
-          .trim()
-          .replace(/\D/g, ''));
-    }
-
-    currentPrice = currentPriceString.slice(0, currentPriceString.length / 2);
-
-    console.log('originalPriceString' + originalPriceString);
-    console.log('currentPriceString ' + currentPriceString);
-    console.log('originalPrice ' + originalPrice);
-    console.log('currentPrice ' + currentPrice);
+    const { originalPrice, currentPrice } = extractPrices($);
 
     const outOfStock =
       $('.stock-and-genius span.label').text().trim().toLowerCase() ===
@@ -68,8 +40,6 @@ export async function scrapeEmagProduct(url: string) {
       .trim()
       .slice(-3)
       .replace(/[-%]/g, '');
-
-    console.log('discountRate ' + discountRate);
 
     const description = $('#description-body').text().trim();
 
@@ -93,9 +63,6 @@ export async function scrapeEmagProduct(url: string) {
 
     const category = $('ol.breadcrumb li:nth-child(3)').text().trim();
 
-    console.log('category ' + category);
-
-    console.log('Recommended Product: ' + recommendedProduct);
     // Construct data object with scraped information
     const data = {
       url,
@@ -105,7 +72,7 @@ export async function scrapeEmagProduct(url: string) {
       currentPrice: Number(currentPrice) / 100 || 0,
       originalPrice: Number(originalPrice) / 100 || 0,
       priceHistory: [],
-      discountRate: Number(discountRate),
+      discountRate: Number(discountRate) || 0,
       category: category || '',
       reviewsCount: reviewsCount || 0,
       stars: stars || 0,
