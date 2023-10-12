@@ -3,7 +3,6 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
 
 import {
   FacebookShareButton,
@@ -30,7 +29,6 @@ const ShareModal = () => {
     setCurrentURL(window.location.href); // This will run on the client side
   }, []);
 
-  console.log(currentURL)
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 

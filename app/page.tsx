@@ -2,12 +2,19 @@ import HeroCarousel from "@/components/HeroCarousel"
 import Searchbar from "@/components/Searchbar"
 import Image from "next/image"
 import { getAllProducts } from "@/lib/actions"
-import { get } from "http"
 import ProductCard from "@/components/ProductCard"
 
 const Home = async () => {
 
   const allProducts = await getAllProducts();
+
+  let sortedProducts = [];
+
+  if (allProducts && allProducts?.length > 0) {
+    sortedProducts = allProducts
+      .sort((a, b) => b.priceHistory.length - a.priceHistory.length)
+      .slice(0, Math.min(8, allProducts.length));
+  }
 
   return (
     <>
@@ -38,12 +45,12 @@ const Home = async () => {
         </div>
       </section>
       
-      {allProducts && allProducts?.length > 0 && (
+      {sortedProducts && sortedProducts?.length > 0 && (
         <section className="trending-section">
           <h2 className="section-text">Trending</h2>
 
           <div className="flex flex-wrap gap-x-8 gap-y-16">
-          {allProducts.slice(0, Math.min(8, allProducts.length)).map((product) => (
+          {sortedProducts.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}
           </div>
