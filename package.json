@@ -16,6 +16,7 @@
     "mongoose": "^7.6.1",
     "next": "13.5.4",
     "next-share": "^0.27.0",
+    "next-themes": "^0.2.1",
     "nodemailer": "^6.9.6",
     "react": "^18",
     "react-dom": "^18",

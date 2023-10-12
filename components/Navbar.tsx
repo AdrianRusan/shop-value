@@ -1,25 +1,25 @@
 import Image from "next/image"
 import Link from "next/link"
+import ThemeSwitch from "./ThemeSwitch"
+import ThemedIcon from "./ThemedIcon";
 
 const navIcons = [
   {
-    src: '/assets/icons/search.svg',
     alt: 'search',
   },
   {
-    src: '/assets/icons/black-heart.svg',
     alt: 'heart',
   },
   {
-    src: '/assets/icons/user.svg',
     alt: 'user',
   }
-]
+];
 
 const Navbar = () => {
+
   return (
-    <header className="w-full">
-      <nav className="nav">
+    <header className="w-full border-b-2">
+      <nav className="nav text-white"> {/* Apply a text color class to the parent container */}
         <Link
           href="/"
           className="flex items-center gap-1"
@@ -31,7 +31,7 @@ const Navbar = () => {
             alt="Logo"
           />
 
-          <p className="nav-logo">
+          <p className="nav-logo dark:text-white-200">
             Shop
             <span className="text-primary">Value</span>
           </p>
@@ -39,19 +39,15 @@ const Navbar = () => {
 
         <div className="flex items-center gap-5">
           {navIcons.map((icon) => (
-            <Image 
-              key={icon.alt}
-              src={icon.src}
-              alt={icon.alt}
-              width={28}
-              height={28}
-              className="object-contain"
-            />
+            <div>
+              <ThemedIcon key={icon.alt} alt={icon.alt} />
+            </div>
           ))}
+          <ThemeSwitch />
         </div>
       </nav>
     </header>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

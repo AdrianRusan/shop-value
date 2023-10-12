@@ -7,8 +7,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
-import ProductButtons from "@/components/ProductButtons";
 import ShareModal from "@/components/ShareModal";
+import ThemedIcon from "@/components/ThemedIcon";
 
 type Props = {
   params: {
@@ -46,14 +46,14 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
         <div className="flex flex-1 flex-col">
           <div className="flex justify-between items-start gap-5 flex-wrap pb-6">
             <div className="flex flex-col gap-3">
-              <p className="text-[28px] text-secondary font-semibold">
+              <p className="text-[28px] text-secondary dark:text-white-200 font-semibold">
                 {product.title}
               </p>
 
               <Link
                 href={product.url}
                 target="_blank"
-                className="text-base text-black opacity-50"
+                className="text-base text-black dark:text-white-200 opacity-50"
               >
                 Visit Product
               </Link>
@@ -90,11 +90,11 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
 
           <div className="product-info">
             <div className="flex flex-col gap-2">
-              <p className="text-[34px] text-secondary font-bold tracking-wide ">
+              <p className="text-[34px] text-secondary dark:text-white-200 font-bold tracking-wide ">
                 {<FormatPrices num={product.currentPrice}/>} {product.currency}
               </p>
               {product.originalPrice > 0 && (
-              <p className="text-[21px] text-black opacity-50 line-through">
+              <p className="text-[21px] text-black dark:text-white-200 opacity-50 line-through">
                 {<FormatPrices num={product.originalPrice}/>} {product.currency}
               </p>
               )}
@@ -132,7 +132,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 </div>
               </div>
 
-              <p className="text-sm text-black opacity-50">
+              <p className="text-sm text-black opacity-50 dark:text-white-200">
                 <span className="text-primary-green font-semibold">
                   {product.recommendedProduct}
                 </span>
@@ -175,7 +175,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
 
       <div className="flex flex-col gap-16">
         <div className="flex flex-col gap-5 ">
-          <h3 className="text-2xl text-secondary font-semibold">
+          <h3 className="text-2xl text-secondary dark:text-white-200 font-semibold">
             Product Description
           </h3>
 
@@ -189,16 +189,11 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
         </div>
 
         <button className="btn w-fit mx-auto flex items-center justify-center gap-3 min-w-[200px]">
-          <Image 
-            src="/assets/icons/bag.svg"
-            alt="check"
-            width={22}
-            height={22}
-          />
+          <ThemedIcon alt="bag" />
 
           <Link
             href="/"
-            className="text-base text-white"
+            className="text-base text-white dark:text-black"
           >
             Buy Now
           </Link>

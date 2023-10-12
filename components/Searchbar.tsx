@@ -50,7 +50,7 @@ const Searchbar = () => {
       <input 
         type="text"
         placeholder="Enter product link"
-        className="searchbar-input"
+        className="searchbar-input dark:bg-secondary"
         value={searchPrompt}
         onChange={(e) => setSearchPrompt(e.target.value)}
       />

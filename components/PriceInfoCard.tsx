@@ -11,7 +11,7 @@ interface Props {
 const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
   return (
     <div className='price-info_card'>
-      <p className="text-base text-black-100">
+      <p className="text-base text-black-100 dark:text-white-100">
         {title}
       </p>
       <div className="flex gap-1">
@@ -21,7 +21,7 @@ const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
           width={24}
           height={24}
         />
-        <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary">
+        <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary dark:text-white-200">
           {value} {currency}
         </p>
       </div>

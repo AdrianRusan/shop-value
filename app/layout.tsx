@@ -2,15 +2,17 @@ import Navbar from '@/components/Navbar'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
+import ThemeProvider from './theme-provider';
 
 const inter = Inter({ subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight:['300', '400', '500', '600', '700'] })
-import { Analytics } from '@vercel/analytics/react'
-
 
 export const metadata: Metadata = {
-  title: 'ShopValue',
-  description: 'Track product prices effortlessly and save money on your online shopping.',
+  applicationName: "ShopValue",
+  robots: "https://example.com",
+  title: 'ShopValue: Your Product Data Scraper and Price Tracker',
+  description: 'ShopValue: Your product data scraper and price tracker. Compare prices, analyze reviews, and track price history.',
 }
 
 export default function RootLayout({
@@ -19,14 +21,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <main className='max-w-10xl mx-auto'>
-          <Navbar />
-          {children}
-          <Analytics />
-        </main>
-      </body>
-    </html>
+      <ThemeProvider>
+        <html lang="en">
+          <body className={`${inter.className} dark:bg-black`}>
+            <main className='max-w-10xl mx-auto'>
+              <Navbar />
+              {children}
+              <Analytics />
+            </main>
+          </body>
+        </html>
+      </ThemeProvider>
   )
 }
