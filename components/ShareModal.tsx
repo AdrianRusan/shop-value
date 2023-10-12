@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, MouseEvent } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
 
@@ -22,7 +22,6 @@ import {
 const ShareModal = () => {
 
   const [isOpen, setIsOpen] = useState(false);
-  const [email, setEmail] = useState('');
   const [currentURL, setCurrentURL] = useState('');
   
   useEffect(() => {
@@ -31,6 +30,15 @@ const ShareModal = () => {
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
+
+  const handleCopyLink = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    try {
+      await navigator.clipboard.writeText(currentURL);
+    } catch (err) {
+      console.error('Unable to copy to clipboard:', err);
+    }
+  };
 
   return (
     <>
@@ -135,26 +143,28 @@ const ShareModal = () => {
                   </div>
 
                   <form className='flex flex-col mt-5'>
-                    <label htmlFor='email' className='text-sm font-medium text-gray-700'>
-                      Email address
-                    </label>
+                    <p>Or copy link</p>
                     <div className='dialog-input_container'>
                       <Image 
-                        src="/assets/icons/mail.svg"
-                        alt="mail"
+                        src="/assets/icons/link.svg"
+                        alt="link"
                         width={18}
                         height={18}
                       />
 
                       <input
                         required
-                        type='email'
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder='Enter your email address'
+                        type='text'
+                        id="link"
+                        value={currentURL}
                         className='dialog-input'
                       />
+                      <button 
+                        className='py-2 px-4 bg-secondary hover:bg-opacity-70 rounded-[27px] text-white text-lg font-semibold;'
+                        onClick={handleCopyLink}
+                      >
+                        Copy
+                      </button>
                     </div>
                   </form>
                 </div>

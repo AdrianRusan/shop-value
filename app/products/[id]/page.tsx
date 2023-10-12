@@ -22,6 +22,13 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
   if (!product) redirect('/')
 
   const similarProducts = await getSimilarProducts(id)
+  let sortedProducts = [];
+
+  if (similarProducts && similarProducts?.length > 0) {
+    sortedProducts = similarProducts
+      .sort((a, b) => b.priceHistory.length - a.priceHistory.length)
+      .slice(0, Math.min(4, similarProducts.length));
+  }
 
   return (
     <div className="product-container">
@@ -78,8 +85,6 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
                 <ShareModal />
               </div>
-
-              <ProductButtons src="/assets/icons/share.svg" alt="share" product={product} />
             </div>
           </div>
 
@@ -200,14 +205,14 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
         </button>
       </div>
 
-      {similarProducts && similarProducts?.length > 0 && (
+      {sortedProducts && sortedProducts?.length > 0 && (
         <div className="py-14 flex flex-col gap-2 w-full">
           <p className="section-text">
             Similar Products
           </p>
 
           <div className="flex flex-wrap gap-8 mt-7 w-full">
-            {similarProducts.map((product) => (
+            {sortedProducts.map((product) => (
               <ProductCard 
                 key={product._id} 
                 product={product}
