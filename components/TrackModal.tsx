@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment, FormEvent } from 'react';
+import { useState, Fragment, FormEvent } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
 import { addUserEmailToProduct } from '@/lib/actions';
@@ -16,12 +16,6 @@ const TrackModal = ({ productId }: Props) => {
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(openModal, 2500);
-
-    return () => clearTimeout(timeout);
-  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -1,19 +1,36 @@
 'use client'
 
-import { useState, useEffect, Fragment, FormEvent } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
-import { addUserEmailToProduct } from '@/lib/actions';
+import { usePathname } from 'next/navigation';
 
-interface Props {
-  productId: string;
-}
+import {
+  FacebookShareButton,
+  FacebookIcon,
+  RedditShareButton,
+  RedditIcon,
+  TwitterShareButton,
+  TwitterIcon,
+  WhatsappShareButton,
+  WhatsappIcon,
+  TelegramShareButton,
+  TelegramIcon,
+  LinkedinShareButton,
+  LinkedinIcon,
+} from 'next-share'
 
-const ShareModal = ({ productId }: Props) => {
+const ShareModal = () => {
+
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
+  const [currentURL, setCurrentURL] = useState('');
+  
+  useEffect(() => {
+    setCurrentURL(window.location.href); // This will run on the client side
+  }, []);
 
+  console.log(currentURL)
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 
@@ -70,7 +87,54 @@ const ShareModal = ({ productId }: Props) => {
                     />
                   </div>
 
-                  <p className='text-sm text-gray-600 mt-2'>Never miss a bargain again with our timely alerts!</p>
+                  <div className='flex flex-col gap-2 py-2'>
+                    <p>Share this link via</p>
+                    <div className='flex justify-evenly'>
+                      <FacebookShareButton
+                        url={currentURL}
+                        quote={'next-share is a social share buttons for your next React apps.'}
+                        hashtag={'#shopvalue'}
+                      >
+                        <FacebookIcon size={48} round />
+                      </FacebookShareButton>
+
+                      <RedditShareButton
+                        url={currentURL}
+                        title={'next-share is a social share buttons for your next React apps.'}
+                      >
+                        <RedditIcon size={48} round />
+                      </RedditShareButton>
+
+                      <TwitterShareButton
+                        url={currentURL}
+                        title={'next-share is a social share buttons for your next React apps.'}
+                      >
+                        <TwitterIcon size={48} round />
+                      </TwitterShareButton>
+
+                      <WhatsappShareButton
+                        url={currentURL}
+                        title={'next-share is a social share buttons for your next React apps.'}
+                        separator=":: "
+                      >
+                        <WhatsappIcon size={48} round />
+                      </WhatsappShareButton>
+
+                      <TelegramShareButton
+                        url={currentURL}
+                        title={'next-share is a social share buttons for your next React apps.'}
+                      >
+                        <TelegramIcon size={48} round />
+                      </TelegramShareButton>
+
+                      <LinkedinShareButton 
+                        url={currentURL}
+                      >
+                        <LinkedinIcon size={48} round />
+                      </LinkedinShareButton>
+
+                    </div>
+                  </div>
 
                   <form className='flex flex-col mt-5'>
                     <label htmlFor='email' className='text-sm font-medium text-gray-700'>

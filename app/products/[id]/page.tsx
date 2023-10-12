@@ -76,7 +76,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               </div>
 
               <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
-                <ShareModal productId={id} />
+                <ShareModal />
               </div>
 
               <ProductButtons src="/assets/icons/share.svg" alt="share" product={product} />
