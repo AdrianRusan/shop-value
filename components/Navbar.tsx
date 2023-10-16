@@ -38,11 +38,11 @@ const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-5">
-          {navIcons.map((icon) => (
+          {/* {navIcons.map((icon) => (
             <div>
               <ThemedIcon key={icon.alt} alt={icon.alt} />
             </div>
-          ))}
+          ))} */}
           <ThemeSwitch />
         </div>
       </nav>
