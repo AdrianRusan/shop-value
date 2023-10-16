@@ -42,13 +42,14 @@ const HeroCarousel = () => {
         labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
       >
         {heroImages.map((image) => (
-          <Image 
+          <Image
             key={image.alt}
             src={image.imgUrl}
             alt={image.alt}
             width={484}
             height={484}
-            className="object-contain "
+            className="object-contain"
+            priority={image.alt === 'smart watch'}
           />
         ))}
       </Carousel>
