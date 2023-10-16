@@ -23,11 +23,11 @@ const ProductCard = ({ product } : Props ) => {
         <h3 className="product-title">{product.title}</h3>
 
         <div className="flex justify-between items-center">
-          <p className={`flex h-[6vh] text-black dark:text-white-200 opacity-50 capitalize text-lg text-center items-center`}>
+          <p className={`flex h-[6vh] text-black dark:text-white-200 opacity-25 capitalize text-lg text-center items-center`}>
             {product.category}
           </p>
           <div className="flex flex-col whitespace-nowrap">
-              <p className={`text-sm text-black opacity-50 dark:text-white-200 line-through ${product.originalPrice > 0 ? '' : 'hidden'}`}>
+              <p className={`text-sm text-black opacity-25 dark:text-white-200 line-through ${product.originalPrice > 0 ? '' : 'hidden'}`}>
                 <span><FormatPrices num={product.originalPrice}/> </span>
                 <span>{product?.currency}</span>
               </p>

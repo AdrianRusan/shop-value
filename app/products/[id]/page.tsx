@@ -94,7 +94,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 {<FormatPrices num={product.currentPrice}/>} {product.currency}
               </p>
               {product.originalPrice > 0 && (
-              <p className="text-[21px] text-black dark:text-white-200 opacity-50 line-through">
+              <p className="text-[21px] text-black dark:text-white-200 opacity-25 line-through">
                 {<FormatPrices num={product.originalPrice}/>} {product.currency}
               </p>
               )}
@@ -132,7 +132,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 </div>
               </div>
 
-              <p className="text-sm text-black opacity-50 dark:text-white-200">
+              <p className="text-sm">
                 <span className="text-primary-green font-semibold">
                   {product.recommendedProduct}
                 </span>
