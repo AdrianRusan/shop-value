@@ -29,6 +29,7 @@ const Navbar = () => {
             width={27}
             height={27}
             alt="Logo"
+            priority
           />
 
           <p className="nav-logo dark:text-white-200">

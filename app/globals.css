@@ -95,7 +95,7 @@
   }
 
   .dialog-head_text {
-    @apply text-secondary text-lg leading-[24px] font-semibold mt-4 dark:text-white-200;
+    @apply text-secondary text-lg leading-[24px] font-semibold mt-4;
   }
 
   .dialog-input_container {

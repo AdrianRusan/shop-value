@@ -87,7 +87,11 @@ const TrackModal = ({ productId }: Props) => {
                   </h4>
                   <p className='text-sm text-gray-600 mt-2'>Never miss a bargain again with our timely alerts!</p>
 
-                  <form className='flex flex-col mt-5' onSubmit={handleSubmit}>
+                  <form 
+                    className='flex flex-col mt-5' 
+                    onSubmit={handleSubmit}
+                    name='track-product'
+                  >
                     <label htmlFor='email' className='text-sm font-medium text-gray-700'>
                       Email address
                     </label>
@@ -107,6 +111,7 @@ const TrackModal = ({ productId }: Props) => {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder='Enter your email address'
                         className='dialog-input'
+                        autoComplete='on'
                       />
                     </div>
                     <button type="submit" className='dialog-btn'>

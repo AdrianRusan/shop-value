@@ -28,6 +28,7 @@ const Home = async () => {
                 alt="arrow-right"
                 width={16}
                 height={16}
+                priority
               />
             </p>
             <h1 className="head-text dark:text-white-200">

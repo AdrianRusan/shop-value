@@ -53,6 +53,7 @@ const Searchbar = () => {
         className="searchbar-input dark:bg-secondary"
         value={searchPrompt}
         onChange={(e) => setSearchPrompt(e.target.value)}
+        name='searchbar-input'
       />
 
       <button 

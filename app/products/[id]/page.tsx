@@ -191,9 +191,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
 
         <button className="btn w-fit mx-auto flex items-center justify-center gap-3 min-w-[200px]">
           <ThemedIcon alt="bag" />
-
           <Link
-            href="/"
+            href={product.url}
+            target="_blank"
             className="text-base text-white dark:text-black"
           >
             Buy Now

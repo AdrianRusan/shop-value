@@ -142,7 +142,10 @@ const ShareModal = () => {
                     </div>
                   </div>
 
-                  <form className='flex flex-col mt-5'>
+                  <form 
+                  className='flex flex-col mt-5'
+                  name='share-link'
+                  >
                     <p>Or copy link</p>
                     <div className='dialog-input_container'>
                       <Image 
@@ -156,7 +159,8 @@ const ShareModal = () => {
                         required
                         type='text'
                         id="link"
-                        value={currentURL}
+                        defaultValue={currentURL}
+                        readOnly
                         className='dialog-input'
                       />
                       <button 

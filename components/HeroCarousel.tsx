@@ -63,6 +63,7 @@ const HeroCarousel = () => {
         width={175}
         height={175}
         className="max-xl:hidden absolute -left-[15%] bottom-0 z-0"
+        priority
       />
     </div>
   )
