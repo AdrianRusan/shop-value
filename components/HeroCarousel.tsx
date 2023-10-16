@@ -3,6 +3,8 @@
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { Carousel } from 'react-responsive-carousel';
 import Image from "next/image";
+import useWindowSize from "@rooks/use-window-size"
+
 
 const heroImages = [
   {
@@ -28,6 +30,8 @@ const heroImages = [
 ]
 
 const HeroCarousel = () => {
+  const { innerWidth } = useWindowSize();
+
   return (
     <div className="hero-carousel">
       <Carousel
@@ -49,7 +53,7 @@ const HeroCarousel = () => {
             width={484}
             height={484}
             className="object-contain"
-            priority={window.innerWidth >= 1280 && image.alt === 'smart watch'}          />
+            priority={innerWidth !== null && innerWidth >= 1280 && image.alt === 'smart watch'}          />
         ))}
       </Carousel>
 
