@@ -49,8 +49,7 @@ const HeroCarousel = () => {
             width={484}
             height={484}
             className="object-contain"
-            priority={image.alt === 'smart watch'}
-          />
+            priority={window.innerWidth >= 1280 && image.alt === 'smart watch'}          />
         ))}
       </Carousel>
 

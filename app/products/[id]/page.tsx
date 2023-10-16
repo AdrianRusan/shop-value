@@ -54,7 +54,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               <Link
                 href={product.url}
                 target="_blank"
-                className="text-base text-black dark:text-white-200 opacity-50"
+                className="text-base text-black dark:text-white-200 opacity-75"
               >
                 Visit Product
               </Link>
@@ -69,7 +69,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                   height={20}
                 />
 
-                <p className="text-base font-semibold text-[#D46F77]">
+                <p className="text-base font-semibold text-[#A2151D]">
                   {product.reviewsCount}
                 </p>
               </div>
@@ -110,7 +110,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                     width={16}
                     height={16}
                   />
-                  <p className="text-sm text-primary-orange font-semibold">
+                  <p className="text-sm text-secondary font-semibold">
                     {product.stars.toFixed(2)} stars
                   </p>
                 </div>
@@ -134,7 +134,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               </div>
 
               <p className="text-sm">
-                <span className="text-primary-green font-semibold">
+                <span className="dark:text-[#39AA41] text-[#0B680C] font-semibold">
                   {product.recommendedProduct}
                 </span>
               </p>

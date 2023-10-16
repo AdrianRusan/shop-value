@@ -78,7 +78,7 @@
   }
 
   .product-stars {
-    @apply flex items-center gap-2 px-3 py-2 bg-[#FBF3EA] rounded-[27px];
+    @apply flex items-center gap-2 px-3 py-2 bg-white-200 rounded-[27px];
   }
 
   .product-reviews {
