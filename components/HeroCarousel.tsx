@@ -37,6 +37,28 @@ const HeroCarousel = () => {
         interval={2000}
         showArrows={false}
         showStatus={false}
+        labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
+        // renderIndicator={(onClickHandler, isSelected, index, label) => {
+        // const defStyle = { color: "white", cursor: "pointer" };
+        // const style = isSelected
+        //   ? { ...defStyle, color: "red" }
+        //   : { ...defStyle };
+        //   return (
+        //     <li
+        //       style={style}
+        //       onClick={onClickHandler}
+        //       onKeyDown={onClickHandler}
+        //       data-index={index}
+        //       key={index}
+        //       role="button"
+        //       tabIndex={0}
+        //       aria-label={`${label} ${index + 1}`}
+        //       className={`dot ${isSelected ? "selected" : ""}`}
+        //     >
+
+        //     </li>
+        //   )
+        // }}
       >
         {heroImages.map((image) => (
           <Image 
