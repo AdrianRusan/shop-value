@@ -38,7 +38,7 @@ const HeroCarousel = () => {
         showArrows={false}
         showStatus={false}
         ariaLabel="carousel"
-        labels={{ leftArrow: "", rightArrow: "", item:  "slide item"git  }}
+        labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
       >
         {heroImages.map((image) => (
           <Image 
