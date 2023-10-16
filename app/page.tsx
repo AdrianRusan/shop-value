@@ -47,10 +47,10 @@ const Home = async () => {
       </section>
       
       {sortedProducts && sortedProducts?.length > 0 && (
-        <section className="trending-section">
+        <section className="trending-section ">
           <h2 className="section-text">Trending</h2>
 
-          <div className="flex flex-wrap gap-x-8 gap-y-16">
+          <div className="flex flex-wrap gap-x-8 gap-y-16 justify-between">
           {sortedProducts.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}
