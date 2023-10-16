@@ -37,6 +37,7 @@ const HeroCarousel = () => {
         interval={2000}
         showArrows={false}
         showStatus={false}
+        showIndicators={false}
         ariaLabel="carousel"
         labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
       >
