@@ -8,7 +8,7 @@ import {
 } from '@/lib/utils';
 import { connectToDB } from '@/lib/mongoose';
 import Product from '@/lib/models/product.model';
-import { scrapeEmagProduct } from '@/lib/scraper';
+import { scrapeEmagProduct, scrapeFlipProduct } from '@/lib/scraper';
 import { generateEmailBody, sendEmail } from '@/lib/nodemailer';
 
 export const maxDuration = 10; // This function can run for a maximum of 300 seconds

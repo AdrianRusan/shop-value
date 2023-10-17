@@ -9,7 +9,7 @@ const Notification = {
 
 const THRESHOLD_PERCENTAGE = 40;
 
-export function extractPrices($: any) {
+export function extractPricesEmag($: any) {
   let originalPriceString = $('p.rrp-lp30d span:nth-child(2)')
     .text()
     .trim()
@@ -35,6 +35,23 @@ export function extractPrices($: any) {
   }
 
   currentPrice = currentPriceString.slice(0, currentPriceString.length / 2);
+
+  return {
+    originalPrice: Number(originalPrice) / 100 || 0,
+    currentPrice: Number(currentPrice) / 100 || 0,
+  };
+}
+
+export function extractPricesFlip($: any) {
+  let originalPrice = $('.previous-price.position-relative')
+    .text()
+    .trim()
+    .replace(/\D/g, '');
+
+  let currentPrice = $('.final-price.new-design-final-price')
+    .text()
+    .trim()
+    .replace(/\D/g, '');
 
   return {
     originalPrice: Number(originalPrice) / 100 || 0,
@@ -69,7 +86,28 @@ export function extractCurrency(element: any) {
   return currencyText ? currencyText : '';
 }
 
-export function formatDescription($: any): string {
+export function formatDescriptionFlip($: any): string {
+  const descriptionContainer = $('#modelDescription .content');
+
+  let description = '';
+
+  const children = descriptionContainer.children().children();
+
+  // Exclude the last child element
+  for (let index = 0; index < children.length - 1; index++) {
+    const element = children[index];
+    const elementText = $(element).text().trim();
+    if (elementText) {
+      description += elementText + '\n';
+    }
+  }
+
+  description = description.trim();
+
+  return description;
+}
+
+export function formatDescriptionEmag($: any): string {
   const descriptionContainer = $('#description-body');
 
   let description = '';
