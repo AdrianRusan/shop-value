@@ -9,7 +9,8 @@ const isValidEmagProductURL = (url: string) => {
     const parsedURL = new URL(url);
     const hostname = parsedURL.hostname;
 
-    if (hostname.includes('emag.ro') || hostname.includes('emag.bg') || hostname.includes('emag.hu') || hostname.includes('emag.net') || hostname.endsWith('emag')) {
+    // if (hostname.includes('emag.ro') || hostname.includes('emag.bg') || hostname.includes('emag.hu') || hostname.includes('emag.net') || hostname.endsWith('emag')) {
+      if (hostname.includes('flip.ro')) {
       return true
     }
   } catch (error) {
@@ -27,7 +28,7 @@ const Searchbar = () => {
 
     const isValidLink = isValidEmagProductURL(searchPrompt)
 
-    if (!isValidLink) return alert('Please provide a valid Emag link')
+    if (!isValidLink) return alert('Please provide a valid Flip link')
 
     try {
       setIsLoading(true)

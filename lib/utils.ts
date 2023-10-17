@@ -1,4 +1,5 @@
 import { PriceHistoryItem, Product } from '@/types';
+import { HtmlProps } from 'next/dist/shared/lib/html-context.shared-runtime';
 
 const Notification = {
   WELCOME: 'WELCOME',
@@ -9,60 +10,43 @@ const Notification = {
 
 const THRESHOLD_PERCENTAGE = 40;
 
+export function formatDescription($: any): string {
+  const descriptionContainer = $('#modelDescription .content');
+
+  let description = '';
+
+  const children = descriptionContainer.children().children();
+
+  // Exclude the last child element
+  for (let index = 0; index < children.length - 1; index++) {
+    const element = children[index];
+    const elementText = $(element).text().trim();
+    if (elementText) {
+      description += elementText + '\n';
+    }
+  }
+
+  description = description.trim();
+
+  return description;
+}
+
 export function extractPrices($: any) {
-  let originalPriceString = $('p.rrp-lp30d span:nth-child(2)')
+  let originalPrice = $('.previous-price.position-relative')
     .text()
     .trim()
     .replace(/\D/g, '');
 
-  let originalPrice, currentPriceString, currentPrice;
-
-  if (originalPriceString.length > 0) {
-    originalPrice = originalPriceString.slice(
-      0,
-      originalPriceString.length / 2
-    );
-    currentPriceString = $('p.product-new-price.has-deal')
-      .text()
-      .trim()
-      .replace(/\D/g, '');
-  } else {
-    (originalPrice = 0),
-      (currentPriceString = $('.pricing-block p.product-new-price')
-        .text()
-        .trim()
-        .replace(/\D/g, ''));
-  }
-
-  currentPrice = currentPriceString.slice(0, currentPriceString.length / 2);
+  let currentPrice = $('.final-price.new-design-final-price')
+    .text()
+    .trim()
+    .replace(/\D/g, '');
 
   return {
     originalPrice: Number(originalPrice) / 100 || 0,
     currentPrice: Number(currentPrice) / 100 || 0,
   };
 }
-
-// Extracts and returns the price from a list of possible elements.
-export function extractPrice(...elements: any) {
-  for (const element of elements) {
-    const priceText = element.text().trim();
-
-    if (priceText) {
-      const cleanPrice = priceText.replace(/[^\d.]/g, '');
-
-      let firstPrice;
-
-      if (cleanPrice) {
-        firstPrice = cleanPrice.match(/\d+\.\d{2}/)?.[0];
-      }
-
-      return firstPrice || cleanPrice;
-    }
-  }
-
-  return '';
-}
-
 // Extracts and returns the currency symbol from an element.
 export function extractCurrency(element: any) {
   const currencyText = element.text().trim().slice(0, 1);
