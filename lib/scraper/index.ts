@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { extractPrices } from '../utils';
+import { extractPrices, formatDescription } from '../utils';
 
 export async function scrapeEmagProduct(url: string) {
   if (!url) return;
@@ -41,7 +41,9 @@ export async function scrapeEmagProduct(url: string) {
       .slice(-3)
       .replace(/[-%]/g, '');
 
-    const description = $('#description-body').text().trim();
+    const description = formatDescription($);
+
+    console.log('description ', description);
 
     const recommendedScraped = $('.positive-reviews').text().trim();
     const recommendedProduct = recommendedScraped.slice(

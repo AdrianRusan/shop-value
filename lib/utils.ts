@@ -69,6 +69,47 @@ export function extractCurrency(element: any) {
   return currencyText ? currencyText : '';
 }
 
+export function formatDescription($: any): string {
+  const descriptionContainer = $('#description-body');
+
+  let description = '';
+
+  descriptionContainer.children().each((index: any, element: any) => {
+    const elementType = element.name;
+    if (elementType === 'ul') {
+      description += `${$(element).text().trim()}\n`;
+
+      const children = $(element).children();
+      children.each((childIndex: any, childElement: any) => {
+        const childType = childElement.name;
+        if (childType === 'li') {
+          description += ` - ${$(childElement).text().trim()}\n`;
+        }
+      });
+    } else if (elementType === 'table') {
+      const table = $(element);
+      table.children().each((rowIndex: any, rowElement: any) => {
+        const row = $(rowElement);
+        row.children().each((colIndex: any, colElement: any) => {
+          const column = $(colElement);
+          column.children().each((cellIndex: any, cellElement: any) => {
+            const cellType = cellElement.name;
+            if (cellType === 'td') {
+              description += `${$(cellElement).text().trim()}\n`;
+            }
+          });
+        });
+      });
+    } else {
+      description += `${$(element).text().trim()}\n`;
+    }
+  });
+
+  description = description.trim();
+
+  return description;
+}
+
 // Extracts description from two possible elements from amazon
 export function extractDescription($: any) {
   // these are possible elements holding description of the product
