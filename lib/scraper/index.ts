@@ -54,8 +54,6 @@ export async function scrapeEmagProduct(url: string) {
 
     const description = formatDescriptionEmag($);
 
-    console.log('description ', description);
-
     const recommendedScraped = $('.positive-reviews').text().trim();
     const recommendedProduct = recommendedScraped.slice(
       0,
