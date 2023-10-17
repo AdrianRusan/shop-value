@@ -70,7 +70,7 @@
   }
 
   .product-info {
-    @apply flex items-center flex-wrap gap-5 py-6 border-y border-y-[#E4E4E4] dark:text-white-200;
+    @apply flex items-center flex-wrap gap-10 py-6 border-y border-y-[#E4E4E4] dark:text-white-200;
   }
 
   .product-hearts {

@@ -5,9 +5,8 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongoose'],
   },
   images: {
-    // domains: ['s13emagst.akamaized.net'],
-    domains: ['cdn.flip.ro'],
+    domains: ['s13emagst.akamaized.net'],
   },
 };
 
-https: module.exports = nextConfig;
+module.exports = nextConfig;

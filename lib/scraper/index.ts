@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { extractPrices, formatDescription } from '../utils';
+import { extractPrices } from '../utils';
 
 export async function scrapeEmagProduct(url: string) {
   if (!url) return;
@@ -26,32 +26,14 @@ export async function scrapeEmagProduct(url: string) {
     const response = await axios.get(url, options);
     const $ = cheerio.load(response.data);
 
-    // const title = $('.page-title').text().trim();
-
-    const phoneTitle = $('.phone-title.new-phone-title');
-    const lastTwoSpans = phoneTitle.find('span').slice(-2);
-    const textContent = phoneTitle
-      .contents()
-      .filter(function () {
-        return this.nodeType === 3; // Filter text nodes
-      })
-      .text()
-      .trim();
-
-    // Combine the text content and the text content of the last two spans into a single string
-    const title = textContent + ' ' + lastTwoSpans.text();
-
-    // const title = $('.phone-title.new-phone-title').text().trim();
+    const title = $('.page-title').text().trim();
     const { originalPrice, currentPrice } = extractPrices($);
-
-    console.log('originalPrice', originalPrice);
-    console.log('currentPrice', currentPrice);
 
     const outOfStock =
       $('.stock-and-genius span.label').text().trim().toLowerCase() ===
       'stoc epuizat';
 
-    const image = $('.slider-image-container img').attr('src');
+    const image = $('.thumbnail.product-gallery-image img').attr('src');
     const currency = $('.product-new-price').text().trim().slice(-3);
     const discountRate = $('p.product-this-deal')
       .text()
@@ -59,11 +41,7 @@ export async function scrapeEmagProduct(url: string) {
       .slice(-3)
       .replace(/[-%]/g, '');
 
-    const descriptionElement = $('#modelDescription .content').html();
-
-    const description = formatDescription($);
-
-    console.log('description', description);
+    const description = $('#description-body').text().trim();
 
     const recommendedScraped = $('.positive-reviews').text().trim();
     const recommendedProduct = recommendedScraped.slice(
@@ -71,44 +49,23 @@ export async function scrapeEmagProduct(url: string) {
       Math.ceil(recommendedScraped.length / 2)
     );
 
-    const stars =
-      Number(
-        $('.font-semibold.ml-1.rating-number')
-          .text()
-          .trim()
-          .replace(/\D/g, '')
-          .slice(-2)
-      ) / 10;
+    const starsScraped = $('.rating-text').text().trim();
+    let stars, reviewsCount;
 
-    let reviewsScrapped = $('.general-opinion')
-      .text()
-      .trim()
-      .replace(/\D/g, '');
-    let reviewsCount = reviewsScrapped.slice(
-      0,
-      Math.ceil(reviewsScrapped.length / 2)
-    );
+    if (starsScraped.length > 0) {
+      stars = Number(
+        starsScraped.slice(0, Math.ceil(starsScraped.length / 2)).split(' ')[0]
+      );
 
-    console.log('reviewsCount', reviewsCount);
+      reviewsCount = Number(
+        starsScraped
+          .slice(0, Math.ceil(starsScraped.length / 2))
+          .split('(')[1]
+          .split(' ')[0]
+      );
+    }
 
-    // if (starsScraped.length > 0) {
-    //   stars = Number(
-    //     starsScraped.slice(0, Math.ceil(starsScraped.length / 2)).split(' ')[0]
-    //   );
-
-    //   reviewsCount = Number(
-    //     starsScraped
-    //       .slice(0, Math.ceil(starsScraped.length / 2))
-    //       .split('(')[1]
-    //       .split(' ')[0]
-    //   );
-    // }
-
-    // const category = phoneTitle.find('span').slice(0, 1).text().trim();
-
-    // Combine the text content and the text content of the last two spans into a single string
-    // const category = $('ol.breadcrumb li:nth-child(3)').text().trim();
-    const category = $('.route.content a:nth-child(1)').text().trim();
+    const category = $('ol.breadcrumb li:nth-child(3)').text().trim();
     const biggerCategory = $('ol.breadcrumb li:nth-child(2)').text().trim();
 
     // Construct data object with scraped information
