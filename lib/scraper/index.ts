@@ -1,6 +1,11 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { extractPrices, formatDescription } from '../utils';
+import {
+  extractPricesEmag,
+  extractPricesFlip,
+  formatDescriptionEmag,
+  formatDescriptionFlip,
+} from '../utils';
 
 export async function scrapeEmagProduct(url: string) {
   if (!url) return;
@@ -8,7 +13,9 @@ export async function scrapeEmagProduct(url: string) {
   // BrightData proxy configuration
   const username = String(process.env.BRIGHTDATA_USERNAME);
   const password = String(process.env.BRIGHTDATA_PASSWORD);
+  ``;
   const port = 22225;
+  ``;
   const session_id = (1000000 * Math.random()) | 0;
 
   const options = {
@@ -26,8 +33,12 @@ export async function scrapeEmagProduct(url: string) {
     const response = await axios.get(url, options);
     const $ = cheerio.load(response.data);
 
+    let source = 'emag';
+    let sourceSrc =
+      'https://s13emagst.akamaized.net/layout/ro/images/logo//59/88362.svg';
+
     const title = $('.page-title').text().trim();
-    const { originalPrice, currentPrice } = extractPrices($);
+    const { originalPrice, currentPrice } = extractPricesEmag($);
 
     const outOfStock =
       $('.stock-and-genius span.label').text().trim().toLowerCase() ===
@@ -41,9 +52,7 @@ export async function scrapeEmagProduct(url: string) {
       .slice(-3)
       .replace(/[-%]/g, '');
 
-    const description = formatDescription($);
-
-    console.log('description ', description);
+    const description = formatDescriptionEmag($);
 
     const recommendedScraped = $('.positive-reviews').text().trim();
     const recommendedProduct = recommendedScraped.slice(
@@ -73,6 +82,122 @@ export async function scrapeEmagProduct(url: string) {
     // Construct data object with scraped information
     const data = {
       url,
+      source: source || 'unknown',
+      sourceSrc: sourceSrc || '',
+      currency: currency || 'RON',
+      image: image || '',
+      title,
+      currentPrice: Number(currentPrice) || 0,
+      originalPrice: Number(originalPrice) || 0,
+      priceHistory: [],
+      discountRate: Number(discountRate) || 0,
+      category: category || '',
+      biggerCategory: biggerCategory || '',
+      reviewsCount: reviewsCount || 0,
+      stars: stars || 0,
+      isOutOfStock: outOfStock,
+      description: description || '',
+      recommendedProduct: recommendedProduct || '',
+      lowestPrice: Number(currentPrice) || 0,
+      highestPrice: Number(currentPrice) || 0,
+      averagePrice: Number(currentPrice) || 0,
+    };
+
+    return data;
+  } catch (error: any) {
+    throw new Error(`Failed to scrape product: ${error.message}`);
+  }
+}
+
+export async function scrapeFlipProduct(url: string) {
+  if (!url) return;
+
+  // BrightData proxy configuration
+  const username = String(process.env.BRIGHTDATA_USERNAME);
+  const password = String(process.env.BRIGHTDATA_PASSWORD);
+  ``;
+  const port = 22225;
+  ``;
+  const session_id = (1000000 * Math.random()) | 0;
+
+  const options = {
+    auth: {
+      username: `${username}-session-${session_id}`,
+      password: password,
+    },
+    host: 'brd.superproxy.io',
+    port,
+    rejectUnauthorized: false,
+  };
+
+  try {
+    const response = await axios.get(url, options);
+    const $ = cheerio.load(response.data);
+
+    let source = 'flip';
+    let sourceSrc = '/shopvalue/images/flip.jpg';
+
+    const phoneTitle = $('.phone-title.new-phone-title');
+    const lastTwoSpans = phoneTitle.find('span').slice(-2);
+    const textContent = phoneTitle
+      .contents()
+      .filter(function () {
+        return this.nodeType === 3; // Filter text nodes
+      })
+      .text()
+      .trim();
+
+    const title = textContent + ' ' + lastTwoSpans.text();
+
+    const { originalPrice, currentPrice } = extractPricesFlip($);
+
+    const outOfStock =
+      $('.stock-and-genius span.label').text().trim().toLowerCase() ===
+      'stoc epuizat';
+
+    const image = $('.slider-image-container img').attr('src');
+    const currency = $('.product-new-price').text().trim().slice(-3);
+    const discountRate = $('p.product-this-deal')
+      .text()
+      .trim()
+      .slice(-3)
+      .replace(/[-%]/g, '');
+
+    const description = formatDescriptionFlip($);
+    console.log('description ', description);
+
+    const recommendedScraped = $('.positive-reviews').text().trim();
+    const recommendedProduct = recommendedScraped.slice(
+      0,
+      Math.ceil(recommendedScraped.length / 2)
+    );
+
+    const stars =
+      Number(
+        $('.font-semibold.ml-1.rating-number')
+          .text()
+          .trim()
+          .replace(/\D/g, '')
+          .slice(-2)
+      ) / 10;
+
+    let reviewsScrapped = $('.general-opinion')
+      .text()
+      .trim()
+      .replace(/\D/g, '');
+    let reviewsCount = reviewsScrapped.slice(
+      0,
+      Math.ceil(reviewsScrapped.length / 2)
+    );
+
+    const category = $('.route.content a:nth-child(1)').text().trim();
+    const biggerCategory = $('ol.breadcrumb li:nth-child(2)').text().trim();
+
+    // Construct data object with scraped information
+    const data = {
+      url,
+      source: source || 'unknown',
+      sourceSrc: sourceSrc || '',
       currency: currency || 'RON',
       image: image || '',
       title,

@@ -18,6 +18,18 @@ const ProductCard = ({ product } : Props ) => {
             height={200}
             className="product-card_img"
           />
+          {product.source === 'emag' ? (
+            <Image
+              src={product.sourceSrc}
+              alt={product.source}
+              width={50}
+              height={50}
+              className=""
+            />
+          ) : (
+            <h3>FLIP</h3> // TO DO - add flip logo
+          )}
+
         </div>
 
         <div className="flex flex-col gap-2">

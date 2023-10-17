@@ -1,71 +1,100 @@
 'use client'
 
-import { scrapeAndScoreProduct } from '@/lib/actions';
-import { url } from 'inspector'
-import { FormEvent, useState } from 'react'
+import { scrapeAndScoreProductEmag, scrapeAndScoreProductFlip  } from '@/lib/actions';
+import { FormEvent, useState } from 'react';
 
 const isValidEmagProductURL = (url: string) => {
   try {
     const parsedURL = new URL(url);
     const hostname = parsedURL.hostname;
 
-    if (hostname.includes('emag.ro') || hostname.includes('emag.bg') || hostname.includes('emag.hu') || hostname.includes('emag.net') || hostname.endsWith('emag')) {
-      return true
+    if (
+      (hostname.includes('emag.ro') ||
+        hostname.includes('emag.bg') ||
+        hostname.includes('emag.hu') ||
+        hostname.includes('emag.net') ||
+        hostname.endsWith('emag'))
+    ) {
+      return {
+        isValid: true,
+        source: 'emag',
+      };
     }
   } catch (error) {
-    return false
+    return false;
   }
-}
+};
+
+const isValidFlipProductURL = (url: string) => {
+  try {
+    const parsedURL = new URL(url);
+    const hostname = parsedURL.hostname;
+
+    if (
+      hostname.includes('flip.ro')
+    ) {
+      return {
+        isValid: true,
+        source: 'flip',
+      };
+    }
+  } catch (error) {
+    return false;
+  }
+};
 
 const Searchbar = () => {
-
-  const [searchPrompt, setSearchPrompt] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [searchPrompt, setSearchPrompt] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const isValidLink = isValidEmagProductURL(searchPrompt)
+    const emagLink = isValidEmagProductURL(searchPrompt);
+    const flipLink = isValidFlipProductURL(searchPrompt);
 
-    if (!isValidLink) return alert('Please provide a valid Emag link')
+    if (!emagLink && !flipLink) {
+      return alert('Please provide a valid link.');
+    }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
 
-      // Scrape the product page
-      const product = await scrapeAndScoreProduct(searchPrompt)
-
+      if (emagLink) {
+        const product = await scrapeAndScoreProductEmag(searchPrompt);
+      } else if (flipLink) {
+        const product = await scrapeAndScoreProductFlip(searchPrompt);
+      }
     } catch (error) {
       console.log(error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <form 
+    <form
       className="flex flex-wrap gap-4 mt-12"
       onSubmit={handleSubmit}
     >
-      <input 
+      <input
         type="text"
         placeholder="Enter product link"
         className="searchbar-input dark:bg-secondary"
         value={searchPrompt}
         onChange={(e) => setSearchPrompt(e.target.value)}
-        name='searchbar-input'
+        name="searchbar-input"
       />
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         className="searchbar-btn"
         disabled={searchPrompt === ''}
       >
         {isLoading ? 'Searching...' : 'Search'}
-          
       </button>
     </form>
-  )
-}
+  );
+};
 
-export default Searchbar
+export default Searchbar;
