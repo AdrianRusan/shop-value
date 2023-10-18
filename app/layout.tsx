@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   robots: "https://example.com",
   title: 'ShopValue: Your Product Data Scraper and Price Tracker',
   description: 'ShopValue: Your product data scraper and price tracker. Compare prices, analyze reviews, and track price history.',
+  openGraph: {
+    url: 'https://shop-value.vercel.app/',
+    title: 'ShopValue: Your Product Data Scraper and Price Tracker',
+    description: 'ShopValue: Your product data scraper and price tracker. Compare prices, analyze reviews, and track price history.',
+    type: 'website',
+    siteName: 'ShopValue',
+  },
 }
 
 export default function RootLayout({
