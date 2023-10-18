@@ -27,7 +27,11 @@ export async function GET(request: Request) {
     const updatedProducts = await Promise.all(
       products.map(async (currentProduct) => {
         // Scrape product
-        const scrapedProduct = await scrapeEmagProduct(currentProduct.url);
+
+        const scrapedProduct =
+          currentProduct.source === 'emag'
+            ? await scrapeEmagProduct(currentProduct.url)
+            : await scrapeFlipProduct(currentProduct.url);
 
         if (!scrapedProduct) return;
 

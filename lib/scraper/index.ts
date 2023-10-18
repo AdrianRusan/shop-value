@@ -185,9 +185,8 @@ export async function scrapeFlipProduct(url: string) {
       .text()
       .trim()
       .replace(/\D/g, '');
-    let reviewsCount = reviewsScrapped.slice(
-      0,
-      Math.ceil(reviewsScrapped.length / 2)
+    let reviewsCount = Number(
+      reviewsScrapped.slice(0, Math.ceil(reviewsScrapped.length / 2))
     );
 
     const category = $('.route.content a:nth-child(1)').text().trim();
