@@ -10,7 +10,7 @@ import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
 import ThemedIcon from "@/components/ThemedIcon";
 import { headers } from 'next/headers'
-import PriceChart from "@/components/PriceChart";
+import PriceTableChart from "@/components/PriceTableChart";
 
 type Props = {
   params: {
@@ -60,7 +60,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               alt={product.source}
               width={100}
               height={100}
-              className="ml-5"
+              className="ml-5 -mt-10"
             />          
           )}
           <Image 
@@ -207,8 +207,8 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
         <div className="flex flex-col gap-5 ">
 
           <div className="flex flex-col gap-4 whitespace-pre-line">
-            {product?.description.split("\n").map((paragraph) => (
-              <p key={paragraph}>
+            {product?.description.split("\n").map((paragraph, index) => (
+              <p key={index}>
                 {paragraph}
               </p>
             ))}
@@ -228,9 +228,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       </div>
 
       {product.priceHistory.length > 0 && (
-        <div className="my-7">
+        <div className="my-7 max-sm:hidden">
           <p className="section-text">Price History</p>
-          <PriceChart priceHistory={priceHistory} />
+          <PriceTableChart priceHistory={priceHistory} />
         </div>
       )}
 

@@ -16,7 +16,7 @@ const ProductCard = ({ product } : Props ) => {
 
   return (
     <div className="mx-0">
-      <Link href={{pathname: `/products/${product._id}`, query: {flipURL}}} className="product-card">
+      <Link href={{pathname: `/products/${product._id}`, query: {flipURL}}} className="product-card min-h-[490px]">
         <div className="product-card_img-container border  border-slate-200 dark:bg-white">
           <Image
             src={product.image}

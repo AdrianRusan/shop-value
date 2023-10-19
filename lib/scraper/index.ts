@@ -135,7 +135,7 @@ export async function scrapeFlipProduct(url: string) {
     const $ = cheerio.load(response.data);
 
     let source = 'flip';
-    let sourceSrc = '/shopvalue/images/flip.jpg';
+    let sourceSrc = '';
 
     const phoneTitle = $('.phone-title.new-phone-title');
     const lastTwoSpans = phoneTitle.find('span').slice(-2);
