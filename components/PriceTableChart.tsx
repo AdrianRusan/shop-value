@@ -53,7 +53,6 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
               },
             },
             y: {
-              beginAtZero: true,
               ticks: {
                 callback: (value) => value + ' RON',
               },

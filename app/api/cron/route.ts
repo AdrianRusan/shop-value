@@ -28,10 +28,14 @@ export async function GET(request: Request) {
       products.map(async (currentProduct) => {
         // Scrape product
 
-        const scrapedProduct =
-          currentProduct.source === 'emag'
-            ? await scrapeEmagProduct(currentProduct.url)
-            : await scrapeFlipProduct(currentProduct.url);
+        let scrapedProduct;
+        if (currentProduct.source === 'emag') {
+          scrapedProduct = await scrapeEmagProduct(currentProduct.url);
+        }
+
+        if (currentProduct.source === 'flip') {
+          scrapedProduct = await scrapeFlipProduct(currentProduct.url);
+        }
 
         if (!scrapedProduct) return;
 
