@@ -9,6 +9,8 @@ import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
 import ThemedIcon from "@/components/ThemedIcon";
+import { headers } from 'next/headers'
+import PriceChart from "@/components/PriceChart";
 
 type Props = {
   params: {
@@ -17,6 +19,11 @@ type Props = {
 }
 
 const ProductDetails = async ({ params: { id }  } : Props) => {
+  const headersList = headers();
+  const domain = headersList.get("x-forwarded-host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
+
   const product: Product = await getProductById(id);
 
   if (!product) redirect('/')
@@ -30,10 +37,32 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       .slice(0, Math.min(4, similarProducts.length));
   }
 
+  const priceHistory = product.priceHistory.map((priceData) => ({
+    date: new Date(priceData.date),
+    price: priceData.price,
+  }));
+
   return (
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
         <div className="product-image">
+        {product.source === 'emag' ? (
+            <Image
+              src={product.sourceSrc}
+              alt={product.source}
+              width={100}
+              height={100}
+              className="ml-5"
+            />
+          ) : (
+            <Image
+              src={flipURL}
+              alt={product.source}
+              width={100}
+              height={100}
+              className="ml-5"
+            />          
+          )}
           <Image 
             src={product.image}
             alt={product.title}
@@ -197,6 +226,13 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
           </Link>
         </button>
       </div>
+
+      {product.priceHistory.length > 0 && (
+        <div className="my-7">
+          <p className="section-text">Price History</p>
+          <PriceChart priceHistory={priceHistory} />
+        </div>
+      )}
 
       {sortedProducts && sortedProducts?.length > 0 && (
         <div className="py-14 flex flex-col gap-2 w-full">

@@ -5,7 +5,13 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongoose'],
   },
   images: {
-    domains: ['s13emagst.akamaized.net', 'cdn.flip.ro'],
+    domains: [
+      's13emagst.akamaized.net',
+      'cdn.flip.ro',
+      'localhost',
+      'shop-value.vercel.app',
+      'shopvalue-seven.vercel.app',
+    ],
   },
 };
 

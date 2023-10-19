@@ -2,14 +2,21 @@ import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
 import FormatPrices from "./FormatPrices";
+import { headers } from 'next/headers'
+
 interface Props {
   product: Product;
 }
 const ProductCard = ({ product } : Props ) => {
 
+  const headersList = headers();
+  const domain = headersList.get("x-forwarded-host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
+
   return (
     <div className="mx-0">
-      <Link href={`/products/${product._id}`} className="product-card">
+      <Link href={{pathname: `/products/${product._id}`, query: {flipURL}}} className="product-card">
         <div className="product-card_img-container border  border-slate-200 dark:bg-white">
           <Image
             src={product.image}
@@ -24,10 +31,14 @@ const ProductCard = ({ product } : Props ) => {
               alt={product.source}
               width={50}
               height={50}
-              className=""
             />
           ) : (
-            <h3>FLIP</h3> // TO DO - add flip logo
+            <Image
+              src={flipURL}
+              alt={product.source}
+              width={50}
+              height={50}
+            />          
           )}
 
         </div>
