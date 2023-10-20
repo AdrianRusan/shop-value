@@ -31,7 +31,7 @@ const isValidFlipProductURL = (url: string) => {
     const hostname = parsedURL.hostname;
 
     if (
-      hostname.includes('flip.ro')
+      hostname.includes('flip.ro') && !url.includes('modelType')
     ) {
       return {
         isValid: true,
@@ -80,7 +80,7 @@ const Searchbar = () => {
       <input
         type="text"
         placeholder="Enter product link"
-        className="searchbar-input dark:bg-secondary"
+        className="searchbar-input dark:text-white-200"
         value={searchPrompt}
         onChange={(e) => setSearchPrompt(e.target.value)}
         name="searchbar-input"

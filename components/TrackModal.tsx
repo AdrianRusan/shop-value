@@ -63,7 +63,7 @@ const TrackModal = ({ productId }: Props) => {
               <div className='dialog-content'>
                 <div className='flex flex-col'>
                   <div className='flex justify-between'>
-                    <div className='p-3 border border-gray-200 rounded-10'>
+                    <div className='p-3 border border-gray-500  rounded-10'>
                       <Image 
                         src="/assets/icons/logo.svg"
                         alt="logo"
@@ -85,14 +85,13 @@ const TrackModal = ({ productId }: Props) => {
                   <h4 className='dialog-head_text'>
                     Stay updated with product pricing alerts right in your inbox.
                   </h4>
-                  <p className='text-sm text-gray-600 mt-2'>Never miss a bargain again with our timely alerts!</p>
-
+                  <p className='text-sm text-gray-600 mt-2 dark:text-white-200'>Never miss a bargain again with our timely alerts!</p>
                   <form 
                     className='flex flex-col mt-5' 
                     onSubmit={handleSubmit}
-                    name='track-product'
+                    name='track-product '
                   >
-                    <label htmlFor='email' className='text-sm font-medium text-gray-700'>
+                    <label htmlFor='email' className='text-sm font-medium text-gray-700 dark:text-gray-500'>
                       Email address
                     </label>
                     <div className='dialog-input_container'>
@@ -110,7 +109,7 @@ const TrackModal = ({ productId }: Props) => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder='Enter your email address'
-                        className='dialog-input'
+                        className='dark:bg-slate-800 dialog-input'
                         autoComplete='on'
                       />
                     </div>

@@ -17,7 +17,7 @@ const Home = async () => {
   }
 
   return (
-    <>
+    <>       
       <section className="px-6 md:px-20 py-5  ">
         <div className="flex max-xl:flex-col gap-16">
           <div className="flex flex-col justify-center">
@@ -28,7 +28,7 @@ const Home = async () => {
                 alt="arrow-right"
                 width={16}
                 height={16}
-                priority
+                
               />
             </p>
             <h1 className="head-text dark:text-white-200">

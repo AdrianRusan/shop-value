@@ -18,6 +18,25 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
 
   const chartInstanceRef = useRef<Chart<'line'> | null>();
 
+  const highlightPriceChanges = () => {
+    const rows = document.querySelectorAll('tr');
+    for (let i = 1; i < rows.length; i++) {
+      const currentPriceElement = rows[i].children[1] as HTMLElement;
+      const prevPriceElement = rows[i - 1].children[1] as HTMLElement;
+
+      const currentPrice = parseFloat(currentPriceElement.textContent || '0');
+      const prevPrice = parseFloat(prevPriceElement.textContent || '0');
+
+      if (currentPrice > prevPrice) {
+        currentPriceElement.style.color = 'red';
+        currentPriceElement.style.fontWeight = 'bold';
+      } else if (currentPrice < prevPrice) {
+        currentPriceElement.style.color = 'green';
+        currentPriceElement.style.fontWeight = 'bold';
+      }
+    }
+  };
+
   useEffect(() => {
     if (chartRef.current && viewMode === 'chart') {
       chartInstanceRef.current = new Chart(chartRef.current, {
@@ -41,50 +60,21 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
               type: 'time',
               time: {
                 unit: 'hour',
-                displayFormats: {
-                  hour: 'dd MMM yyyy - p',
-                },
+                displayFormats: { hour: 'dd MMM yyyy - p' },
               },
               bounds: 'ticks',
-              ticks: {
-                maxRotation: 30,
-                minRotation: 30,
-                padding: 12.5,
-              },
+              ticks: { maxRotation: 30, minRotation: 30, padding: 12.5 },
             },
-            y: {
-              ticks: {
-                callback: (value) => value + ' RON',
-              },
-            },
+            y: { ticks: { callback: (value) => value + ' RON' } },
           },
         },
       });
     }
 
     return () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy();
-      }
+      chartInstanceRef.current?.destroy();
     };
   }, [priceHistory, viewMode]);
-
-  const highlightPriceChanges = () => {
-    const rows = document.querySelectorAll('tr');
-    for (let i = 1; i < rows.length; i++) {
-      const currentPriceElement = rows[i].children[1] as HTMLElement;
-      const prevPriceElement = rows[i - 1].children[1] as HTMLElement;
-
-      const currentPrice = parseFloat(currentPriceElement.textContent || '0');
-      const prevPrice = parseFloat(prevPriceElement.textContent || '0');
-
-      if (currentPrice > prevPrice) {
-        currentPriceElement.style.color = 'green';
-      } else if (currentPrice < prevPrice) {
-        currentPriceElement.style.color = 'red';
-      }
-    }
-  };
 
   useEffect(() => {
     highlightPriceChanges();
@@ -94,9 +84,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = currentPage * rowsPerPage;
 
-  const toggleView = () => {
-    setViewMode(viewMode === 'chart' ? 'table' : 'chart');
-  };
+  const toggleView = () => setViewMode(viewMode === 'chart' ? 'table' : 'chart');
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -105,29 +93,26 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
 
   return (
     <>
-      <button
-        onClick={toggleView}
-        className="btn-small w-fit mx-auto gap-3 min-w-[200px] mt-2 mb-5"
-      >
+      <button onClick={toggleView} className="btn-small w-fit mx-auto gap-3 min-w-[200px] mt-2 mb-5">
         {viewMode === 'chart' ? 'Switch to Table View' : 'Switch to Chart View'}
       </button>
       {viewMode === 'chart' && (
         <div className="relative w-auto h-auto max-md:h-full">
-          <canvas ref={chartRef} />
+          <canvas className="dark:bg-white-200 rounded-[30px]" ref={chartRef} />
         </div>
       )}
       {viewMode === 'table' && (
         <div>
           <table className="w-full border-collapse">
             <thead>
-              <tr>
+              <tr className="dark:text-secondary">
                 <th className="bg-gray-200 text-left py-2 px-4 border">Date</th>
                 <th className="bg-gray-200 text-left py-2 px-4 border">Price</th>
               </tr>
             </thead>
             <tbody>
               {priceHistory.slice(startIndex, endIndex).map((data, index) => (
-                <tr key={index}>
+                <tr className="dark:bg-secondary" key={index}>
                   <td className="py-2 px-4 border">{data.date.toLocaleString()}</td>
                   <td className="py-2 px-4 border">{data.price} RON</td>
                 </tr>
@@ -139,11 +124,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
               <button
                 key={i}
                 onClick={() => handlePageChange(i + 1)}
-                className={`px-3 py-1 mx-1 rounded-full ${
-                  currentPage === i + 1
-                    ? 'bg-secondary text-white'
-                    : 'text-gray-700'
-                }`}
+                className={`px-3 py-1 mx-1 rounded-full ${currentPage === i + 1 ? 'bg-secondary text-white' : 'text-gray-700'}`}
               >
                 {i + 1}
               </button>

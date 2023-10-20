@@ -42,13 +42,16 @@ const ShareModal = () => {
 
   return (
     <>
-      <button type="button" onClick={openModal}>
+    
+    <button type="button" onClick={openModal}>
+        <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
         <Image 
           src='/assets/icons/share.svg'
           alt='share'
           width={20}
           height={20}
         /> 
+            </div>
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
@@ -93,7 +96,7 @@ const ShareModal = () => {
                     />
                   </div>
 
-                  <div className='flex flex-col gap-2 py-2'>
+                  <div className='flex flex-col gap-2 py-2 dark:text-white-200'>
                     <p>Share this link via</p>
                     <div className='flex justify-evenly'>
                       <FacebookShareButton
@@ -143,7 +146,7 @@ const ShareModal = () => {
                   </div>
 
                   <form 
-                  className='flex flex-col mt-5'
+                  className='flex flex-col mt-5 dark:text-white-200'
                   name='share-link'
                   >
                     <p>Or copy link</p>
@@ -161,10 +164,10 @@ const ShareModal = () => {
                         id="link"
                         defaultValue={currentURL}
                         readOnly
-                        className='dialog-input'
+                        className='dark:bg-slate-800 dialog-input'
                       />
                       <button 
-                        className='py-2 px-4 bg-secondary hover:bg-opacity-70 rounded-[27px] text-white text-lg font-semibold;'
+                        className='py-2 px-4 bg-secondary dark:bg-white-200 font-bold hover:bg-opacity-70 rounded-[27px] text-white-200 dark:text-secondary text-lg font-semibold;'
                         onClick={handleCopyLink}
                       >
                         Copy
@@ -178,6 +181,7 @@ const ShareModal = () => {
         </Dialog>
       </Transition>
     </>
+
   );
 };
 

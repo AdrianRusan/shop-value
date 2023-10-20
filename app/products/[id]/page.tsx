@@ -69,7 +69,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             width={480}
             height={400}
             className="mx-auto"
-            priority
+            
           />
         </div>
 
@@ -80,6 +80,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 {product.title}
               </p>
 
+            <div className="flex items-center gap-3">
               <Link
                 href={product.url}
                 target="_blank"
@@ -87,35 +88,12 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               >
                 Visit Product
               </Link>
+
+              <ShareModal />
+            </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="product-hearts">
-                <Image 
-                  src='/assets/icons/red-heart.svg'
-                  alt="heart"
-                  width={20}
-                  height={20}
-                />
 
-                <p className="text-base font-semibold text-[#A2151D]">
-                  {product.reviewsCount}
-                </p>
-              </div>
-
-              <div className="p-2 bg-white-200 rounded-10">
-                <Image 
-                  src='/assets/icons/bookmark.svg'
-                  alt='bookmark'
-                  width={20}
-                  height={20}
-                /> 
-              </div>
-
-              <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
-                <ShareModal />
-              </div>
-            </div>
           </div>
 
           <div className="product-info">
@@ -130,7 +108,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               )}
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col">
               <div className="flex gap-3">
                 <div className="product-stars">
                   <Image 
@@ -153,7 +131,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                   />
                   <button className="text-sm text-secondary font-semibold">
                     <Link
-                      href={`${product.url}#reviews-section`}
+                      href={`${product.url}#shop-reviews`}
                       target="_blank"
                     >
                       {product.reviewsCount} Review{product.reviewsCount > 1 ? 's' : ''}
@@ -230,7 +208,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       {product.priceHistory.length > 0 && (
         <div className="my-7 max-sm:hidden">
           <p className="section-text">Price History</p>
-          <PriceTableChart priceHistory={priceHistory} />
+          <PriceTableChart priceHistory={priceHistory}/>
         </div>
       )}
 

@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import ThemeProvider from './theme-provider';
+import Image from 'next/image'
 
 const inter = Inter({ subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight:['300', '400', '500', '600', '700'] })
