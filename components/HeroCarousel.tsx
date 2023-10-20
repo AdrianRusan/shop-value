@@ -45,7 +45,7 @@ const HeroCarousel = () => {
         ariaLabel="carousel"
         labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
       >
-        {heroImages.map((image) => (
+        {heroImages.map((image, index) => (
           <Image
             key={image.alt}
             src={image.imgUrl}
@@ -53,8 +53,7 @@ const HeroCarousel = () => {
             width={484}
             height={484}
             className="object-contain"
-            loading="lazy"
-            // priority={innerWidth !== null && innerWidth >= 1280 && image.alt === 'smart watch'}         
+            loading={index === 0 ? "eager" : "lazy"}
           />
         ))}
       </Carousel>
