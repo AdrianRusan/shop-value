@@ -53,7 +53,7 @@ const HeroCarousel = () => {
             width={484}
             height={484}
             className="object-contain"
-            priority
+            loading="lazy"
             // priority={innerWidth !== null && innerWidth >= 1280 && image.alt === 'smart watch'}         
           />
         ))}
