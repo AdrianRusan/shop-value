@@ -104,6 +104,20 @@ export async function getProductById(productId: string) {
   }
 }
 
+export async function getProductByTitle(productTitle: string) {
+  try {
+    connectToDB();
+
+    const product = await Product.findOne({ title: productTitle });
+
+    if (!product) return;
+
+    return product;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 export async function getAllProducts() {
   try {
     connectToDB();

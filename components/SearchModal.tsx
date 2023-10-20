@@ -1,24 +1,43 @@
 'use client'
 
-import { useState, Fragment, FormEvent } from 'react';
+import { useState, useEffect, Fragment, FormEvent } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
 import ThemedIcon from './ThemedIcon';
-
+import { Product } from '@/types';
+import { getProductByTitle } from '@/lib/actions';
 
 const SearchModal = () => {
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [email, setEmail] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const products = await getProductByTitle(searchInput);
+        setFilteredProducts(products || []);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    }
+
+    fetchData();
+  }, [searchInput]);
 
   const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
+  const closeModal = () => {
+    setIsOpen(false);
+    setSearchInput('');
+    setFilteredProducts([]);
+  };
+
+  const handleSearch = (input: string) => {
+    setSearchInput(input);
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setIsSubmitting(false);
-    setEmail('');
     closeModal();
   };
 
@@ -68,13 +87,16 @@ const SearchModal = () => {
                         <input
                           required
                           type='text'
-                          id="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          id="search-input"
+                          value={searchInput}
+                          onChange={(e) => handleSearch(e.target.value)}
                           placeholder='Search products...'
                           className='dark:bg-slate-800 dialog-input dark:text-white-200'
                           autoComplete='on'
                         />
+                        {filteredProducts.map((product) => (
+                          <div key={product._id}>{product.title}</div>
+                        ))}
                       </div>
                     </form>
 

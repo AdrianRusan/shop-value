@@ -11,7 +11,6 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight:['300', '400', '
 
 export const metadata: Metadata = {
   applicationName: "ShopValue",
-  robots: "https://example.com",
   title: 'ShopValue: Your Product Data Scraper and Price Tracker',
   description: 'ShopValue: Your product data scraper and price tracker. Compare prices, analyze reviews, and track price history.',
   openGraph: {

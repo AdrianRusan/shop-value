@@ -7,10 +7,10 @@ const Navbar = () => {
 
   return (
     <header className="w-full border-b-2">
-      <nav className="nav text-white flex justify-between">
+      <nav className="nav text-white flex justify-between max-sm:flex-col max-sm:gap-5">
         <Link
           href="/"
-          className="flex items-center gap-1 w-1/6"
+          className="flex items-center justify-center gap-1 w-1/6 max-sm:w-full"
         >
           <Image 
             src="/assets/icons/logo.svg"
@@ -24,13 +24,13 @@ const Navbar = () => {
           </p>
         </Link>
 
-        <div className="flex justify-end w-3/4">
-          <SearchModal />
-        </div>
+          <div className="flex justify-end max-sm:justify-start w-1/2">
+            <SearchModal />
+          </div>
 
-        <div className="flex gap-5 w-1/6 justify-end">
-          <ThemeSwitch />
-        </div>
+          <div className="flex gap-5 justify-center w-1/6 max-sm:w-1/3 ">
+            <ThemeSwitch />
+          </div>
       </nav>
     </header>
   );
