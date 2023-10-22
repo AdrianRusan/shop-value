@@ -3,8 +3,6 @@
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { Carousel } from 'react-responsive-carousel';
 import Image from "next/image";
-import useWindowSize from "@rooks/use-window-size"
-
 
 const heroImages = [
   {
@@ -30,43 +28,45 @@ const heroImages = [
 ]
 
 const HeroCarousel = () => {
-  const { innerWidth } = useWindowSize();
 
   return (
-    <div className="hero-carousel">
-      <Carousel
-        showThumbs={false}
-        autoPlay
-        infiniteLoop
-        interval={2000}
-        showArrows={false}
-        showStatus={false}
-        showIndicators={false}
-        ariaLabel="carousel"
-        labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
-      >
-        {heroImages.map((image, index) => (
-          <Image
-            key={image.alt}
-            src={image.imgUrl}
-            alt={image.alt}
-            width={484}
-            height={484}
-            className="object-contain"
-            loading={index === 0 ? "eager" : "lazy"}
-          />
-        ))}
-      </Carousel>
+    <>
+      <div className="hero-carousel max-lg:hidden">
+        <Carousel
+          showThumbs={false}
+          autoPlay
+          infiniteLoop
+          interval={2000}
+          showArrows={false}
+          showStatus={false}
+          showIndicators={false}
+          ariaLabel="carousel"
+          labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
+        >
+          {heroImages.map((image, index) => (
+            <Image
+              key={image.alt}
+              src={image.imgUrl}
+              alt={image.alt}
+              width={484}
+              height={484}
+              className="object-contain"
+              loading={index === 0 ? "eager" : "lazy"}
+              sizes="(max-width: 320px) 280px, (max-width: 640px) 50vw, (max-width: 1024px) 70vw, 1024px"
+            />
+          ))}
+        </Carousel>
 
-      <Image 
-        src="assets/icons/hand-drawn-arrow.svg"
-        alt="arrow"
-        width={175}
-        height={175}
-        className="max-xl:hidden absolute -left-[15%] bottom-0 z-0"
-        
-      />
-    </div>
+        <Image 
+          src="assets/icons/hand-drawn-arrow.svg"
+          alt="arrow"
+          width={175}
+          height={175}
+          className="max-xl:hidden absolute -left-[15%] bottom-0 z-0 w-auto h-auto"
+          
+        />
+      </div>
+    </>
   )
 }
 

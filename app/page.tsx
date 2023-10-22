@@ -13,21 +13,22 @@ const Home = async () => {
   if (allProducts && allProducts?.length > 0) {
     sortedProducts = allProducts
       .sort((a, b) => b.priceHistory.length - a.priceHistory.length)
-      .slice(0, Math.min(8, allProducts.length));
+      .slice(0, Math.min(12, allProducts.length));
   }
 
   return (
     <>       
       <section className="px-6 md:px-20 py-5  ">
-        <div className="flex max-xl:flex-col gap-16">
+        <div className="flex max-lg:flex-col gap-16">
           <div className="flex flex-col justify-center">
-            <p className="small-text">
+            <p className="small-text w-auto h-auto">
               Smart Shopping Starts Here
               <Image 
                 src="/assets/icons/arrow-right.svg"
                 alt="arrow-right"
-                width={16}
-                height={16}
+                width={0}
+                height={0}
+                className="w-auto h-auto"
                 
               />
             </p>

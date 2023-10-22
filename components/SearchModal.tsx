@@ -104,10 +104,10 @@ const SearchModal = () => {
                     <Image 
                       src="/assets/icons/x-close.svg"
                       alt="close"
-                      width={24}
-                      height={24}
-                      className='cursor-pointer'
+                      width={0}
+                      height={0}
                       onClick={closeModal}
+                      className='cursor-pointer w-auto h-auto'
                     />
                   </div>
                 </div>

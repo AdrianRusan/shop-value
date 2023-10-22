@@ -72,7 +72,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             alt={product.title}
             width={480}
             height={400}
-            className="mx-auto"
+            className="mx-auto w-auto h-auto"
             priority
           />
         </div>
@@ -119,8 +119,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                   <Image 
                     src="/assets/icons/star.svg"
                     alt="star"
-                    width={16}
-                    height={16}
+                    width={0}
+                    height={0}
+                    className="w-auto h-auto"
                     priority
                   />
                   <p className="text-sm text-secondary font-semibold">
@@ -132,8 +133,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                   <Image 
                     src="/assets/icons/comment.svg"
                     alt="comment"
-                    width={16}
-                    height={16}
+                    width={0}
+                    height={0}
+                    className="w-auto h-auto"
                     priority
                   />
                   <button className="text-sm text-secondary font-semibold">

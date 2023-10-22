@@ -21,6 +21,7 @@ const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
           width={24}
           height={24}
           priority
+          className="w-auto h-auto"
         />
         <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary dark:text-white-200">
           {value} {currency}
