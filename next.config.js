@@ -6,7 +6,8 @@ const nextConfig = {
   },
   images: {
     domains: [
-      's13emagst.akamaized.net',
+      // Not Valid
+      // 's13emagst.akamaized.net',
       'cdn.flip.ro',
       'localhost',
       'shop-value.vercel.app',

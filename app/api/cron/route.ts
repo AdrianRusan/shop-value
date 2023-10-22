@@ -8,7 +8,7 @@ import {
 } from '@/lib/utils';
 import { connectToDB } from '@/lib/mongoose';
 import Product from '@/lib/models/product.model';
-import { scrapeEmagProduct, scrapeFlipProduct } from '@/lib/scraper';
+import { scrapeFlipProduct } from '@/lib/scraper';
 import { generateEmailBody, sendEmail } from '@/lib/nodemailer';
 
 export const maxDuration = 10; // This function can run for a maximum of 300 seconds
@@ -29,9 +29,11 @@ export async function GET(request: Request) {
         // Scrape product
 
         let scrapedProduct;
-        if (currentProduct.source === 'emag') {
-          scrapedProduct = await scrapeEmagProduct(currentProduct.url);
-        }
+
+        // Not Valid
+        // if (currentProduct.source === 'emag') {
+        //   scrapedProduct = await scrapeEmagProduct(currentProduct.url);
+        // }
 
         if (currentProduct.source === 'flip') {
           scrapedProduct = await scrapeFlipProduct(currentProduct.url);

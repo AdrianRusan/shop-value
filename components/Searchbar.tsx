@@ -1,29 +1,30 @@
 'use client'
 
-import { scrapeAndScoreProductEmag, scrapeAndScoreProductFlip  } from '@/lib/actions';
+import { scrapeAndScoreProductFlip  } from '@/lib/actions';
 import { FormEvent, useState } from 'react';
 
-const isValidEmagProductURL = (url: string) => {
-  try {
-    const parsedURL = new URL(url);
-    const hostname = parsedURL.hostname;
+//  Not Valid
+// const isValidEmagProductURL = (url: string) => {
+//   try {
+//     const parsedURL = new URL(url);
+//     const hostname = parsedURL.hostname;
 
-    if (
-      (hostname.includes('emag.ro') ||
-        hostname.includes('emag.bg') ||
-        hostname.includes('emag.hu') ||
-        hostname.includes('emag.net') ||
-        hostname.endsWith('emag'))
-    ) {
-      return {
-        isValid: true,
-        source: 'emag',
-      };
-    }
-  } catch (error) {
-    return false;
-  }
-};
+//     if (
+//       (hostname.includes('emag.ro') ||
+//         hostname.includes('emag.bg') ||
+//         hostname.includes('emag.hu') ||
+//         hostname.includes('emag.net') ||
+//         hostname.endsWith('emag'))
+//     ) {
+//       return {
+//         isValid: true,
+//         source: 'emag',
+//       };
+//     }
+//   } catch (error) {
+//     return false;
+//   }
+// };
 
 const isValidFlipProductURL = (url: string) => {
   try {
@@ -50,21 +51,33 @@ const Searchbar = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const emagLink = isValidEmagProductURL(searchPrompt);
+    //  Not Valid
+    // const emagLink = isValidEmagProductURL(searchPrompt);
     const flipLink = isValidFlipProductURL(searchPrompt);
+    
+    //  Not Valid
+    // if (!emagLink && !flipLink) {
+    //   return alert('Please provide a valid link.');
+    // }
 
-    if (!emagLink && !flipLink) {
+    if (!flipLink) {
       return alert('Please provide a valid link.');
     }
 
     try {
       setIsLoading(true);
+      
+      // Not Valid
+      // if (emagLink) {
+      //   const product = await scrapeAndScoreProductEmag(searchPrompt);
+      // } else if (flipLink) {
+      //   const product = await scrapeAndScoreProductFlip(searchPrompt);
+      // }
 
-      if (emagLink) {
-        const product = await scrapeAndScoreProductEmag(searchPrompt);
-      } else if (flipLink) {
+      if (flipLink) {
         const product = await scrapeAndScoreProductFlip(searchPrompt);
       }
+
     } catch (error) {
       console.log(error);
     } finally {
