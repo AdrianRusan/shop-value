@@ -13,6 +13,8 @@ const nextConfig = {
       'shop-value.vercel.app',
       'shop-value-develop.vercel.app',
       'shop-value-feature.vercel.app',
+      'shop-value-release.vercel.app',
+      'shop-value-hotfix.vercel.app',
       'shopvalue-seven.vercel.app',
     ],
   },
