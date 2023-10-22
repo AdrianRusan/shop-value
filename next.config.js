@@ -11,6 +11,8 @@ const nextConfig = {
       'cdn.flip.ro',
       'localhost',
       'shop-value.vercel.app',
+      'shop-value-develop.vercel.app',
+      'shop-value-feature.vercel.app',
       'shopvalue-seven.vercel.app',
     ],
   },
