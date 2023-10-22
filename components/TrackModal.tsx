@@ -100,6 +100,7 @@ const TrackModal = ({ productId }: Props) => {
                         alt="mail"
                         width={18}
                         height={18}
+                        priority
                       />
 
                       <input

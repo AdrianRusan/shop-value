@@ -8,9 +8,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
-import ThemedIcon from "@/components/ThemedIcon";
 import { headers } from 'next/headers'
 import PriceTableChart from "@/components/PriceTableChart";
+import dynamic from "next/dynamic";
 
 type Props = {
   params: {
@@ -42,6 +42,8 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
     price: priceData.price,
   }));
 
+  const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
+
   return (
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
@@ -53,6 +55,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               width={100}
               height={100}
               className="ml-5"
+              priority
             />
           ) : (
             <Image
@@ -61,6 +64,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               width={100}
               height={100}
               className="ml-5 -mt-10"
+              priority
             />          
           )}
           <Image 
@@ -85,6 +89,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 href={product.url}
                 target="_blank"
                 className="text-base text-black dark:text-white-200 opacity-75"
+                rel="preload"
               >
                 Visit Product
               </Link>
@@ -116,6 +121,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                     alt="star"
                     width={16}
                     height={16}
+                    priority
                   />
                   <p className="text-sm text-secondary font-semibold">
                     {product.stars.toFixed(2)} stars
@@ -128,6 +134,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                     alt="comment"
                     width={16}
                     height={16}
+                    priority
                   />
                   <button className="text-sm text-secondary font-semibold">
                     <Link

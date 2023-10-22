@@ -3,9 +3,10 @@
 import { useState, useEffect, Fragment, FormEvent } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
-import ThemedIcon from './ThemedIcon';
 import { Product } from '@/types';
 import { getProductByTitle } from '@/lib/actions';
+import ThemedIcon from './ThemedIcon';
+
 
 const SearchModal = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);

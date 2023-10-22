@@ -50,6 +50,7 @@ const ShareModal = () => {
           alt='share'
           width={20}
           height={20}
+          priority
         /> 
             </div>
       </button>

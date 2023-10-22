@@ -20,6 +20,7 @@ const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
           alt={title}
           width={24}
           height={24}
+          priority
         />
         <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary dark:text-white-200">
           {value} {currency}

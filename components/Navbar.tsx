@@ -1,7 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
-import ThemeSwitch from "./ThemeSwitch"
 import SearchModal from "./SearchModal";
+import dynamic from "next/dynamic";
+
+const ThemeSwitch = dynamic(() => import('./ThemeSwitch'))
 
 const Navbar = () => {
 
@@ -17,6 +19,7 @@ const Navbar = () => {
             width={27}
             height={27}
             alt="Logo"
+            priority
           />
           <p className="nav-logo dark:text-white-200">
             Shop
