@@ -51,7 +51,7 @@ const HeroCarousel = () => {
               width={484}
               height={484}
               className="object-contain"
-              priority
+              priority={index === 0}
             />
           ))}
         </Carousel>
