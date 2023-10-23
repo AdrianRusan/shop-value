@@ -50,6 +50,7 @@ const ShareModal = () => {
           alt='share'
           width={20}
           height={20}
+          priority
         /> 
             </div>
       </button>
@@ -89,9 +90,9 @@ const ShareModal = () => {
                     <Image 
                       src="/assets/icons/x-close.svg"
                       alt="close"
-                      width={24}
-                      height={24}
-                      className='cursor-pointer'
+                      width={0}
+                      height={0}
+                      className='cursor-pointer w-auto h-auto'
                       onClick={closeModal}
                     />
                   </div>

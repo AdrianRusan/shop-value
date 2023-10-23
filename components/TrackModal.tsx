@@ -75,9 +75,9 @@ const TrackModal = ({ productId }: Props) => {
                     <Image 
                       src="/assets/icons/x-close.svg"
                       alt="close"
-                      width={24}
-                      height={24}
-                      className='cursor-pointer'
+                      width={0}
+                      height={0}
+                      className='cursor-pointer w-auto h-auto'
                       onClick={closeModal}
                     />
                   </div>
@@ -100,6 +100,7 @@ const TrackModal = ({ productId }: Props) => {
                         alt="mail"
                         width={18}
                         height={18}
+                        priority
                       />
 
                       <input
