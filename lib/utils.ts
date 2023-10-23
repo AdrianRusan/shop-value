@@ -121,33 +121,58 @@ export function formatDescriptionFlip($: any): string {
   return description;
 }
 
-export function getHighestPrice(priceList: PriceHistoryItem[]) {
-  let highestPrice = priceList[0];
+export function getHighestPrice(
+  priceList: PriceHistoryItem[],
+  originalPrice: number
+) {
+  let highestPriceItem: PriceHistoryItem = {
+    date: new Date(),
+    price: originalPrice,
+  };
 
-  for (let i = 0; i < priceList.length; i++) {
-    if (priceList[i].price > highestPrice.price) {
-      highestPrice = priceList[i];
+  for (const item of priceList) {
+    if (item.price > highestPriceItem.price) {
+      highestPriceItem = { date: item.date, price: item.price };
     }
   }
 
-  return highestPrice.price;
+  return highestPriceItem;
 }
 
 export function getLowestPrice(priceList: PriceHistoryItem[]) {
-  let lowestPrice = priceList[0];
+  let lowestPriceItem: PriceHistoryItem | null = null;
 
-  for (let i = 0; i < priceList.length; i++) {
-    if (priceList[i].price < lowestPrice.price) {
-      lowestPrice = priceList[i];
+  for (const item of priceList) {
+    if (
+      item.price !== 0 &&
+      (!lowestPriceItem || item.price < lowestPriceItem.price)
+    ) {
+      lowestPriceItem = { date: item.date, price: item.price };
     }
   }
 
-  return lowestPrice.price;
+  return lowestPriceItem || { date: new Date(), price: 0 };
 }
 
-export function getAveragePrice(priceList: PriceHistoryItem[]) {
-  const sumOfPrices = priceList.reduce((acc, curr) => acc + curr.price, 0);
-  const averagePrice = sumOfPrices / priceList.length || 0;
+export function getAveragePrice(
+  priceList: PriceHistoryItem[],
+  originalPrice: number
+) {
+  // Create a new array with originalPrice included if it's greater than zero
+  const pricesWithOriginal =
+    originalPrice > 0
+      ? [...priceList, { date: new Date(), price: originalPrice }]
+      : priceList;
+
+  const nonZeroPrices = pricesWithOriginal.filter((item) => item.price !== 0);
+
+  // Check if there are non-zero prices
+  if (nonZeroPrices.length === 0) {
+    return originalPrice;
+  }
+
+  const sumOfPrices = nonZeroPrices.reduce((acc, curr) => acc + curr.price, 0);
+  const averagePrice = sumOfPrices / nonZeroPrices.length;
 
   return averagePrice;
 }
@@ -156,7 +181,7 @@ export const getEmailNotifType = (
   scrapedProduct: Product,
   currentProduct: Product
 ) => {
-  const lowestPrice = getLowestPrice(currentProduct.priceHistory);
+  const lowestPrice = getLowestPrice(currentProduct.priceHistory).price;
 
   if (scrapedProduct.currentPrice < lowestPrice) {
     return Notification.LOWEST_PRICE as keyof typeof Notification;

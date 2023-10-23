@@ -73,9 +73,15 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
       product = {
         ...scrapedProduct,
         priceHistory: updatedPriceHistory,
-        lowestPrice: getLowestPrice(updatedPriceHistory),
-        highestPrice: getHighestPrice(updatedPriceHistory),
-        averagePrice: getAveragePrice(updatedPriceHistory),
+        lowestPrice: getLowestPrice(updatedPriceHistory).price,
+        highestPrice: getHighestPrice(
+          updatedPriceHistory,
+          existingProduct.originalPrice
+        ).price,
+        averagePrice: getAveragePrice(
+          updatedPriceHistory,
+          existingProduct.originalPrice
+        ),
       };
     }
 
