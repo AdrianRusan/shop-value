@@ -51,8 +51,7 @@ const HeroCarousel = () => {
               width={484}
               height={484}
               className="object-contain"
-              loading={index === 0 ? "eager" : "lazy"}
-              sizes="(max-width: 320px) 280px, (max-width: 640px) 50vw, (max-width: 1024px) 70vw, 1024px"
+              priority
             />
           ))}
         </Carousel>

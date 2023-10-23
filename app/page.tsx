@@ -20,7 +20,7 @@ const Home = async () => {
     <>       
       <section className="px-6 md:px-20 py-5  ">
         <div className="flex max-lg:flex-col gap-16">
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center py-7 gap-y-5 md:py-20 md:gap-y-8 lg:gap-y-0">
             <p className="small-text w-auto h-auto">
               Smart Shopping Starts Here
               <Image 
@@ -51,7 +51,7 @@ const Home = async () => {
         <section className="trending-section ">
           <h2 className="section-text">Trending</h2>
 
-          <div className={`flex flex-wrap gap-x-8 gap-y-16`}>
+          <div className={`flex flex-wrap gap-x-8 md:gap-x-24 xl:gap-x-16 gap-y-16 justify-start`}>
           {sortedProducts.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}

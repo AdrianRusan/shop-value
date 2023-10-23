@@ -54,16 +54,16 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               alt={product.source}
               width={100}
               height={100}
-              className="ml-5"
+              className="absolute"
               priority
             />
           ) : (
             <Image
               src={flipURL}
               alt={product.source}
-              width={100}
-              height={100}
-              className="ml-5 -mt-10"
+              width={75}
+              height={75}
+              className="absolute ml-1 -mt-2"
               priority
             />          
           )}
@@ -157,18 +157,12 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             </div>
           </div>
 
-          <div className="my-7 flex flex-col gap-5">
+          <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
               <PriceInfoCard 
                 title="Current Price"
                 iconSrc="/assets/icons/price-tag.svg"
                 value={<FormatPrices num={product.currentPrice}/>}
-                currency={product.currency}
-              />
-              <PriceInfoCard 
-                title="Average Price"
-                iconSrc="/assets/icons/chart.svg"
-                value={<FormatPrices num={product.averagePrice}/>}
                 currency={product.currency}
               />
               <PriceInfoCard 
@@ -181,6 +175,12 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 title="Lowest Price"
                 iconSrc="/assets/icons/arrow-down.svg"
                 value={<FormatPrices num={product.lowestPrice}/>}
+                currency={product.currency}
+              />
+              <PriceInfoCard 
+                title="Average Price"
+                iconSrc="/assets/icons/chart.svg"
+                value={<FormatPrices num={product.averagePrice}/>}
                 currency={product.currency}
               />
             </div>
