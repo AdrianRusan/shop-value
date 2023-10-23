@@ -6,24 +6,61 @@ import Image from 'next/image';
 import { Product } from '@/types';
 import { getProductByTitle } from '@/lib/actions';
 import ThemedIcon from './ThemedIcon';
+import ProductCard from './ProductCard';
 
 
 const SearchModal = () => {
+
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        const products = await getProductByTitle(searchInput);
-        setFilteredProducts(products || []);
-      } catch (error) {
-        console.error("Error fetching products:", error);
+      if (searchInput.length >= 3) {
+        try {
+          const productsData = await getProductByTitle(searchInput);
+          
+          if (productsData) {
+            const products = productsData.map((item) => ({
+              _id: String(item._id || ''),
+              url: item.url || '',
+              source: item.source || '',
+              sourceSrc: item.sourceSrc || '',
+              currency: item.currency || 'RON',
+              image: item.image || '',
+              title: item.title || '',
+              currentPrice: Number(item.currentPrice) || 0,
+              originalPrice: Number(item.originalPrice) || 0,
+              priceHistory: [],
+              discountRate: Number(item.discountRate) || 0,
+              category: item.category || '',
+              biggerCategory: item.biggerCategory || '',
+              reviewsCount: item.reviewsCount || 0,
+              stars: item.stars || 0,
+              isOutOfStock: item.outOfStock,
+              description: item.description || '',
+              recommendedProduct: item.recommendedProduct || '',
+              lowestPrice: Number(item.currentPrice) || 0,
+              highestPrice: Number(item.currentPrice) || 0,
+              averagePrice: Number(item.currentPrice) || 0,
+            }));
+            setFilteredProducts(products);
+          } else {
+            setFilteredProducts([]);
+            console.error("Error fetching products: productsData is undefined");
+          }
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      } else {
+        setFilteredProducts([]);
       }
     }
 
-    fetchData();
+    if (searchInput !== '') {
+      fetchData();
+    }
   }, [searchInput]);
 
   const openModal = () => setIsOpen(true);
@@ -44,7 +81,7 @@ const SearchModal = () => {
 
   return (
     <>
-      <button onClick={openModal} className='searchbar-top gap-2'>
+      <button onClick={openModal} className='searchbar-top gap-2 text-[#415985] dark:text-[#A7B5B9]'>
         <ThemedIcon alt='search' />
         Product Search...
       </button>
@@ -76,13 +113,13 @@ const SearchModal = () => {
             >
               <div className='dialog-content'>
                 <div className='flex flex-col'>
-                  <div className='flex justify-between gap-5'>
+                  <div className='flex justify-between items-center gap-5'>
                     <form 
                       className='flex flex-col w-full' 
                       onSubmit={handleSubmit}
                       name='track-product'
                     >
-                      <div className='dialog-input_container'>
+                      <div className='dialog-input_container flex items-center'>
                         <ThemedIcon alt='search' />
 
                         <input
@@ -95,9 +132,6 @@ const SearchModal = () => {
                           className='dark:bg-slate-800 dialog-input dark:text-white-200'
                           autoComplete='on'
                         />
-                        {filteredProducts.map((product) => (
-                          <div key={product._id}>{product.title}</div>
-                        ))}
                       </div>
                     </form>
 
@@ -109,6 +143,12 @@ const SearchModal = () => {
                       onClick={closeModal}
                       className='cursor-pointer w-auto h-auto'
                     />
+                  </div>
+
+                  <div className='flex flex-wrap justify-between mt-5'>
+                    {filteredProducts.map((product) => (
+                      <ProductCard key={product._id} product={product} />
+                    ))}
                   </div>
                 </div>
               </div>

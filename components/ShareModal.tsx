@@ -42,8 +42,7 @@ const ShareModal = () => {
 
   return (
     <>
-    
-    <button type="button" onClick={openModal}>
+      <button type="button" onClick={openModal}>
         <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
         <Image 
           src='/assets/icons/share.svg'

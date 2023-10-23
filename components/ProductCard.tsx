@@ -2,17 +2,17 @@ import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
 import FormatPrices from "./FormatPrices";
-import { headers } from 'next/headers'
+// import { headers } from 'next/headers'
 
 interface Props {
   product: Product;
 }
 const ProductCard = ({ product } : Props ) => {
 
-  const headersList = headers();
-  const domain = headersList.get("x-forwarded-host") || "";
-  const protocol = headersList.get("x-forwarded-proto") || "";
-  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
+  // const headersList = headers();
+  // const domain = headersList.get("x-forwarded-host") || "";
+  // const protocol = headersList.get("x-forwarded-proto") || "";
+  const flipURL = `/assets/images/flip.jpg`;
 
   return (
     <div className="mx-0">

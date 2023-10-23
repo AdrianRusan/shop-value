@@ -165,7 +165,6 @@ export async function scrapeFlipProduct(url: string) {
       .replace(/[-%]/g, '');
 
     const description = formatDescriptionFlip($);
-    console.log('description ', description);
 
     const recommendedScraped = $('.positive-reviews').text().trim();
     const recommendedProduct = recommendedScraped.slice(

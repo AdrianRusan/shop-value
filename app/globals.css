@@ -95,7 +95,7 @@
   }
 
   .dialog-content {
-    @apply py-5 px-5 bg-white inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl dark:bg-slate-800;
+    @apply py-5 px-5 bg-white inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl dark:bg-slate-800;
   }
 
   .dialog-head_text {
@@ -147,11 +147,11 @@
 
   /* SEARCHBAR INPUT */
   .searchbar-input {
-    @apply flex-1 w-full lg:flex items-center text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700;
+    @apply flex-1 w-full lg:flex items-center text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 placeholder:text-[#415985] dark:placeholder:text-[#A7B5B9];
   }
 
   .searchbar-top {
-    @apply w-full flex items-center text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700;
+    @apply w-full flex items-center text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 placeholder:text-[#415985] dark:placeholder:text-[#A7B5B9];
   }
 
   .searchbar-btn {

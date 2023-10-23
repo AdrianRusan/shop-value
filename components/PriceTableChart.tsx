@@ -27,6 +27,8 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
       const currentPrice = parseFloat(currentPriceElement.textContent || '0');
       const prevPrice = parseFloat(prevPriceElement.textContent || '0');
 
+      console.log(currentPrice, prevPrice);
+
       if (currentPrice > prevPrice) {
         currentPriceElement.style.color = 'red';
         currentPriceElement.style.fontWeight = 'bold';
@@ -103,7 +105,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
         </div>
       )}
       {viewMode === 'table' && (
-        <div>
+        <>
           <table className="w-full border-collapse">
             <thead>
               <tr className="dark:text-secondary">
@@ -131,7 +133,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
               </button>
             ))}
           </div>
-        </div>
+        </>
       )}
     </>
   );
