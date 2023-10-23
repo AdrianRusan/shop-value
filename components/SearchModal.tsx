@@ -5,7 +5,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
 import { Product } from '@/types';
 import { getProductByTitle } from '@/lib/actions';
-import dynamic from 'next/dynamic';
+import ThemedIcon from './ThemedIcon';
 
 
 const SearchModal = () => {
@@ -41,8 +41,6 @@ const SearchModal = () => {
     e.preventDefault();
     closeModal();
   };
-
-  const ThemedIcon = dynamic(() => import('./ThemedIcon'));
 
   return (
     <>
