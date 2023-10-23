@@ -1,10 +1,9 @@
-import Navbar from '@/components/Navbar'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import ThemeProvider from './theme-provider';
-import Image from 'next/image'
+import dynamic from 'next/dynamic'
 
 const inter = Inter({ subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight:['300', '400', '500', '600', '700'] })
@@ -27,6 +26,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+
+  const Navbar = dynamic(() => import('../components/Navbar'))
+
+
   return (
       <ThemeProvider>
         <html lang="en">
