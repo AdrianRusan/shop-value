@@ -51,9 +51,15 @@ export async function GET(request: Request) {
         const product = {
           ...scrapedProduct,
           priceHistory: updatedPriceHistory,
-          lowestPrice: getLowestPrice(updatedPriceHistory),
-          highestPrice: getHighestPrice(updatedPriceHistory),
-          averagePrice: getAveragePrice(updatedPriceHistory),
+          lowestPrice: getLowestPrice(updatedPriceHistory).price,
+          highestPrice: getHighestPrice(
+            updatedPriceHistory,
+            currentProduct.originalPrice
+          ).price,
+          averagePrice: getAveragePrice(
+            updatedPriceHistory,
+            currentProduct.originalPrice
+          ),
         };
 
         // Update Products in DB
