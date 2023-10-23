@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { Carousel } from 'react-responsive-carousel';
 import Image from "next/image";
@@ -29,6 +30,33 @@ const heroImages = [
 
 const HeroCarousel = () => {
 
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+        setShouldRender(true);
+      } else {
+        setShouldRender(false);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleResize);
+      handleResize();
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
+      }
+    };
+  }, []);
+
+  if (!shouldRender) {
+    return null;
+  }
+
   return (
     <>
       <div className="hero-carousel hidden lg:block">
@@ -52,7 +80,7 @@ const HeroCarousel = () => {
               width={484}
               height={484}
               className="object-contain hidden lg:block"
-              priority={index === 0 && window.innerWidth >= 1024}
+              priority={window.innerWidth >= 1024 ? true : false}
             />
           ))}
         </Carousel>
