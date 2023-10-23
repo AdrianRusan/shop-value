@@ -22,12 +22,19 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   const [theme, setTheme] = useState('light');
 
   useEffect(() => {
-    const userPreferredTheme = localStorage.getItem('theme');
-    if (userPreferredTheme) {
-      setTheme(userPreferredTheme);
-    } else {
-      setTheme('light');
-    }
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    setTheme(systemPrefersDark ? 'dark' : 'light');
+
+    const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const updateTheme = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+    darkModeMediaQuery.addEventListener("change", updateTheme);
+
+    return () => {
+      darkModeMediaQuery.removeEventListener("change", updateTheme);
+    };
   }, []);
 
   useEffect(() => {

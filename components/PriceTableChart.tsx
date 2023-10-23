@@ -63,7 +63,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
                 displayFormats: { hour: 'dd MMM yyyy - p' },
               },
               bounds: 'ticks',
-              ticks: { maxRotation: 30, minRotation: 30, padding: 12.5 },
+              ticks: { maxRotation: 30, minRotation: 30, padding: 12.5, maxTicksLimit: 20},
             },
             y: { ticks: { callback: (value) => value + ' RON' } },
           },
@@ -76,13 +76,14 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
     };
   }, [priceHistory, viewMode]);
 
-  useEffect(() => {
-    highlightPriceChanges();
-  }, [priceHistory, viewMode]);
-
   const totalPages = Math.ceil(priceHistory.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = currentPage * rowsPerPage;
+
+  useEffect(() => {
+    setCurrentPage(totalPages);
+    highlightPriceChanges();
+  }, [totalPages]);
 
   const toggleView = () => setViewMode(viewMode === 'chart' ? 'table' : 'chart');
 
