@@ -3,9 +3,10 @@
 import { useState, useEffect, Fragment, FormEvent } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
-import ThemedIcon from './ThemedIcon';
 import { Product } from '@/types';
 import { getProductByTitle } from '@/lib/actions';
+import ThemedIcon from './ThemedIcon';
+
 
 const SearchModal = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -103,10 +104,10 @@ const SearchModal = () => {
                     <Image 
                       src="/assets/icons/x-close.svg"
                       alt="close"
-                      width={24}
-                      height={24}
-                      className='cursor-pointer'
+                      width={0}
+                      height={0}
                       onClick={closeModal}
+                      className='cursor-pointer w-auto h-auto'
                     />
                   </div>
                 </div>

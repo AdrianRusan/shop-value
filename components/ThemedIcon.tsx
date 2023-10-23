@@ -18,6 +18,7 @@ const ThemedIcon = ({ alt }: Props) => {
         width={28}
         height={28}
         className="object-contain"
+        priority={alt === "search" ? true : false}
       />
   );
 };

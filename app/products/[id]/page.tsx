@@ -8,9 +8,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
-import ThemedIcon from "@/components/ThemedIcon";
 import { headers } from 'next/headers'
 import PriceTableChart from "@/components/PriceTableChart";
+import dynamic from "next/dynamic";
 
 type Props = {
   params: {
@@ -42,6 +42,8 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
     price: priceData.price,
   }));
 
+  const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
+
   return (
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
@@ -52,15 +54,17 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
               alt={product.source}
               width={100}
               height={100}
-              className="ml-5"
+              className="absolute"
+              priority
             />
           ) : (
             <Image
               src={flipURL}
               alt={product.source}
-              width={100}
-              height={100}
-              className="ml-5 -mt-10"
+              width={75}
+              height={75}
+              className="absolute ml-1 -mt-2"
+              priority
             />          
           )}
           <Image 
@@ -68,7 +72,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             alt={product.title}
             width={480}
             height={400}
-            className="mx-auto"
+            className="mx-auto w-auto h-auto"
             priority
           />
         </div>
@@ -85,6 +89,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 href={product.url}
                 target="_blank"
                 className="text-base text-black dark:text-white-200 opacity-75"
+                rel="preload"
               >
                 Visit Product
               </Link>
@@ -114,8 +119,10 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                   <Image 
                     src="/assets/icons/star.svg"
                     alt="star"
-                    width={16}
-                    height={16}
+                    width={0}
+                    height={0}
+                    className="w-auto h-auto"
+                    priority
                   />
                   <p className="text-sm text-secondary font-semibold">
                     {product.stars.toFixed(2)} stars
@@ -126,8 +133,10 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                   <Image 
                     src="/assets/icons/comment.svg"
                     alt="comment"
-                    width={16}
-                    height={16}
+                    width={0}
+                    height={0}
+                    className="w-auto h-auto"
+                    priority
                   />
                   <button className="text-sm text-secondary font-semibold">
                     <Link
@@ -148,18 +157,12 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             </div>
           </div>
 
-          <div className="my-7 flex flex-col gap-5">
+          <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
               <PriceInfoCard 
                 title="Current Price"
                 iconSrc="/assets/icons/price-tag.svg"
                 value={<FormatPrices num={product.currentPrice}/>}
-                currency={product.currency}
-              />
-              <PriceInfoCard 
-                title="Average Price"
-                iconSrc="/assets/icons/chart.svg"
-                value={<FormatPrices num={product.averagePrice}/>}
                 currency={product.currency}
               />
               <PriceInfoCard 
@@ -172,6 +175,12 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 title="Lowest Price"
                 iconSrc="/assets/icons/arrow-down.svg"
                 value={<FormatPrices num={product.lowestPrice}/>}
+                currency={product.currency}
+              />
+              <PriceInfoCard 
+                title="Average Price"
+                iconSrc="/assets/icons/chart.svg"
+                value={<FormatPrices num={product.averagePrice}/>}
                 currency={product.currency}
               />
             </div>
