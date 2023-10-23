@@ -46,15 +46,15 @@ const HeroCarousel = () => {
           className="hidden lg:block"
         >
           {heroImages.map((image, index) => (
-            <Image
-              key={image.alt}
-              src={image.imgUrl}
-              alt={image.alt}
-              width={484}
-              height={484}
-              className="object-contain hidden lg:block"
-              priority={window.innerWidth >= 1024 ? true : false}
-            />
+            <div key={image.alt} className="object-contain hidden lg:block">
+              <Image
+                src={image.imgUrl}
+                alt={image.alt}
+                width={484}
+                height={484}
+                priority={index === 0}
+              />
+            </div>
           ))}
         </Carousel>
 
