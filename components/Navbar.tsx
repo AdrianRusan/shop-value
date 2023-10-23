@@ -1,9 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import SearchModal from "./SearchModal";
-import dynamic from "next/dynamic";
-
-const ThemeSwitch = dynamic(() => import('./ThemeSwitch'))
+import ThemeSwitch from "./ThemeSwitch";
 
 const Navbar = () => {
 
