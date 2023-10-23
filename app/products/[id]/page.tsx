@@ -2,7 +2,7 @@ import TrackModal from "@/components/TrackModal";
 import PriceInfoCard from "@/components/PriceInfoCard";
 import ProductCard from "@/components/ProductCard";
 import { getProductById, getSimilarProducts } from "@/lib/actions";
-import { Product } from "@/types";
+import { PriceHistoryItem, Product } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -11,6 +11,7 @@ import ShareModal from "@/components/ShareModal";
 import { headers } from 'next/headers'
 import PriceTableChart from "@/components/PriceTableChart";
 import dynamic from "next/dynamic";
+import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 
 type Props = {
   params: {
@@ -42,7 +43,18 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
     price: priceData.price,
   }));
 
+  const filteredPriceHistory = priceHistory.filter((item) => item.price !== 0);
+
+
   const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
+
+  const lowestPriceItem: PriceHistoryItem = getLowestPrice(priceHistory);
+  const highestPriceItem: PriceHistoryItem = getHighestPrice(priceHistory, product.originalPrice);
+
+  const formatDate = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(date).toLocaleDateString(undefined, options);
+  };
 
   return (
     <div className="product-container">
@@ -102,16 +114,22 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
           </div>
 
           <div className="product-info">
-            <div className="flex flex-col gap-2">
-              <p className="text-[34px] text-secondary dark:text-white-200 font-bold tracking-wide ">
-                {<FormatPrices num={product.currentPrice}/>} {product.currency}
+            {product.isOutOfStock ? (
+              <p className="text-[34px] text-primary font-bold">
+                Stoc Epuizat
               </p>
-              {product.originalPrice > 0 && (
-              <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
-                {<FormatPrices num={product.originalPrice}/>} {product.currency}
-              </p>
-              )}
-            </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-[34px] text-secondary dark:text-white-200 font-bold tracking-wide ">
+                  {<FormatPrices num={product.currentPrice}/>} {product.currency}
+                </p>
+                {product.originalPrice > 0 && (
+                <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
+                  {<FormatPrices num={product.originalPrice}/>} {product.currency}
+                </p>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-col">
               <div className="flex gap-3">
@@ -157,6 +175,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             </div>
           </div>
 
+        <div className="text-lg font-bold text-secondary dark:text-white-200 pt-2 text-center">
+          Tracked since: {formatDate(filteredPriceHistory[0].date)}
+        </div>
           <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
               <PriceInfoCard 
@@ -164,24 +185,30 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 iconSrc="/assets/icons/price-tag.svg"
                 value={<FormatPrices num={product.currentPrice}/>}
                 currency={product.currency}
+                outOfStock={product.isOutOfStock}
               />
               <PriceInfoCard 
                 title="Highest Price"
                 iconSrc="/assets/icons/arrow-up.svg"
                 value={<FormatPrices num={product.highestPrice}/>}
                 currency={product.currency}
+                outOfStock={product.isOutOfStock}
+                date={highestPriceItem.date}
               />
               <PriceInfoCard 
                 title="Lowest Price"
                 iconSrc="/assets/icons/arrow-down.svg"
                 value={<FormatPrices num={product.lowestPrice}/>}
                 currency={product.currency}
+                outOfStock={product.isOutOfStock}
+                date={lowestPriceItem.date}
               />
               <PriceInfoCard 
                 title="Average Price"
                 iconSrc="/assets/icons/chart.svg"
                 value={<FormatPrices num={product.averagePrice}/>}
                 currency={product.currency}
+                outOfStock={product.isOutOfStock}
               />
             </div>
           </div>
@@ -214,10 +241,10 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
         </button>
       </div>
 
-      {product.priceHistory.length > 0 && (
+      {filteredPriceHistory.length > 0 && (
         <div className="my-7 max-sm:hidden">
           <p className="section-text">Price History</p>
-          <PriceTableChart priceHistory={priceHistory}/>
+          <PriceTableChart priceHistory={filteredPriceHistory} />
         </div>
       )}
 
