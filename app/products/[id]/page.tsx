@@ -83,8 +83,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             src={product.image}
             alt={product.title}
             width={480}
-            height={400}
+            height={480}
             className="mx-auto w-auto h-auto"
+            sizes="(max-width: 425px) 100vw, (max-width: 768px) 768px, (max-width: 1024px) 1024px, (max-width: 1440px) 1440px, (max-width: 2560px) 2560px, 425px"
             priority
           />
         </div>
