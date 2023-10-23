@@ -145,11 +145,16 @@ export async function scrapeFlipProduct(url: string) {
 
     const title = textContent + ' ' + lastTwoSpans.text();
 
-    const { originalPrice, currentPrice } = extractPricesFlip($);
+    const outOfStockElement = $(
+      'span.badge.stoc-alert-new.py-2.mb-3.badge-secondary'
+    );
+    const outOfStockText = outOfStockElement.text().trim().toLowerCase();
 
-    const outOfStock =
-      $('.stock-and-genius span.label').text().trim().toLowerCase() ===
-      'stoc epuizat';
+    const outOfStock = outOfStockText === 'va reveni curand in stoc';
+
+    console.log('outOfStock: ', outOfStock);
+
+    const { originalPrice, currentPrice } = extractPricesFlip($);
 
     const image = $('.slider-image-container img').attr('src');
     const currency = $('.product-new-price').text().trim().slice(-3);
