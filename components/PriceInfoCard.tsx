@@ -6,13 +6,24 @@ interface Props {
   iconSrc: string;
   value: ReactNode;
   currency: string;
+  outOfStock: Boolean;
+  date?: Date;
 }
 
-const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
+const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date }: Props) => {
+  const formatDate = (date: Date) => {
+    const day = date.getDate();
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+
   return (
     <div className='price-info_card'>
       <p className="text-base text-black-100 dark:text-white-100">
-        {title}
+        {title} {date ? `- ${formatDate(date)}` : ''}
       </p>
       <div className="flex gap-1">
         <Image 
@@ -23,9 +34,15 @@ const PriceInfoCard = ({ title, iconSrc, value, currency }: Props) => {
           priority
           className="w-auto h-auto"
         />
-        <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary dark:text-white-200">
-          {value} {currency}
-        </p>
+        {(outOfStock && title === "Current Price") ? (
+          <p className="text-lg text-primary font-semibold">
+            Stoc Epuizat
+          </p>
+        ) : (
+          <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary dark:text-white-200">
+            {value} {currency}
+          </p>
+        )}
       </div>
     </div>
   )

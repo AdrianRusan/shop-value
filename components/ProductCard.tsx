@@ -51,16 +51,23 @@ const ProductCard = ({ product } : Props ) => {
             <p className={`flex h-[6vh] text-black dark:text-white-200 opacity-75 capitalize text-lg text-center items-center`}>
               {product.category}
             </p>
-            <div className="flex flex-col whitespace-nowrap">
-                <p className={`text-sm text-black opacity-75 dark:text-white-200 line-through ${product.originalPrice > 0 ? '' : 'hidden'}`}>
-                  <span><FormatPrices num={product.originalPrice}/> </span>
+            {product.isOutOfStock ? (
+              <p className="text-sm text-primary font-semibold">
+                Stoc Epuizat
+              </p>
+            ) : (
+              <div className="flex flex-col whitespace-nowrap">
+                  <p className={`text-sm text-black opacity-75 dark:text-white-200 line-through ${product.originalPrice > 0 ? '' : 'hidden'}`}>
+                    <span><FormatPrices num={product.originalPrice}/> </span>
+                    <span>{product?.currency}</span>
+                  </p>
+                <p className="text-black text-lg font-semibold dark:text-white-200">
+                  <span><FormatPrices num={product.currentPrice}/> </span>
                   <span>{product?.currency}</span>
                 </p>
-              <p className="text-black text-lg font-semibold dark:text-white-200">
-                <span><FormatPrices num={product.currentPrice}/> </span>
-                <span>{product?.currency}</span>
-              </p>
-            </div>
+              </div>
+            )}
+
           </div>
         </div>
       </Link>
