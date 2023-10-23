@@ -29,7 +29,7 @@ const Home = async () => {
                 width={0}
                 height={0}
                 className="w-auto h-auto"
-                
+                priority
               />
             </p>
             <h1 className="head-text dark:text-white-200">
