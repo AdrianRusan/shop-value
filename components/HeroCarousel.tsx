@@ -52,7 +52,7 @@ const HeroCarousel = () => {
               width={484}
               height={484}
               className="object-contain hidden md:block"
-              priority={index === 0}
+              priority={index === 0 && window.innerWidth > 1024}
             />
           ))}
         </Carousel>
