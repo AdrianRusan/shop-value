@@ -8,19 +8,18 @@ import { getProductByTitle } from '@/lib/actions';
 import ThemedIcon from './ThemedIcon';
 import ProductCard from './ProductCard';
 
-type Props = {
-  item: Product;
-};
-
-
 const SearchModal = () => {
 
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
 
+  const debounceDelay = 250;
+
   useEffect(() => {
-    async function fetchData() {
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    const fetchData = async () => {
       if (searchInput.length >= 3) {
         try {
           const productsData = await getProductByTitle(searchInput);
@@ -28,7 +27,6 @@ const SearchModal = () => {
           if (productsData) {
             const products = productsData.map(( item: any ) => ({
               _id: String(item._id || ''),
-              url: item.url || '',
               source: item.source || '',
               sourceSrc: item.sourceSrc || '',
               currency: item.currency || 'RON',
@@ -36,18 +34,8 @@ const SearchModal = () => {
               title: item.title || '',
               currentPrice: Number(item.currentPrice) || 0,
               originalPrice: Number(item.originalPrice) || 0,
-              priceHistory: [],
-              discountRate: Number(item.discountRate) || 0,
               category: item.category || '',
-              biggerCategory: item.biggerCategory || '',
-              reviewsCount: item.reviewsCount || 0,
-              stars: item.stars || 0,
               isOutOfStock: item.isOutOfStock,
-              description: item.description || '',
-              recommendedProduct: item.recommendedProduct || '',
-              lowestPrice: Number(item.currentPrice) || 0,
-              highestPrice: Number(item.currentPrice) || 0,
-              averagePrice: Number(item.currentPrice) || 0,
             }));
             setFilteredProducts(products);
           } else {
@@ -62,9 +50,23 @@ const SearchModal = () => {
       }
     }
 
-    if (searchInput !== '') {
-      fetchData();
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
     }
+
+    // Set a new debounce timer to fetch data after a delay
+    debounceTimer = setTimeout(() => {
+      if (searchInput !== '') {
+        fetchData();
+      }
+    }, debounceDelay);
+
+    return () => {
+      // Clean up by clearing the debounce timer if the component unmounts or the search input changes
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
   }, [searchInput]);
 
   const openModal = () => setIsOpen(true);
@@ -82,6 +84,11 @@ const SearchModal = () => {
     e.preventDefault();
     closeModal();
   };
+
+  const handleProductCardClick = () => {
+    closeModal();
+  };
+
 
   return (
     <>
@@ -149,9 +156,14 @@ const SearchModal = () => {
                     />
                   </div>
 
-                  <div className='flex flex-wrap justify-between mt-5'>
+                  <div className='flex flex-wrap mt-5 xl:gap-x-6 lg:gap-x-9 md:gap-x-28 gap-y-5'>
                     {filteredProducts.map((product) => (
-                      <ProductCard key={product._id} product={product} />
+                      <div 
+                        key={product._id}
+                        onClick={() => handleProductCardClick()}
+                      >
+                        <ProductCard product={product} />
+                      </div>
                     ))}
                   </div>
                 </div>

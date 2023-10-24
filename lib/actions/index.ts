@@ -120,10 +120,10 @@ export async function getProductByTitle(productTitle: string) {
       title: { $regex: searchRegex },
     })
       .select(
-        'url title image sourceSrc source category isOutOfStock originalPrice currentPrice currency'
+        'title image sourceSrc source category isOutOfStock originalPrice currentPrice currency'
       )
       .lean()
-      .limit(4); // Convert Mongoose documents to plain JavaScript objects
+      .limit(8); // Convert Mongoose documents to plain JavaScript objects
 
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
