@@ -150,9 +150,7 @@ export async function scrapeFlipProduct(url: string) {
     );
     const outOfStockText = outOfStockElement.text().trim().toLowerCase();
 
-    const outOfStock = outOfStockText === 'va reveni curand in stoc';
-
-    console.log('outOfStock: ', outOfStock);
+    const isoutOfStock = outOfStockText === 'va reveni curand in stoc';
 
     const { originalPrice, currentPrice } = extractPricesFlip($);
 
@@ -208,7 +206,7 @@ export async function scrapeFlipProduct(url: string) {
       biggerCategory: biggerCategory || '',
       reviewsCount: reviewsCount || 0,
       stars: stars || 0,
-      isOutOfStock: outOfStock,
+      isOutOfStock: isoutOfStock,
       description: description || '',
       recommendedProduct: recommendedProduct || '',
       lowestPrice: Number(currentPrice) || 0,

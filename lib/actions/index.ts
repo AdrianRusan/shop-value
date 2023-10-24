@@ -125,7 +125,7 @@ export async function getProductByTitle(productTitle: string) {
       .lean()
       .limit(4); // Convert Mongoose documents to plain JavaScript objects
 
-    return products;
+    return JSON.parse(JSON.stringify(products));
   } catch (error) {
     console.log(error);
   }

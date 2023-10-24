@@ -8,6 +8,10 @@ import { getProductByTitle } from '@/lib/actions';
 import ThemedIcon from './ThemedIcon';
 import ProductCard from './ProductCard';
 
+type Props = {
+  item: Product;
+};
+
 
 const SearchModal = () => {
 
@@ -22,7 +26,7 @@ const SearchModal = () => {
           const productsData = await getProductByTitle(searchInput);
           
           if (productsData) {
-            const products = productsData.map((item) => ({
+            const products = productsData.map(( item: any ) => ({
               _id: String(item._id || ''),
               url: item.url || '',
               source: item.source || '',
@@ -38,7 +42,7 @@ const SearchModal = () => {
               biggerCategory: item.biggerCategory || '',
               reviewsCount: item.reviewsCount || 0,
               stars: item.stars || 0,
-              isOutOfStock: item.outOfStock,
+              isOutOfStock: item.isOutOfStock,
               description: item.description || '',
               recommendedProduct: item.recommendedProduct || '',
               lowestPrice: Number(item.currentPrice) || 0,
