@@ -12,6 +12,7 @@ import { headers } from 'next/headers'
 import PriceTableChart from "@/components/PriceTableChart";
 import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
+import ProductDescription from "@/components/ProductDescription";
 
 type Props = {
   params: {
@@ -55,6 +56,8 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(date).toLocaleDateString(undefined, options);
   };
+
+  const regex = /(?<=[.!?])\s+(?=[A-ZĂÎȘÂȚ\d])|\d+\.\s+|\n+(?!\d+\.\s+)|(?<=[a-z])(?=[A-Z](?![a-z]))|(?<=[?])(?=[A-ZĂÎȘÂȚĂÎȘÂȚ\d])|(?<=[?])(?=[A-Z](?=\s|$)|eSIM|iOS)/;
 
   return (
     <div className="product-container">
@@ -221,13 +224,8 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       <div className="flex flex-col gap-16">
         <div className="flex flex-col gap-5 ">
 
-          <div className="flex flex-col gap-4 whitespace-pre-line">
-            {product?.description.split("\n").map((paragraph, index) => (
-              <p key={index}>
-                {paragraph}
-              </p>
-            ))}
-          </div>
+        <ProductDescription description={product?.description} />
+
         </div>
 
         <button className="btn w-fit mx-auto flex items-center justify-center gap-3 min-w-[200px]">

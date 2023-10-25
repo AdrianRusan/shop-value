@@ -86,7 +86,9 @@ const SearchModal = () => {
   };
 
   const handleProductCardClick = () => {
-    closeModal();
+    setTimeout(() => {
+      closeModal();
+    }, 1000);
   };
 
 

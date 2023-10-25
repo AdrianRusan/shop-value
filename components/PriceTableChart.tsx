@@ -18,24 +18,24 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
 
   const chartInstanceRef = useRef<Chart<'line'> | null>();
 
-  const highlightPriceChanges = () => {
-    const rows = document.querySelectorAll('tr');
-    for (let i = 1; i < rows.length; i++) {
-      const currentPriceElement = rows[i].children[1] as HTMLElement;
-      const prevPriceElement = rows[i - 1].children[1] as HTMLElement;
+  // const highlightPriceChanges = () => {
+  //   const rows = document.querySelectorAll('tr');
+  //   for (let i = 1; i < rows.length; i++) {
+  //     const currentPriceElement = rows[i].children[1] as HTMLElement;
+  //     const prevPriceElement = rows[i - 1].children[1] as HTMLElement;
 
-      const currentPrice = parseFloat(currentPriceElement.textContent || '0');
-      const prevPrice = parseFloat(prevPriceElement.textContent || '0');
+  //     const currentPrice = parseFloat(currentPriceElement.textContent || '0');
+  //     const prevPrice = parseFloat(prevPriceElement.textContent || '0');
 
-      if (currentPrice > prevPrice) {
-        currentPriceElement.style.color = 'red';
-        currentPriceElement.style.fontWeight = 'bold';
-      } else if (currentPrice < prevPrice) {
-        currentPriceElement.style.color = 'green';
-        currentPriceElement.style.fontWeight = 'bold';
-      }
-    }
-  };
+  //     if (currentPrice > prevPrice) {
+  //       currentPriceElement.style.color = 'red';
+  //       currentPriceElement.style.fontWeight = 'bold';
+  //     } else if (currentPrice < prevPrice) {
+  //       currentPriceElement.style.color = 'green';
+  //       currentPriceElement.style.fontWeight = 'bold';
+  //     }
+  //   }
+  // };
 
   useEffect(() => {
     if (chartRef.current && viewMode === 'chart') {
@@ -82,14 +82,12 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
 
   useEffect(() => {
     setCurrentPage(totalPages);
-    highlightPriceChanges();
   }, [totalPages]);
 
   const toggleView = () => setViewMode(viewMode === 'chart' ? 'table' : 'chart');
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    highlightPriceChanges();
   };
 
   return (
@@ -112,12 +110,30 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
               </tr>
             </thead>
             <tbody>
-              {priceHistory.slice(startIndex, endIndex).map((data, index) => (
-                <tr className="dark:bg-secondary" key={index}>
-                  <td className="py-2 px-4 border">{data.date.toLocaleString()}</td>
-                  <td className="py-2 px-4 border">{data.price} RON</td>
-                </tr>
-              ))}
+              {priceHistory.map((data, index) => { // {priceHistory.slice(startIndex, endIndex).map((data, index) => {
+                const currentPrice = data.price;
+                const nextPrice =
+                  index > 0 ? priceHistory[index - 1].price : null;
+
+                const textColorClass =
+                  nextPrice !== null
+                    ? currentPrice !== nextPrice
+                      ? currentPrice > nextPrice
+                        ? 'text-red-500'
+                        : 'text-green-500'
+                      : 'text-white'
+                    : 'text-white';
+
+                return (
+                  <tr
+                    className={`dark:bg-secondary ${textColorClass}`}
+                    key={index}
+                  >
+                    <td className="py-2 px-4 border">{data.date.toLocaleString()}</td>
+                    <td className="py-2 px-4 border">{data.price} RON</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <div className="flex justify-center mt-4">
