@@ -242,7 +242,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       </div>
 
       {filteredPriceHistory.length > 0 && (
-        <div className="my-7 max-sm:hidden">
+        <div className="my-7">
           <p className="section-text">Price History</p>
           <PriceTableChart priceHistory={filteredPriceHistory} />
         </div>
