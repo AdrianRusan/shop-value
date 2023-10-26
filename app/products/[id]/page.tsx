@@ -1,6 +1,5 @@
 import TrackModal from "@/components/TrackModal";
 import PriceInfoCard from "@/components/PriceInfoCard";
-import ProductCard from "@/components/ProductCard";
 import { getProductById, getSimilarProducts } from "@/lib/actions";
 import { PriceHistoryItem, Product } from "@/types";
 import Image from "next/image";
@@ -9,9 +8,9 @@ import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
 import { headers } from 'next/headers'
-import PriceTableChart from "@/components/PriceTableChart";
 import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
+import ProductDescription from "@/components/ProductDescription";
 
 type Props = {
   params: {
@@ -20,13 +19,7 @@ type Props = {
 }
 
 const ProductDetails = async ({ params: { id }  } : Props) => {
-  const headersList = headers();
-  const domain = headersList.get("x-forwarded-host") || "";
-  const protocol = headersList.get("x-forwarded-proto") || "";
-  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
-
   const product: Product = await getProductById(id);
-
   if (!product) redirect('/')
 
   const similarProducts = await getSimilarProducts(id)
@@ -47,6 +40,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
 
 
   const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
+  const PriceTableChart = dynamic(() => import('../../../components/PriceTableChart'))
+  const ProductCard = dynamic(() => import('../../../components/ProductCard'))
+
 
   const lowestPriceItem: PriceHistoryItem = getLowestPrice(priceHistory);
   const highestPriceItem: PriceHistoryItem = getHighestPrice(priceHistory, product.originalPrice);
@@ -55,6 +51,14 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(date).toLocaleDateString(undefined, options);
   };
+
+  const headersList = headers();
+  const domain = headersList.get("x-forwarded-host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
+
+  let differentPrices = true;
+  if (product.lowestPrice === product.highestPrice) differentPrices = false;
 
   return (
     <div className="product-container">
@@ -97,21 +101,19 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 {product.title}
               </p>
 
-            <div className="flex items-center gap-3">
-              <Link
-                href={product.url}
-                target="_blank"
-                className="text-base text-black dark:text-white-200 opacity-75"
-                rel="preload"
-              >
-                Visit Product
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  href={product.url}
+                  target="_blank"
+                  className="text-base text-black dark:text-white-200 opacity-75"
+                  rel="preload"
+                >
+                  Visit Product
+                </Link>
 
-              <ShareModal />
+                <ShareModal />
+              </div>
             </div>
-            </div>
-
-
           </div>
 
           <div className="product-info">
@@ -195,6 +197,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={highestPriceItem.date}
+                differentPrices={differentPrices}
               />
               <PriceInfoCard 
                 title="Lowest Price"
@@ -203,6 +206,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={lowestPriceItem.date}
+                differentPrices={differentPrices}
               />
               <PriceInfoCard 
                 title="Average Price"
@@ -221,13 +225,8 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       <div className="flex flex-col gap-16">
         <div className="flex flex-col gap-5 ">
 
-          <div className="flex flex-col gap-4 whitespace-pre-line">
-            {product?.description.split("\n").map((paragraph, index) => (
-              <p key={index}>
-                {paragraph}
-              </p>
-            ))}
-          </div>
+        <ProductDescription description={product?.description} />
+
         </div>
 
         <button className="btn w-fit mx-auto flex items-center justify-center gap-3 min-w-[200px]">
@@ -243,7 +242,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
       </div>
 
       {filteredPriceHistory.length > 0 && (
-        <div className="my-7 max-sm:hidden">
+        <div className="my-7">
           <p className="section-text">Price History</p>
           <PriceTableChart priceHistory={filteredPriceHistory} />
         </div>
