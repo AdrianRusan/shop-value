@@ -25,7 +25,7 @@ const ShareModal = () => {
   const [currentURL, setCurrentURL] = useState('');
   
   useEffect(() => {
-    setCurrentURL(window.location.href); // This will run on the client side
+    setCurrentURL(window.location.href);
   }, []);
 
   const openModal = () => setIsOpen(true);
@@ -42,17 +42,16 @@ const ShareModal = () => {
 
   return (
     <>
-    
-    <button type="button" onClick={openModal}>
+      <button type="button" onClick={openModal}>
         <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
-        <Image 
-          src='/assets/icons/share.svg'
-          alt='share'
-          width={20}
-          height={20}
-          priority
-        /> 
-            </div>
+          <Image 
+            src='/assets/icons/share.svg'
+            alt='share'
+            width={20}
+            height={20}
+            priority
+          /> 
+        </div>
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
@@ -99,49 +98,52 @@ const ShareModal = () => {
 
                   <div className='flex flex-col gap-2 py-2 dark:text-white-200'>
                     <p>Share this link via</p>
-                    <div className='flex justify-evenly'>
-                      <FacebookShareButton
-                        url={currentURL}
-                        quote={'next-share is a social share buttons for your next React apps.'}
-                        hashtag={'#shopvalue'}
-                      >
-                        <FacebookIcon size={48} round />
-                      </FacebookShareButton>
+                    <div className='flex justify-between max-sm:flex-col items-center gap-y-2'>
+                      <div className='flex justify-evenly w-full gap-1'>
+                        <FacebookShareButton
+                          url={currentURL}
+                          quote={'next-share is a social share buttons for your next React apps.'}
+                          hashtag={'#shopvalue'}
+                        >
+                          <FacebookIcon size={48} round />
+                        </FacebookShareButton>
 
-                      <RedditShareButton
-                        url={currentURL}
-                        title={'next-share is a social share buttons for your next React apps.'}
-                      >
-                        <RedditIcon size={48} round />
-                      </RedditShareButton>
+                        <RedditShareButton
+                          url={currentURL}
+                          title={'next-share is a social share buttons for your next React apps.'}
+                        >
+                          <RedditIcon size={48} round />
+                        </RedditShareButton>
 
-                      <TwitterShareButton
-                        url={currentURL}
-                        title={'next-share is a social share buttons for your next React apps.'}
-                      >
-                        <TwitterIcon size={48} round />
-                      </TwitterShareButton>
+                        <TwitterShareButton
+                          url={currentURL}
+                          title={'next-share is a social share buttons for your next React apps.'}
+                        >
+                          <TwitterIcon size={48} round />
+                        </TwitterShareButton>
+                      </div>
+                      <div className='flex justify-evenly w-full gap-1'>
+                        <WhatsappShareButton
+                          url={currentURL}
+                          title={'next-share is a social share buttons for your next React apps.'}
+                          separator=":: "
+                        >
+                          <WhatsappIcon size={48} round />
+                        </WhatsappShareButton>
 
-                      <WhatsappShareButton
-                        url={currentURL}
-                        title={'next-share is a social share buttons for your next React apps.'}
-                        separator=":: "
-                      >
-                        <WhatsappIcon size={48} round />
-                      </WhatsappShareButton>
+                        <TelegramShareButton
+                          url={currentURL}
+                          title={'next-share is a social share buttons for your next React apps.'}
+                        >
+                          <TelegramIcon size={48} round />
+                        </TelegramShareButton>
 
-                      <TelegramShareButton
-                        url={currentURL}
-                        title={'next-share is a social share buttons for your next React apps.'}
-                      >
-                        <TelegramIcon size={48} round />
-                      </TelegramShareButton>
-
-                      <LinkedinShareButton 
-                        url={currentURL}
-                      >
-                        <LinkedinIcon size={48} round />
-                      </LinkedinShareButton>
+                        <LinkedinShareButton 
+                          url={currentURL}
+                        >
+                          <LinkedinIcon size={48} round />
+                        </LinkedinShareButton>
+                      </div>
 
                     </div>
                   </div>
@@ -151,27 +153,24 @@ const ShareModal = () => {
                   name='share-link'
                   >
                     <p>Or copy link</p>
-                    <div className='dialog-input_container'>
-                      <Image 
-                        src="/assets/icons/link.svg"
-                        alt="link"
-                        width={18}
-                        height={18}
-                      />
-
-                      <input
-                        required
-                        type='text'
-                        id="link"
-                        defaultValue={currentURL}
-                        readOnly
-                        className='dark:bg-slate-800 dialog-input'
-                      />
+                    <div className='flex flex-col gap-2'>
+                      <div className='dialog-input_container'>
+                        <div className='flex w-[98%]'>
+                          <input
+                            required
+                            type='text'
+                            id="link"
+                            defaultValue={currentURL}
+                            readOnly
+                            className='dark:bg-slate-800 dialog-input max-sm:w-[98%]'
+                          />
+                        </div>
+                      </div>
                       <button 
-                        className='py-2 px-4 bg-secondary dark:bg-white-200 font-bold hover:bg-opacity-70 rounded-[27px] text-white-200 dark:text-secondary text-lg font-semibold;'
-                        onClick={handleCopyLink}
-                      >
-                        Copy
+                          className='w-full mt-3 py-2 px-4 bg-secondary dark:bg-white-200 font-bold hover:bg-opacity-70 rounded-2xl text-white-200 dark:text-secondary text-lg;'
+                          onClick={handleCopyLink}
+                        >
+                          Copy
                       </button>
                     </div>
                   </form>
