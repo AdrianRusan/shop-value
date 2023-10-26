@@ -51,7 +51,7 @@ const Home = async () => {
         <section className="trending-section ">
           <h2 className="section-text">Trending</h2>
 
-          <div className={`flex flex-wrap gap-x-8 md:gap-x-24 xl:gap-x-16 gap-y-16 justify-start`}>
+          <div className={`flex flex-wrap gap-x-8 md:gap-x-24 lg:gap-x-7 xl:gap-x-16 gap-y-16 justify-start`}>
           {sortedProducts.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}

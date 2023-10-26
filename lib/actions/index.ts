@@ -114,12 +114,18 @@ export async function getProductById(productId: string) {
 export async function getProductByTitle(productTitle: string) {
   try {
     connectToDB();
+    const searchRegex = new RegExp(productTitle, 'i');
 
-    const product = await Product.findOne({ title: productTitle });
+    const products = await Product.find({
+      title: { $regex: searchRegex },
+    })
+      .select(
+        'title image sourceSrc source category isOutOfStock originalPrice currentPrice currency'
+      )
+      .lean()
+      .limit(8); // Convert Mongoose documents to plain JavaScript objects
 
-    if (!product) return;
-
-    return product;
+    return JSON.parse(JSON.stringify(products));
   } catch (error) {
     console.log(error);
   }

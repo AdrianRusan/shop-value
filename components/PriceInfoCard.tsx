@@ -8,9 +8,10 @@ interface Props {
   currency: string;
   outOfStock: Boolean;
   date?: Date;
+  differentPrices?: Boolean;
 }
 
-const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date }: Props) => {
+const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date, differentPrices }: Props) => {
   const formatDate = (date: Date) => {
     const day = date.getDate();
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -21,9 +22,9 @@ const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date }: Pr
 
 
   return (
-    <div className='price-info_card'>
+    <div className='price-info_card justify-center items-center'>
       <p className="text-base text-black-100 dark:text-white-100">
-        {title} {date ? `- ${formatDate(date)}` : ''}
+        {title}
       </p>
       <div className="flex gap-1">
         <Image 
@@ -44,6 +45,9 @@ const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date }: Pr
           </p>
         )}
       </div>
+      {differentPrices && (
+        <p >{date ? `${formatDate(date)}` : ''}</p>
+      )}
     </div>
   )
 }
