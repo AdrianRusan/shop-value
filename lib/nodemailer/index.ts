@@ -15,7 +15,7 @@ export async function generateEmailBody(
   type: NotificationType
 ) {
   const THRESHOLD_PERCENTAGE = 10;
-  // Shorten the product title
+
   const shortenedTitle =
     product.title.length > 20
       ? `${product.title.substring(0, 20)}...`

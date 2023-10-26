@@ -100,7 +100,6 @@ const TrackModal = ({ productId }: Props) => {
                         alt="mail"
                         width={18}
                         height={18}
-                        priority
                       />
 
                       <input
@@ -110,11 +109,11 @@ const TrackModal = ({ productId }: Props) => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder='Enter your email address'
-                        className='dark:bg-slate-800 dialog-input'
+                        className='dark:bg-slate-800 dialog-input max-sm:w-[98%]'
                         autoComplete='on'
                       />
                     </div>
-                    <button type="submit" className='dialog-btn'>
+                    <button type="submit" className='w-full mt-5 py-2 px-4 bg-secondary dark:bg-white-200 font-bold hover:bg-opacity-70 rounded-2xl text-white-200 dark:text-secondary text-lg;'>
                       {isSubmitting ? 'Submitting...' : 'Track'}
                     </button>
                   </form>
