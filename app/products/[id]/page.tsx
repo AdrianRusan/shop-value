@@ -1,6 +1,5 @@
 import TrackModal from "@/components/TrackModal";
 import PriceInfoCard from "@/components/PriceInfoCard";
-import ProductCard from "@/components/ProductCard";
 import { getProductById, getSimilarProducts } from "@/lib/actions";
 import { PriceHistoryItem, Product } from "@/types";
 import Image from "next/image";
@@ -9,7 +8,6 @@ import { redirect } from "next/navigation";
 import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
 import { headers } from 'next/headers'
-import PriceTableChart from "@/components/PriceTableChart";
 import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
@@ -42,6 +40,9 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
 
 
   const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
+  const PriceTableChart = dynamic(() => import('../../../components/PriceTableChart'))
+  const ProductCard = dynamic(() => import('../../../components/ProductCard'))
+
 
   const lowestPriceItem: PriceHistoryItem = getLowestPrice(priceHistory);
   const highestPriceItem: PriceHistoryItem = getHighestPrice(priceHistory, product.originalPrice);

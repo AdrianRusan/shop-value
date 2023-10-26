@@ -44,14 +44,14 @@ const ShareModal = () => {
     <>
       <button type="button" onClick={openModal}>
         <div className="p-2 bg-white-200 rounded-10 flex justify-center items-center">
-        <Image 
-          src='/assets/icons/share.svg'
-          alt='share'
-          width={20}
-          height={20}
-          priority
-        /> 
-            </div>
+          <Image 
+            src='/assets/icons/share.svg'
+            alt='share'
+            width={20}
+            height={20}
+            priority
+          /> 
+        </div>
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
@@ -156,13 +156,6 @@ const ShareModal = () => {
                     <div className='flex flex-col gap-2'>
                       <div className='dialog-input_container'>
                         <div className='flex w-[98%]'>
-                          <Image 
-                            src="/assets/icons/link.svg"
-                            alt="link"
-                            width={18}
-                            height={18}
-                          />
-
                           <input
                             required
                             type='text'

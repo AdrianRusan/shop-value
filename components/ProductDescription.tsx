@@ -34,10 +34,10 @@ const ProductDescription: React.FC<ProductDescriptionProps> = ({ description }) 
                 View Less
                 <Image 
                   src="/assets/icons/arrow-up-small.svg"
-                  alt="arrow-right"
+                  alt="arrow-up"
                   width={20}
                   height={20}
-                  className=""
+                  className="w-5 h-5"
                 /> 
               </div>
             ) : (
@@ -45,10 +45,10 @@ const ProductDescription: React.FC<ProductDescriptionProps> = ({ description }) 
                 View More
                 <Image 
                   src="/assets/icons/arrow-down-small.svg"
-                  alt="arrow-right"
+                  alt="arrow-down"
                   width={20}
                   height={20}
-                  className=""
+                  className="w-5 h-5"
                 /> 
               </div>
             )
