@@ -95,7 +95,7 @@
   }
 
   .dialog-content {
-    @apply py-5 px-5 bg-white inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl dark:bg-slate-800;
+    @apply py-5 px-5 bg-white inline-block max-sm:w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl dark:bg-slate-800;
   }
 
   .dialog-head_text {

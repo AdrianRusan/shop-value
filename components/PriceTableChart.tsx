@@ -18,25 +18,6 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
 
   const chartInstanceRef = useRef<Chart<'line'> | null>();
 
-  // const highlightPriceChanges = () => {
-  //   const rows = document.querySelectorAll('tr');
-  //   for (let i = 1; i < rows.length; i++) {
-  //     const currentPriceElement = rows[i].children[1] as HTMLElement;
-  //     const prevPriceElement = rows[i - 1].children[1] as HTMLElement;
-
-  //     const currentPrice = parseFloat(currentPriceElement.textContent || '0');
-  //     const prevPrice = parseFloat(prevPriceElement.textContent || '0');
-
-  //     if (currentPrice > prevPrice) {
-  //       currentPriceElement.style.color = 'red';
-  //       currentPriceElement.style.fontWeight = 'bold';
-  //     } else if (currentPrice < prevPrice) {
-  //       currentPriceElement.style.color = 'green';
-  //       currentPriceElement.style.fontWeight = 'bold';
-  //     }
-  //   }
-  // };
-
   useEffect(() => {
     if (chartRef.current && viewMode === 'chart') {
       chartInstanceRef.current = new Chart(chartRef.current, {

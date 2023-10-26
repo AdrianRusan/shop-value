@@ -8,8 +8,8 @@ const ThemeSwitch = () => {
 
   return (
     <Switch
-      checked={theme === 'dark'} // Check if the theme is 'dark'
-      onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')} // Toggle between 'dark' and 'light'
+      checked={theme === 'dark'}
+      onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className="bg-black dark:bg-white relative inline-flex h-6 w-11 items-center rounded-full"
     >
       <span className="sr-only">Switch theme</span>

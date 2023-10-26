@@ -21,13 +21,7 @@ type Props = {
 }
 
 const ProductDetails = async ({ params: { id }  } : Props) => {
-  const headersList = headers();
-  const domain = headersList.get("x-forwarded-host") || "";
-  const protocol = headersList.get("x-forwarded-proto") || "";
-  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
-
   const product: Product = await getProductById(id);
-
   if (!product) redirect('/')
 
   const similarProducts = await getSimilarProducts(id)
@@ -57,7 +51,13 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
     return new Date(date).toLocaleDateString(undefined, options);
   };
 
-  const regex = /(?<=[.!?])\s+(?=[A-ZĂÎȘÂȚ\d])|\d+\.\s+|\n+(?!\d+\.\s+)|(?<=[a-z])(?=[A-Z](?![a-z]))|(?<=[?])(?=[A-ZĂÎȘÂȚĂÎȘÂȚ\d])|(?<=[?])(?=[A-Z](?=\s|$)|eSIM|iOS)/;
+  const headersList = headers();
+  const domain = headersList.get("x-forwarded-host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "";
+  const flipURL = `${protocol}://${domain}/assets/images/flip.jpg`;
+
+  let differentPrices = true;
+  if (product.lowestPrice === product.highestPrice) differentPrices = false;
 
   return (
     <div className="product-container">
@@ -100,21 +100,19 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 {product.title}
               </p>
 
-            <div className="flex items-center gap-3">
-              <Link
-                href={product.url}
-                target="_blank"
-                className="text-base text-black dark:text-white-200 opacity-75"
-                rel="preload"
-              >
-                Visit Product
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  href={product.url}
+                  target="_blank"
+                  className="text-base text-black dark:text-white-200 opacity-75"
+                  rel="preload"
+                >
+                  Visit Product
+                </Link>
 
-              <ShareModal />
+                <ShareModal />
+              </div>
             </div>
-            </div>
-
-
           </div>
 
           <div className="product-info">
@@ -198,6 +196,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={highestPriceItem.date}
+                differentPrices={differentPrices}
               />
               <PriceInfoCard 
                 title="Lowest Price"
@@ -206,6 +205,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={lowestPriceItem.date}
+                differentPrices={differentPrices}
               />
               <PriceInfoCard 
                 title="Average Price"
