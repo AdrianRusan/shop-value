@@ -11,6 +11,7 @@ import { headers } from 'next/headers'
 import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
+import { Metadata } from "next";
 
 type Props = {
   params: {
@@ -18,11 +19,39 @@ type Props = {
   }
 }
 
-const ProductDetails = async ({ params: { id }  } : Props) => {
-  const product: Product = await getProductById(id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const product: Product = await getProductById(params.id);
+    if (!product) return {
+      title: "Produsul nu a fost gasit.",
+      description: "Produsul nu a fost gasit."
+    }
+
+    return {
+      title: `ShopValue - ${product.title.split(',')[0]}`,
+      description: `ShopValue - ${product.title}`,
+      alternates: {
+        canonical: `/products/${params.id}`,
+        languages:{
+          "ro-RO": `/products/${params.id}`,
+        },
+      },
+      openGraph: {
+        url: `/products/${params.id}`,
+        title: `ShopValue - ${product.title.split(',')[0]}`,
+        description: `ShopValue - ${product.title}`,
+        type: 'website',
+        siteName: 'ShopValue',
+        locale: 'ro_RO',
+      },
+    }
+
+}
+
+const ProductDetails = async ({ params } : Props) => {
+  const product: Product = await getProductById(params.id);
   if (!product) redirect('/')
 
-  const similarProducts = await getSimilarProducts(id)
+  const similarProducts = await getSimilarProducts(params.id)
   let sortedProducts = [];
 
   if (similarProducts && similarProducts?.length > 0) {
@@ -218,7 +247,7 @@ const ProductDetails = async ({ params: { id }  } : Props) => {
             </div>
           </div>
 
-          <TrackModal productId={id} />
+          <TrackModal productId={params.id} />
         </div>
       </div>
 
