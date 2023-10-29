@@ -98,7 +98,7 @@ const ProductDetails = async ({ params } : Props) => {
   return (
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
-        <div className="product-image">
+        <div className="product-image xl:mb-24">
           {product.source === 'emag' ? (
             <Image
               src={product.sourceSrc}
