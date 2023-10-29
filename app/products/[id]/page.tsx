@@ -266,7 +266,7 @@ const ProductDetails = async ({ params } : Props) => {
           <Link
             href={product.url}
             target="_blank"
-            className="text-base text-white dark-text-black"
+            className="text-base text-white dark:text-black"
           >
             Buy Now
           </Link>
