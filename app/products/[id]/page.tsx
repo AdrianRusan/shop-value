@@ -42,23 +42,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         type: 'website',
         siteName: 'ShopValue',
         locale: 'ro_RO',
+        images: [
+          {
+            url: product.image,
+            width: 250,
+            height: 250,
+            alt: product.title,
+          }
+        ],
       },
     }
-
 }
 
+const formatDate = (date: Date) =>
+  new Date(date).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
 const ProductDetails = async ({ params } : Props) => {
-  const product: Product = await getProductById(params.id);
-  if (!product) redirect('/')
+  const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
+  const PriceTableChart = dynamic(() => import('../../../components/PriceTableChart'))
+  const ProductCard = dynamic(() => import('../../../components/ProductCard'))
 
-  const similarProducts = await getSimilarProducts(params.id)
-  let sortedProducts = [];
+  const [product, similarProducts] = await Promise.all([
+    getProductById(params.id) as Promise<Product>,
+    getSimilarProducts(params.id) as Promise<Product[]>,
+  ]);
 
-  if (similarProducts && similarProducts?.length > 0) {
-    sortedProducts = similarProducts
-      .sort((a, b) => b.priceHistory.length - a.priceHistory.length)
-      .slice(0, Math.min(4, similarProducts.length));
+  if (!product) {
+    redirect('/');
   }
+
+  const sortedProducts: Product[] = similarProducts?.slice(0, 4).sort((a, b) => b.priceHistory.length - a.priceHistory.length) || [];
 
   const priceHistory = product.priceHistory.map((priceData) => ({
     date: new Date(priceData.date),
@@ -67,19 +84,8 @@ const ProductDetails = async ({ params } : Props) => {
 
   const filteredPriceHistory = priceHistory.filter((item) => item.price !== 0);
 
-
-  const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
-  const PriceTableChart = dynamic(() => import('../../../components/PriceTableChart'))
-  const ProductCard = dynamic(() => import('../../../components/ProductCard'))
-
-
   const lowestPriceItem: PriceHistoryItem = getLowestPrice(priceHistory);
   const highestPriceItem: PriceHistoryItem = getHighestPrice(priceHistory, product.originalPrice);
-
-  const formatDate = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(date).toLocaleDateString(undefined, options);
-  };
 
   const headersList = headers();
   const domain = headersList.get("x-forwarded-host") || "";
@@ -93,12 +99,12 @@ const ProductDetails = async ({ params } : Props) => {
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
         <div className="product-image">
-        {product.source === 'emag' ? (
+          {product.source === 'emag' ? (
             <Image
               src={product.sourceSrc}
               alt={product.source}
-              width={100}
-              height={100}
+              width={75}
+              height={75}
               className="absolute"
               priority
             />
@@ -108,17 +114,16 @@ const ProductDetails = async ({ params } : Props) => {
               alt={product.source}
               width={75}
               height={75}
-              className="absolute ml-1 -mt-2"
+              className="absolute ml-1 -mt-"
               priority
             />          
           )}
           <Image 
             src={product.image}
             alt={product.title}
-            width={480}
-            height={480}
+            width={250}
+            height={250}
             className="mx-auto w-auto h-auto"
-            sizes="(max-width: 425px) 100vw, (max-width: 768px) 768px, (max-width: 1024px) 1024px, (max-width: 1440px) 1440px, (max-width: 2560px) 2560px, 425px"
             priority
           />
         </div>
@@ -156,9 +161,9 @@ const ProductDetails = async ({ params } : Props) => {
                   {<FormatPrices num={product.currentPrice}/>} {product.currency}
                 </p>
                 {product.originalPrice > 0 && (
-                <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
-                  {<FormatPrices num={product.originalPrice}/>} {product.currency}
-                </p>
+                  <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
+                    {<FormatPrices num={product.originalPrice}/>} {product.currency}
+                  </p>
                 )}
               </div>
             )}
@@ -207,9 +212,9 @@ const ProductDetails = async ({ params } : Props) => {
             </div>
           </div>
 
-        <div className="text-lg font-bold text-secondary dark:text-white-200 pt-2 text-center">
-          Tracked since: {formatDate(filteredPriceHistory[0].date)}
-        </div>
+          <div className="text-lg font-bold text-secondary dark:text-white-200 pt-2 text-center">
+            Tracked since: {formatDate(filteredPriceHistory[0].date)}
+          </div>
           <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
               <PriceInfoCard 
@@ -252,10 +257,8 @@ const ProductDetails = async ({ params } : Props) => {
       </div>
 
       <div className="flex flex-col gap-16">
-        <div className="flex flex-col gap-5 ">
-
-        <ProductDescription description={product?.description} />
-
+        <div className="flex flex-col gap-5">
+          <ProductDescription description={product?.description} />
         </div>
 
         <button className="btn w-fit mx-auto flex items-center justify-center gap-3 min-w-[200px]">
@@ -263,7 +266,7 @@ const ProductDetails = async ({ params } : Props) => {
           <Link
             href={product.url}
             target="_blank"
-            className="text-base text-white dark:text-black"
+            className="text-base text-white dark-text-black"
           >
             Buy Now
           </Link>
@@ -277,24 +280,19 @@ const ProductDetails = async ({ params } : Props) => {
         </div>
       )}
 
-      {sortedProducts && sortedProducts?.length > 0 && (
+      {sortedProducts && sortedProducts.length > 0 && (
         <div className="py-14 flex flex-col gap-2 w-full">
-          <p className="section-text">
-            Similar Products
-          </p>
+          <p className="section-text">Similar Products</p>
 
           <div className="flex flex-wrap gap-8 mt-7 w-full">
             {sortedProducts.map((product) => (
-              <ProductCard 
-                key={product._id} 
-                product={product}
-              />
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default ProductDetails
