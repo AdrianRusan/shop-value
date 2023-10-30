@@ -102,16 +102,7 @@ const ProductDetails = async ({ params }: Props) => {
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
         <div className="product-image xl:mb-24">
-          {product.source === 'emag' ? (
-            <Image
-              src={product.sourceSrc}
-              alt={product.source}
-              width={75}
-              height={75}
-              className="absolute"
-              priority
-            />
-          ) : (
+          {product.source === 'flip' && (
             <Image
               src={flipURL}
               alt={product.source}
