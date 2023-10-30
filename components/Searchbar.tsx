@@ -37,8 +37,12 @@ const Searchbar = () => {
     try {
       setIsLoading(true);
 
+      let product
+
       if (flipLink) {
-        const product = await scrapeAndScoreProductFlip(searchPrompt);
+        for (let i = 0; i < 3; i++) {
+          product = await scrapeAndScoreProductFlip(searchPrompt);
+        }      
       }
 
     } catch (error) {
