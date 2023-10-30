@@ -73,7 +73,7 @@ import { extractPricesFlip, formatDescriptionFlip } from '../utils';
 //     }
 
 //     const category = $('ol.breadcrumb li:nth-child(3)').text().trim();
-//     const biggerCategory = $('ol.breadcrumb li:nth-child(2)').text().trim();
+//     const brand = $('ol.breadcrumb li:nth-child(2)').text().trim();
 
 //     // Construct data object with scraped information
 //     const data = {
@@ -88,7 +88,7 @@ import { extractPricesFlip, formatDescriptionFlip } from '../utils';
 //       priceHistory: [],
 //       discountRate: Number(discountRate) || 0,
 //       category: category || '',
-//       biggerCategory: biggerCategory || '',
+//       brand: brand || '',
 //       reviewsCount: reviewsCount || 0,
 //       stars: stars || 0,
 //       isOutOfStock: outOfStock,
@@ -188,7 +188,11 @@ export async function scrapeFlipProduct(url: string) {
     );
 
     const category = $('.route.content a:nth-child(1)').text().trim();
-    const biggerCategory = $('ol.breadcrumb li:nth-child(2)').text().trim();
+    const brand = $('.route.content a:nth-child(2)')
+      .text()
+      .trim()
+      .toLowerCase();
+    const model = $('.route.content a:nth-child(3)').text().trim();
 
     // Construct data object with scraped information
     const data = {
@@ -203,7 +207,8 @@ export async function scrapeFlipProduct(url: string) {
       priceHistory: [],
       discountRate: Number(discountRate) || 0,
       category: category || '',
-      biggerCategory: biggerCategory || '',
+      brand: brand || '',
+      model: model || '',
       reviewsCount: reviewsCount || 0,
       stars: stars || 0,
       isOutOfStock: isoutOfStock,

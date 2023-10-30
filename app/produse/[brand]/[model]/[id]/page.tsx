@@ -15,43 +15,45 @@ import { Metadata } from "next";
 
 type Props = {
   params: {
+    brand: string,
+    model: string,
     id: string
   }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product: Product = await getProductById(params.id);
-    if (!product) return {
-      title: "Produsul nu a fost gasit.",
-      description: "Produsul nu a fost gasit."
-    }
+  if (!product) return {
+    title: "Produsul nu a fost gasit.",
+    description: "Produsul nu a fost gasit."
+  }
 
-    return {
+  return {
+    title: `ShopValue - ${product.title.split(',')[0]}`,
+    description: `ShopValue - ${product.title}`,
+    alternates: {
+      canonical: `/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`,
+      languages: {
+        "ro-RO": `/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`,
+      },
+    },
+    openGraph: {
+      url: `/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`,
       title: `ShopValue - ${product.title.split(',')[0]}`,
       description: `ShopValue - ${product.title}`,
-      alternates: {
-        canonical: `/products/${params.id}`,
-        languages:{
-          "ro-RO": `/products/${params.id}`,
-        },
-      },
-      openGraph: {
-        url: `/products/${params.id}`,
-        title: `ShopValue - ${product.title.split(',')[0]}`,
-        description: `ShopValue - ${product.title}`,
-        type: 'website',
-        siteName: 'ShopValue',
-        locale: 'ro_RO',
-        images: [
-          {
-            url: product.image,
-            width: 250,
-            height: 250,
-            alt: product.title,
-          }
-        ],
-      },
-    }
+      type: 'website',
+      siteName: 'ShopValue',
+      locale: 'ro_RO',
+      images: [
+        {
+          url: product.image,
+          width: 250,
+          height: 250,
+          alt: product.title,
+        }
+      ],
+    },
+  }
 }
 
 const formatDate = (date: Date) =>
@@ -61,10 +63,11 @@ const formatDate = (date: Date) =>
     day: 'numeric',
   });
 
-const ProductDetails = async ({ params } : Props) => {
-  const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
-  const PriceTableChart = dynamic(() => import('../../../components/PriceTableChart'))
-  const ProductCard = dynamic(() => import('../../../components/ProductCard'))
+const ProductDetails = async ({ params }: Props) => {
+
+  const ThemedIcon = dynamic(() => import('../../../../../components/ThemedIcon'))
+  const PriceTableChart = dynamic(() => import('../../../../../components/PriceTableChart'))
+  const ProductCard = dynamic(() => import('../../../../../components/ProductCard'))
 
   const [product, similarProducts] = await Promise.all([
     getProductById(params.id) as Promise<Product>,
@@ -116,9 +119,9 @@ const ProductDetails = async ({ params } : Props) => {
               height={75}
               className="absolute ml-1 -mt-"
               priority
-            />          
+            />
           )}
-          <Image 
+          <Image
             src={product.image}
             alt={product.title}
             width={250}
@@ -158,11 +161,11 @@ const ProductDetails = async ({ params } : Props) => {
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-[34px] text-secondary dark:text-white-200 font-bold tracking-wide ">
-                  {<FormatPrices num={product.currentPrice}/>} {product.currency}
+                  {<FormatPrices num={product.currentPrice} />} {product.currency}
                 </p>
                 {product.originalPrice > 0 && (
                   <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
-                    {<FormatPrices num={product.originalPrice}/>} {product.currency}
+                    {<FormatPrices num={product.originalPrice} />} {product.currency}
                   </p>
                 )}
               </div>
@@ -171,7 +174,7 @@ const ProductDetails = async ({ params } : Props) => {
             <div className="flex flex-col">
               <div className="flex gap-3">
                 <div className="product-stars">
-                  <Image 
+                  <Image
                     src="/assets/icons/star.svg"
                     alt="star"
                     width={0}
@@ -185,7 +188,7 @@ const ProductDetails = async ({ params } : Props) => {
                 </div>
 
                 <div className="product-reviews">
-                  <Image 
+                  <Image
                     src="/assets/icons/comment.svg"
                     alt="comment"
                     width={0}
@@ -217,35 +220,35 @@ const ProductDetails = async ({ params } : Props) => {
           </div>
           <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
-              <PriceInfoCard 
+              <PriceInfoCard
                 title="Current Price"
                 iconSrc="/assets/icons/price-tag.svg"
-                value={<FormatPrices num={product.currentPrice}/>}
+                value={<FormatPrices num={product.currentPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />
-              <PriceInfoCard 
+              <PriceInfoCard
                 title="Highest Price"
                 iconSrc="/assets/icons/arrow-up.svg"
-                value={<FormatPrices num={product.highestPrice}/>}
+                value={<FormatPrices num={product.highestPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={highestPriceItem.date}
                 differentPrices={differentPrices}
               />
-              <PriceInfoCard 
+              <PriceInfoCard
                 title="Lowest Price"
                 iconSrc="/assets/icons/arrow-down.svg"
-                value={<FormatPrices num={product.lowestPrice}/>}
+                value={<FormatPrices num={product.lowestPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={lowestPriceItem.date}
                 differentPrices={differentPrices}
               />
-              <PriceInfoCard 
+              <PriceInfoCard
                 title="Average Price"
                 iconSrc="/assets/icons/chart.svg"
-                value={<FormatPrices num={product.averagePrice}/>}
+                value={<FormatPrices num={product.averagePrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />

@@ -1,18 +1,17 @@
 'use client'
 
-import { useState, useEffect, Fragment, FormEvent } from 'react';
+import React, { useState, useEffect, Fragment, FormEvent } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Image from 'next/image';
-import { Product } from '@/types';
-import { getProductByTitle } from '@/lib/actions';
+import { searchProducts } from '@/lib/actions'; // Update the import to the new function
 import ThemedIcon from './ThemedIcon';
-import ProductCard from './ProductCard';
+import { Product } from '@/types';
+import Link from 'next/link';
 
 const SearchModal = () => {
-
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [suggestions, setSuggestions] = useState<any>({});
 
   const debounceDelay = 250;
 
@@ -22,39 +21,24 @@ const SearchModal = () => {
     const fetchData = async () => {
       if (searchInput.length >= 3) {
         try {
-          const productsData = await getProductByTitle(searchInput);
-          
+          const productsData = await searchProducts(searchInput);
           if (productsData) {
-            const products = productsData.map(( item: any ) => ({
-              _id: String(item._id || ''),
-              source: item.source || '',
-              sourceSrc: item.sourceSrc || '',
-              currency: item.currency || 'RON',
-              image: item.image || '',
-              title: item.title || '',
-              currentPrice: Number(item.currentPrice) || 0,
-              originalPrice: Number(item.originalPrice) || 0,
-              category: item.category || '',
-              isOutOfStock: item.isOutOfStock,
-            }));
-            setFilteredProducts(products);
+            setSuggestions(productsData);
           } else {
-            setFilteredProducts([]);
-            console.error("Error fetching products: productsData is undefined");
+            setSuggestions({});
           }
         } catch (error) {
-          console.error("Error fetching products:", error);
+          console.error('Error fetching suggestions:', error);
         }
       } else {
-        setFilteredProducts([]);
+        setSuggestions({});
       }
-    }
+    };
 
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
 
-    // Set a new debounce timer to fetch data after a delay
     debounceTimer = setTimeout(() => {
       if (searchInput !== '') {
         fetchData();
@@ -62,7 +46,6 @@ const SearchModal = () => {
     }, debounceDelay);
 
     return () => {
-      // Clean up by clearing the debounce timer if the component unmounts or the search input changes
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
@@ -73,7 +56,7 @@ const SearchModal = () => {
   const closeModal = () => {
     setIsOpen(false);
     setSearchInput('');
-    setFilteredProducts([]);
+    setSuggestions({});
   };
 
   const handleSearch = (input: string) => {
@@ -85,12 +68,21 @@ const SearchModal = () => {
     closeModal();
   };
 
+  function capitalizeItem(item: string): string {
+    return item
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
   const handleProductCardClick = () => {
     setTimeout(() => {
       closeModal();
     }, 1000);
   };
 
+  const defaultSuggestions = ['Suggestion 1', 'Suggestion 2', 'Suggestion 3', 'Suggestion 4'];
 
   return (
     <>
@@ -127,8 +119,8 @@ const SearchModal = () => {
               <div className='dialog-content'>
                 <div className='flex flex-col'>
                   <div className='flex justify-between items-center gap-5'>
-                    <form 
-                      className='flex flex-col w-full' 
+                    <form
+                      className='flex flex-col w-full'
                       onSubmit={handleSubmit}
                       name='track-product'
                     >
@@ -148,7 +140,7 @@ const SearchModal = () => {
                       </div>
                     </form>
 
-                    <Image 
+                    <Image
                       src="/assets/icons/x-close.svg"
                       alt="close"
                       width={0}
@@ -158,15 +150,46 @@ const SearchModal = () => {
                     />
                   </div>
 
-                  <div className='flex flex-wrap mt-5 xl:gap-x-6 lg:gap-x-9 md:gap-x-28 gap-y-5'>
-                    {filteredProducts.map((product) => (
-                      <div 
-                        key={product._id}
-                        onClick={() => handleProductCardClick()}
-                      >
-                        <ProductCard product={product} />
+                  <div className='mt-3 space-y-4 dark:text-white'>
+                    <h3>Sugestii de cautare:</h3>
+                    {defaultSuggestions.map((suggestion, index) => (
+                      <div className='py-2 rounded-md' key={index}>
+                        <ul>
+                          <li className='py-2 hover:scale-105' onClick={handleProductCardClick}>
+                            {capitalizeItem(suggestion)}
+                            {defaultSuggestions.length > 1 && <hr />}
+                          </li>
+                        </ul>
                       </div>
                     ))}
+                    {suggestions.brands && suggestions.brands.length > 0 && (
+                      <div className='py-2 rounded-md'>
+                        <ul>
+                          {suggestions.brands.map((brand: string, index: number) => (
+                            <Link href={`/produse/${brand}`} key={index}>
+                              <li className='py-2 hover:scale-105' onClick={handleProductCardClick}>
+                                {capitalizeItem(brand)}
+                                {suggestions.brands.length > 1 && <hr />}
+                              </li>
+                            </Link>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {suggestions.brandModelObjects && suggestions.brandModelObjects.length > 0 && (
+                      <div className='py-2 rounded-md'>
+                        <ul>
+                          {suggestions.brandModelObjects.map((item: any, index: number) => (
+                            <Link href={`/produse/${item.brand}/${item.model.replace(/ /g, '-')}`} key={index}>
+                              <li className='py-2 hover:scale-105' onClick={handleProductCardClick}>
+                                {item.model}
+                                {suggestions.brandModelObjects.length > 1 && <hr />}
+                              </li>
+                            </Link>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -44,7 +44,7 @@ import { User } from '@/types';
 //       { upsert: true, new: true }
 //     );
 
-//     revalidatePath(`/products/${newProduct._id}`);
+//     revalidatePath(`/produse/${newProduct._id}`);
 //   } catch (error: any) {
 //     throw new Error(`Failed to create/update product: ${error.message}`);
 //   }
@@ -91,7 +91,11 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
       { upsert: true, new: true }
     );
 
-    revalidatePath(`/products/${newProduct._id}`);
+    revalidatePath(
+      `/produse/${newProduct.brand}/${newProduct.model.replace(/ /g, '-')}/${
+        newProduct._id
+      }`
+    );
   } catch (error: any) {
     throw new Error(`Failed to create/update product: ${error.message}`);
   }
@@ -120,12 +124,85 @@ export async function getProductByTitle(productTitle: string) {
       title: { $regex: searchRegex },
     })
       .select(
-        'title image sourceSrc source category isOutOfStock originalPrice currentPrice currency'
+        'title image sourceSrc source category brand model isOutOfStock originalPrice currentPrice currency'
       )
       .lean()
       .limit(8); // Convert Mongoose documents to plain JavaScript objects
 
     return JSON.parse(JSON.stringify(products));
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getProductByBrand(productBrand: string) {
+  try {
+    connectToDB();
+    const searchRegex = new RegExp(productBrand, 'i');
+
+    const products = await Product.find({
+      brand: { $regex: searchRegex },
+    })
+      .select(
+        'title image sourceSrc source category brand model isOutOfStock originalPrice currentPrice currency'
+      )
+      .lean();
+
+    return JSON.parse(JSON.stringify(products));
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getProductByModel(productModel: string) {
+  try {
+    connectToDB();
+    const searchRegex = new RegExp(productModel, 'i');
+
+    const products = await Product.find({
+      model: { $regex: searchRegex },
+    })
+      .select(
+        'title image sourceSrc source category brand model isOutOfStock originalPrice currentPrice currency'
+      )
+      .lean();
+
+    console.log('products: ', products);
+
+    return JSON.parse(JSON.stringify(products));
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function searchProducts(searchTerm: string) {
+  try {
+    connectToDB();
+    const searchRegex = new RegExp(searchTerm, 'i');
+
+    const brands = await Product.distinct('brand', {
+      brand: { $regex: searchRegex },
+    });
+
+    const models = await Product.distinct('model', {
+      model: { $regex: searchRegex },
+    });
+
+    // Initialize an array to store the brand-model objects
+    const brandModelObjects = [];
+
+    // Iterate through the unique models and find the corresponding brands
+    for (const model of models) {
+      // Use the find method to get the brand for each model
+      const brand = await Product.findOne({ model: model });
+
+      if (brand) {
+        // Create an object that contains both brand and model
+        brandModelObjects.push({ brand: brand.brand, model: model });
+      }
+    }
+
+    return { brands, brandModelObjects };
   } catch (error) {
     console.log(error);
   }
@@ -153,7 +230,7 @@ export async function getSimilarProducts(productId: string) {
 
     const similarProducts = await Product.find({
       _id: { $ne: productId },
-      biggerCategory: currentProduct.biggerCategory,
+      brand: currentProduct.brand,
     }).limit(4);
 
     return similarProducts;
