@@ -13,7 +13,6 @@ export type Product = {
   model: string;
   url: string;
   source: string;
-  sourceSrc: string;
   currency: string;
   image: string;
   title: string;
@@ -47,4 +46,6 @@ export type EmailContent = {
 export type EmailProductInfo = {
   title: string;
   url: string;
+  image?: string;
+  source?: string;
 };

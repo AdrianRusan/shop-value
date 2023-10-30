@@ -21,14 +21,7 @@ const ProductCard = ({ product }: Props) => {
             height={200}
             className="product-card_img"
           />
-          {product.source === 'emag' ? (
-            <Image
-              src={product.sourceSrc}
-              alt={product.source}
-              width={50}
-              height={50}
-            />
-          ) : (
+          {product.source === 'flip' && (
             <Image
               src={flipURL}
               alt={product.source}

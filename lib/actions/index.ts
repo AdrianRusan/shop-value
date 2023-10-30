@@ -82,7 +82,7 @@ export async function getProductByTitle(productTitle: string) {
       title: { $regex: searchRegex },
     })
       .select(
-        'title image sourceSrc source category brand model isOutOfStock originalPrice currentPrice currency'
+        'title image source category brand model isOutOfStock originalPrice currentPrice currency'
       )
       .lean()
       .limit(8); // Convert Mongoose documents to plain JavaScript objects
@@ -102,7 +102,7 @@ export async function getProductByBrand(productBrand: string) {
       brand: { $regex: searchRegex },
     })
       .select(
-        'title image sourceSrc source category brand model isOutOfStock originalPrice currentPrice currency'
+        'title image source category brand model isOutOfStock originalPrice currentPrice currency'
       )
       .lean();
 
@@ -121,7 +121,7 @@ export async function getProductByModel(productModel: string) {
       model: { $regex: searchRegex },
     })
       .select(
-        'title image sourceSrc source category brand model isOutOfStock originalPrice currentPrice currency'
+        'title image source category brand model isOutOfStock originalPrice currentPrice currency'
       )
       .lean();
 
