@@ -146,7 +146,7 @@ const SearchModal = () => {
     <>
       <button onClick={openModal} className='searchbar-top gap-2 text-[#415985] dark:text-[#A7B5B9]'>
         <ThemedIcon alt='search' />
-        Product Search...
+        Caută produsul dorit...
       </button>
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog as='div' onClose={closeModal} className='dialog-container'>
@@ -186,7 +186,7 @@ const SearchModal = () => {
                           id='search-input'
                           value={searchInput}
                           onChange={e => handleSearch(e.target.value)}
-                          placeholder='Search products...'
+                          placeholder='Caută...'
                           className='dark:bg-slate-800 dialog-input dark:text-white-200'
                           autoComplete='on'
                         />
@@ -203,7 +203,7 @@ const SearchModal = () => {
                   </div>
 
                   <div className='mt-3 space-y-4 dark:text-white'>
-                    <h3>Sugestii de cautare:</h3>
+                    <h3>Sugestii de Căutare:</h3>
                     {!suggestions.brandModelObjects ? renderDefaultSuggestions() : null}
                     {suggestions.brands && suggestions.brands.length > 0
                       ? renderBrandSuggestions(suggestions.brands[0])

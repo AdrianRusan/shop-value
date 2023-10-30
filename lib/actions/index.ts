@@ -167,8 +167,6 @@ export async function getProductByModel(productModel: string) {
       )
       .lean();
 
-    console.log('products: ', products);
-
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
     console.log(error);
@@ -177,42 +175,46 @@ export async function getProductByModel(productModel: string) {
 
 export async function searchProducts(searchTerm: string) {
   try {
-    connectToDB();
-    const searchRegex = new RegExp(searchTerm, 'i');
+    connectToDB(); // Assuming this is your database connection setup
+
+    const searchTerms = searchTerm.split(' ');
 
     const brands = await Product.distinct('brand', {
-      brand: { $regex: searchRegex },
+      brand: { $regex: new RegExp(searchTerms.join('|'), 'i') }, // Match the brand with any search term.
     });
 
-    const models = await Product.distinct('model', {
-      model: { $regex: searchRegex },
-    });
+    const orConditions = searchTerms.map((term) => ({
+      model: { $regex: new RegExp(term, 'i') },
+    }));
 
-    // Initialize an array to store the brand-model objects
-    const brandModelObjects = [];
+    const models = await Product.find(
+      {
+        $or: orConditions,
+      },
+      'brand model -_id'
+    ).limit(4);
 
-    // Iterate through the unique models and find the corresponding brands
-    for (const model of models) {
-      // Use the find method to get the brand for each model
-      const brand = await Product.findOne({ model: model });
-
-      if (brand) {
-        // Create an object that contains both brand and model
-        brandModelObjects.push({ brand: brand.brand, model: model });
-      }
-    }
+    const brandModelObjects = models.map((product) => ({
+      brand: product.brand,
+      model: product.model,
+    }));
 
     // Get the top 4 most searched products
     const topSearchedProducts = await Product.find(
-      { model: { $regex: searchRegex } },
-      'model brand -_id' // Include 'brand' in the projection
+      {
+        model: { $regex: new RegExp(searchTerms.join('|'), 'i') }, // Match the model with any search term.
+      },
+      'model brand -_id'
     )
       .limit(4)
-      .sort({ hits: -1 });
+      .sort({ hits: -1 })
+      .lean();
 
     return { brands, brandModelObjects, topSearchedProducts };
   } catch (error) {
-    console.log(error);
+    // Handle errors appropriately, such as logging or returning an error response.
+    console.error('An error occurred:', error);
+    throw error; // Re-throw the error to be handled at a higher level if needed.
   }
 }
 

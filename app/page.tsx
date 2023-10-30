@@ -22,7 +22,7 @@ const Home = async () => {
         <div className="flex max-lg:flex-col gap-16">
           <div className="flex flex-col justify-center py-7 gap-y-5 md:py-20 md:gap-y-8 lg:gap-y-0">
             <p className="small-text w-auto h-auto">
-              Smart Shopping Starts Here
+              Cumpărăturile Inteligente Încep Aici
               <Image 
                 src="/assets/icons/arrow-right.svg"
                 alt="arrow-right"
@@ -33,11 +33,11 @@ const Home = async () => {
               />
             </p>
             <h1 className="head-text dark:text-white-200">
-              Unleash the Power of
+              Orice preț, oricând, oriunde -
               <span className="text-primary"> ShopValue</span>
             </h1>
             <p className="mt-6 dark:text-white-200">
-              Powerful, self-serve product and growth analytics to help you convert, engage, and retain more.
+              Descoperă Tendințele de Prețuri pentru Produsele de pe Flip.
             </p>
 
             <Searchbar />
@@ -49,7 +49,7 @@ const Home = async () => {
       
       {sortedProducts && sortedProducts?.length > 0 && (
         <section className="trending-section ">
-          <h2 className="section-text">Trending</h2>
+          <h2 className="section-text">Produse Populare</h2>
 
           <div className={`flex flex-wrap gap-x-8 md:gap-x-24 lg:gap-x-7 xl:gap-x-16 gap-y-16 justify-start`}>
           {sortedProducts.map((product) => (

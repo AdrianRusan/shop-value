@@ -87,25 +87,29 @@ const Searchbar = () => {
 
   return (
     <form
-      className="flex flex-wrap gap-4 mt-12 max-sm:flex-col"
+      className="flex flex-col mt-12 "
       onSubmit={handleSubmit}
     >
-      <input
-        type="text"
-        placeholder="Enter product link"
-        className="searchbar-input dark:text-white-200"
-        value={searchPrompt}
-        onChange={(e) => setSearchPrompt(e.target.value)}
-        name="searchbar-input"
-      />
+      <label className='dark:text-white text-sm'>Nu găsești produsul?</label>
+      <div className='flex flex-wrap gap-4 mt-1 max-sm:flex-col'>
+        <input
+          type="text"
+          aria-label='sadasd'
+          placeholder="Introduceți link-ul produsului de pe Flip aici..."
+          className="searchbar-input dark:text-white-200"
+          value={searchPrompt}
+          onChange={(e) => setSearchPrompt(e.target.value)}
+          name="searchbar-input"
+        />
 
-      <button
-        type="submit"
-        className="searchbar-btn"
-        disabled={searchPrompt === ''}
-      >
-        {isLoading ? 'Searching...' : 'Search'}
-      </button>
+        <button
+          type="submit"
+          className="searchbar-btn"
+          disabled={searchPrompt === ''}
+        >
+          {isLoading ? 'Căutare...' : 'Caută'}
+        </button>
+      </div>
     </form>
   );
 };
