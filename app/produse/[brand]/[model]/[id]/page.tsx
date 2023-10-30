@@ -145,7 +145,7 @@ const ProductDetails = async ({ params }: Props) => {
                   className="text-base text-black dark:text-white-200 opacity-75"
                   rel="preload"
                 >
-                  Visit Product
+                  Vezi Produsul
                 </Link>
 
                 <ShareModal />
@@ -183,7 +183,7 @@ const ProductDetails = async ({ params }: Props) => {
                     priority
                   />
                   <p className="text-sm text-secondary font-semibold">
-                    {product.stars.toFixed(2)} stars
+                    {product.stars.toFixed(2)}
                   </p>
                 </div>
 
@@ -201,7 +201,7 @@ const ProductDetails = async ({ params }: Props) => {
                       href={`${product.url}#shop-reviews`}
                       target="_blank"
                     >
-                      {product.reviewsCount} Review{product.reviewsCount > 1 ? 's' : ''}
+                      {product.reviewsCount} Review{product.reviewsCount > 1 ? '-uri' : ''}
                     </Link>
                   </button>
                 </div>
@@ -216,19 +216,19 @@ const ProductDetails = async ({ params }: Props) => {
           </div>
 
           <div className="text-lg font-bold text-secondary dark:text-white-200 pt-2 text-center">
-            Tracked since: {formatDate(filteredPriceHistory[0].date)}
+            Evidență ținută din: {formatDate(filteredPriceHistory[0].date)}
           </div>
           <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
               <PriceInfoCard
-                title="Current Price"
+                title="Prețul Actual"
                 iconSrc="/assets/icons/price-tag.svg"
                 value={<FormatPrices num={product.currentPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />
               <PriceInfoCard
-                title="Highest Price"
+                title="Cel mai Mare Preț"
                 iconSrc="/assets/icons/arrow-up.svg"
                 value={<FormatPrices num={product.highestPrice} />}
                 currency={product.currency}
@@ -237,7 +237,7 @@ const ProductDetails = async ({ params }: Props) => {
                 differentPrices={differentPrices}
               />
               <PriceInfoCard
-                title="Lowest Price"
+                title="Cel mai Mic Preț"
                 iconSrc="/assets/icons/arrow-down.svg"
                 value={<FormatPrices num={product.lowestPrice} />}
                 currency={product.currency}
@@ -246,7 +246,7 @@ const ProductDetails = async ({ params }: Props) => {
                 differentPrices={differentPrices}
               />
               <PriceInfoCard
-                title="Average Price"
+                title="Media Prețurilor"
                 iconSrc="/assets/icons/chart.svg"
                 value={<FormatPrices num={product.averagePrice} />}
                 currency={product.currency}
@@ -271,21 +271,21 @@ const ProductDetails = async ({ params }: Props) => {
             target="_blank"
             className="text-base text-white dark:text-black"
           >
-            Buy Now
+            Cumpără Acum
           </Link>
         </button>
       </div>
 
       {filteredPriceHistory.length > 0 && (
         <div className="my-7">
-          <p className="section-text">Price History</p>
+          <p className="section-text">Istoricul Prețurilor</p>
           <PriceTableChart priceHistory={filteredPriceHistory} />
         </div>
       )}
 
       {sortedProducts && sortedProducts.length > 0 && (
         <div className="py-14 flex flex-col gap-2 w-full">
-          <p className="section-text">Similar Products</p>
+          <p className="section-text">Produse Similare</p>
 
           <div className="flex flex-wrap gap-8 mt-7 w-full">
             {sortedProducts.map((product) => (
