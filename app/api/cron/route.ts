@@ -30,11 +30,6 @@ export async function GET(request: Request) {
 
         let scrapedProduct;
 
-        // Not Valid
-        // if (currentProduct.source === 'emag') {
-        //   scrapedProduct = await scrapeEmagProduct(currentProduct.url);
-        // }
-
         if (currentProduct.source === 'flip') {
           scrapedProduct = await scrapeFlipProduct(currentProduct.url);
         }

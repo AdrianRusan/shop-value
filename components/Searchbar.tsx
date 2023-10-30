@@ -3,29 +3,6 @@
 import { scrapeAndScoreProductFlip  } from '@/lib/actions';
 import { FormEvent, useState } from 'react';
 
-//  Not Valid
-// const isValidEmagProductURL = (url: string) => {
-//   try {
-//     const parsedURL = new URL(url);
-//     const hostname = parsedURL.hostname;
-
-//     if (
-//       (hostname.includes('emag.ro') ||
-//         hostname.includes('emag.bg') ||
-//         hostname.includes('emag.hu') ||
-//         hostname.includes('emag.net') ||
-//         hostname.endsWith('emag'))
-//     ) {
-//       return {
-//         isValid: true,
-//         source: 'emag',
-//       };
-//     }
-//   } catch (error) {
-//     return false;
-//   }
-// };
-
 const isValidFlipProductURL = (url: string) => {
   try {
     const parsedURL = new URL(url);
@@ -51,28 +28,14 @@ const Searchbar = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    //  Not Valid
-    // const emagLink = isValidEmagProductURL(searchPrompt);
     const flipLink = isValidFlipProductURL(searchPrompt);
     
-    //  Not Valid
-    // if (!emagLink && !flipLink) {
-    //   return alert('Please provide a valid link.');
-    // }
-
     if (!flipLink) {
       return alert('Please provide a valid link.');
     }
 
     try {
       setIsLoading(true);
-      
-      // Not Valid
-      // if (emagLink) {
-      //   const product = await scrapeAndScoreProductEmag(searchPrompt);
-      // } else if (flipLink) {
-      //   const product = await scrapeAndScoreProductFlip(searchPrompt);
-      // }
 
       if (flipLink) {
         const product = await scrapeAndScoreProductFlip(searchPrompt);
