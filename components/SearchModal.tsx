@@ -100,7 +100,7 @@ const SearchModal = () => {
   const handleProductCardClick = () => {
     setTimeout(() => {
       closeModal();
-    }, 1000);
+    }, 500);
   };
 
   const renderDefaultSuggestions = () => (
