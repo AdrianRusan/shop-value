@@ -12,11 +12,11 @@ const Home = async () => {
 
   if (allProducts && allProducts?.length > 0) {
     sortedProducts = allProducts
-      .sort((a, b) => b.priceHistory[b.priceHistory.length - 1].date - a.priceHistory[a.priceHistory.length - 1].date)
+      .sort((a, b) => b.priceHistory.length - a.priceHistory[a.priceHistory.length - 1].date)
       .slice(0, Math.min(12, allProducts.length));
   }
 
-  const dateOptions = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric' };
+  const dateOptions = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'Europe/Bucharest' };
 
   return (
     <>       

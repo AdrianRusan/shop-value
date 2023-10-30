@@ -117,7 +117,7 @@ const ProductDetails = async ({ params }: Props) => {
               alt={product.source}
               width={75}
               height={75}
-              className="absolute ml-1 -mt-"
+              className="absolute ml-1"
               priority
             />
           )}
