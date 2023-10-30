@@ -102,12 +102,13 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
                     : 'dark:text-white text-black';
 
                 // Add a class for the first row to make the font bold
-                const isFirstRow = index === 0 ? 'font-bold' : '';
+                const firstLastRowStyle = (index === 0 || index === filteredPriceHistory.length - 1)  && 'font-bold';
+                const firstLastRowText = (index === 0)  ? '- Initial Price' : ((index === filteredPriceHistory.length - 1)) ? '- Last Price' : '';
 
                 return (
-                  <tr className={`dark:bg-secondary ${textColorClass} ${isFirstRow}`} key={index}>
-                    <td className="py-2 px-4 border">{data.date.toLocaleString()}</td>
-                    <td className="py-2 px-4 border">{data.price} RON</td>
+                  <tr className={`dark:bg-secondary ${textColorClass} ${firstLastRowStyle}`} key={index}>
+                    <td className="py-2 px-4 border">{data.date.toLocaleString()} </td>
+                    <td className="py-2 px-4 border">{data.price} RON {firstLastRowText} </td>
                   </tr>
                 );
               })}
