@@ -202,7 +202,15 @@ export async function searchProducts(searchTerm: string) {
       }
     }
 
-    return { brands, brandModelObjects };
+    // Get the top 4 most searched products
+    const topSearchedProducts = await Product.find(
+      { model: { $regex: searchRegex } },
+      'model brand -_id' // Include 'brand' in the projection
+    )
+      .limit(4)
+      .sort({ hits: -1 });
+
+    return { brands, brandModelObjects, topSearchedProducts };
   } catch (error) {
     console.log(error);
   }
