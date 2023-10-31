@@ -37,7 +37,7 @@ const Navbar = () => {
         
         <Link
           href={'/produse'}
-          className="text-base text-black dark:text-white-200 hover:scale-110"
+          className="text-base text-black dark:text-white-200 hover:scale-110 font-bold"
           rel="preload"
         >
           Produse
