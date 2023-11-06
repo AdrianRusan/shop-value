@@ -20,9 +20,9 @@ const Home = async () => {
 
   return (
     <>
-      <section className="px-6 md:px-20 py-5  ">
-        <div className="flex max-lg:flex-col gap-16">
-          <div className="flex flex-col justify-center py-7 gap-y-5 md:py-20 md:gap-y-8 lg:gap-y-0">
+      <section className="px-6 md:px-20 min-h-[calc(100vh-167.5px)] md:min-h-[calc(100vh-72px)] flex items-center justify-center">
+        <div className="flex max-lg:flex-col">
+          <div className="flex flex-col justify-center gap-y-5 md:py-20 md:gap-y-8 lg:gap-y-0 xl:w-1/2">
             <p className="small-text w-auto h-auto">
               Cumpărăturile Inteligente Încep Aici
               <Image

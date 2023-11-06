@@ -31,7 +31,7 @@
   }
 
   .hero-carousel {
-    @apply relative sm:px-10 py-5 sm:pt-20 pb-10 max-w-[560px] h-[700px] w-full bg-[#F2F4F7] rounded-[30px] sm:mx-auto;
+    @apply relative sm:px-10 max-w-[560px] h-[700px] w-full bg-[#F2F4F7] rounded-[30px] sm:mx-auto;
   }
 
   .carousel {
@@ -51,7 +51,7 @@
   }
 
   .trending-section {
-    @apply flex flex-col gap-10 px-10 lg:px-10 lg:py-24 py-10 dark:text-white-200;
+    @apply flex flex-col gap-10 px-10 lg:px-10 lg:py-24 dark:text-white-200;
   }
 
   /* PRODUCT DETAILS PAGE STYLES */
