@@ -1,31 +1,22 @@
 import HeroCarousel from "@/components/HeroCarousel"
 import Searchbar from "@/components/Searchbar"
+import TrendingSection from "@/components/TrendingSection"
 import Image from "next/image"
-import { getAllProducts } from "@/lib/actions"
-import ProductCard from "@/components/ProductCard"
+import dynamic from "next/dynamic";
+
 
 const Home = async () => {
 
-  const allProducts = await getAllProducts();
-
-  let sortedProducts = [];
-
-  if (allProducts && allProducts?.length > 0) {
-    sortedProducts = allProducts
-      .sort((a, b) => b.priceHistory.length - a.priceHistory[a.priceHistory.length - 1].date)
-      .slice(0, Math.min(12, allProducts.length));
-  }
-
-  const dateOptions = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'Europe/Bucharest' };
+  const TrendingSection = dynamic(() => import('../components/TrendingSection'))
 
   return (
-    <>       
+    <>
       <section className="px-6 md:px-20 py-5  ">
         <div className="flex max-lg:flex-col gap-16">
           <div className="flex flex-col justify-center py-7 gap-y-5 md:py-20 md:gap-y-8 lg:gap-y-0">
             <p className="small-text w-auto h-auto">
               Cumpărăturile Inteligente Încep Aici
-              <Image 
+              <Image
                 src="/assets/icons/arrow-right.svg"
                 alt="arrow-right"
                 width={0}
@@ -48,21 +39,8 @@ const Home = async () => {
           <HeroCarousel />
         </div>
       </section>
-      
-      {sortedProducts && sortedProducts?.length > 0 && (
-        <section className="trending-section ">
-          <h2 className="section-text">Ultimele Căutări</h2>
 
-          <div className={`flex flex-wrap gap-x-8 md:gap-x-24 lg:gap-x-7 xl:gap-x-16 gap-y-16 justify-start`}>
-          {sortedProducts.map((product) => (
-            <div key={product._id} className="flex flex-col">
-              <p >{product.priceHistory[product.priceHistory.length - 1].date.toLocaleString('ro-RO', dateOptions)}</p>
-              <ProductCard product={product} />
-            </div>
-          ))}
-          </div>
-        </section>
-      )}
+      <TrendingSection />
     </>
   )
 }
