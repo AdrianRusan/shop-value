@@ -33,7 +33,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
           labels: filteredPriceHistory.map((data) => data.date),
           datasets: [
             {
-              label: 'Price over Time',
+              label: 'Prețul de-a Lungul Timpului',
               data: filteredPriceHistory.map((data) => data.price),
               borderColor: 'rgba(75, 192, 192, 1)',
               borderWidth: 2,
@@ -71,7 +71,7 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
   return (
     <>
       <button onClick={toggleView} className="btn-small w-fit mx-auto gap-3 min-w-[200px] mt-2 mb-5 max-sm:hidden">
-        {viewMode === 'chart' ? 'Switch to Table View' : 'Switch to Chart View'}
+        {viewMode === 'chart' ? 'Vizualizează Tabelul' : 'Vizualizează Graficul'}
       </button>
       {viewMode === 'chart' && (
         <div className="relative w-auto h-auto max-md:h-full">
@@ -83,8 +83,8 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="dark:text-secondary">
-                <th className="bg-gray-200 text-left py-2 px-4 border">Date</th>
-                <th className="bg-gray-200 text-left py-2 px-4 border">Price</th>
+                <th className="bg-gray-200 text-left py-2 px-4 border">Dată</th>
+                <th className="bg-gray-200 text-left py-2 px-4 border">Preț</th>
               </tr>
             </thead>
             <tbody>
@@ -102,12 +102,13 @@ const PriceTableChart: React.FC<PriceTableChartProps> = ({ priceHistory }) => {
                     : 'dark:text-white text-black';
 
                 // Add a class for the first row to make the font bold
-                const isFirstRow = index === 0 ? 'font-bold' : '';
+                const firstLastRowStyle = (index === 0 || index === filteredPriceHistory.length - 1)  && 'font-bold';
+                const firstLastRowText = (index === 0)  ? '- Initial Price' : ((index === filteredPriceHistory.length - 1)) ? '- Last Price' : '';
 
                 return (
-                  <tr className={`dark:bg-secondary ${textColorClass} ${isFirstRow}`} key={index}>
-                    <td className="py-2 px-4 border">{data.date.toLocaleString()}</td>
-                    <td className="py-2 px-4 border">{data.price} RON</td>
+                  <tr className={`dark:bg-secondary ${textColorClass} ${firstLastRowStyle}`} key={index}>
+                    <td className="py-2 px-4 border">{data.date.toLocaleString()} </td>
+                    <td className="py-2 px-4 border">{data.price} RON {firstLastRowText} </td>
                   </tr>
                 );
               })}

@@ -9,39 +9,6 @@ const Notification = {
 
 const THRESHOLD_PERCENTAGE = 10;
 
-export function extractPricesEmag($: any) {
-  let originalPriceString = $('p.rrp-lp30d span:nth-child(2)')
-    .text()
-    .trim()
-    .replace(/\D/g, '');
-
-  let originalPrice, currentPriceString, currentPrice;
-
-  if (originalPriceString.length > 0) {
-    originalPrice = originalPriceString.slice(
-      0,
-      originalPriceString.length / 2
-    );
-    currentPriceString = $('p.product-new-price.has-deal')
-      .text()
-      .trim()
-      .replace(/\D/g, '');
-  } else {
-    (originalPrice = 0),
-      (currentPriceString = $('.pricing-block p.product-new-price')
-        .text()
-        .trim()
-        .replace(/\D/g, ''));
-  }
-
-  currentPrice = currentPriceString.slice(0, currentPriceString.length / 2);
-
-  return {
-    originalPrice: Number(originalPrice) / 100 || 0,
-    currentPrice: Number(currentPrice) / 100 || 0,
-  };
-}
-
 export function extractPricesFlip($: any) {
   let originalPrice = $('.previous-price.position-relative')
     .text()
@@ -57,47 +24,6 @@ export function extractPricesFlip($: any) {
     originalPrice: Number(originalPrice) / 100 || 0,
     currentPrice: Number(currentPrice) / 100 || 0,
   };
-}
-
-export function formatDescriptionEmag($: any): string {
-  const descriptionContainer = $('#description-body');
-
-  let description = '';
-
-  descriptionContainer.children().each((index: any, element: any) => {
-    const elementType = element.name;
-    if (elementType === 'ul') {
-      description += `${$(element).text().trim()}\n`;
-
-      const children = $(element).children();
-      children.each((childIndex: any, childElement: any) => {
-        const childType = childElement.name;
-        if (childType === 'li') {
-          description += ` - ${$(childElement).text().trim()}\n`;
-        }
-      });
-    } else if (elementType === 'table') {
-      const table = $(element);
-      table.children().each((rowIndex: any, rowElement: any) => {
-        const row = $(rowElement);
-        row.children().each((colIndex: any, colElement: any) => {
-          const column = $(colElement);
-          column.children().each((cellIndex: any, cellElement: any) => {
-            const cellType = cellElement.name;
-            if (cellType === 'td') {
-              description += `${$(cellElement).text().trim()}\n`;
-            }
-          });
-        });
-      });
-    } else {
-      description += `${$(element).text().trim()}\n`;
-    }
-  });
-
-  description = description.trim();
-
-  return description;
 }
 
 export function formatDescriptionFlip($: any): string {

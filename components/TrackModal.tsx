@@ -31,7 +31,7 @@ const TrackModal = ({ productId }: Props) => {
   return (
     <>
       <button type="button" className="btn" onClick={openModal}>
-        Track
+        Urmărește
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
@@ -83,16 +83,16 @@ const TrackModal = ({ productId }: Props) => {
                   </div>
 
                   <h4 className='dialog-head_text'>
-                    Stay updated with product pricing alerts right in your inbox.
+                    Rămâneți la curent cu alertele privind prețurile produselor direct pe e-mail.
                   </h4>
-                  <p className='text-sm text-gray-600 mt-2 dark:text-white-200'>Never miss a bargain again with our timely alerts!</p>
+                  <p className='text-sm text-gray-600 mt-2 dark:text-white-200'>Nu veți mai rata niciodată o ofertă cu alertele noastre!</p>
                   <form 
                     className='flex flex-col mt-5' 
                     onSubmit={handleSubmit}
                     name='track-product '
                   >
                     <label htmlFor='email' className='text-sm font-medium text-gray-700 dark:text-gray-500'>
-                      Email address
+                      Adresă de e-mail
                     </label>
                     <div className='dialog-input_container'>
                       <Image 
@@ -108,13 +108,13 @@ const TrackModal = ({ productId }: Props) => {
                         id="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder='Enter your email address'
+                        placeholder='Introduceți adresa dumneavoastră de e-mail'
                         className='dark:bg-slate-800 dialog-input max-sm:w-[98%]'
                         autoComplete='on'
                       />
                     </div>
                     <button type="submit" className='w-full mt-5 py-2 px-4 bg-secondary dark:bg-white-200 font-bold hover:bg-opacity-70 rounded-2xl text-white-200 dark:text-secondary text-lg;'>
-                      {isSubmitting ? 'Submitting...' : 'Track'}
+                      {isSubmitting ? 'Se creează alertele...' : 'Urmărește Produsul'}
                     </button>
                   </form>
                 </div>

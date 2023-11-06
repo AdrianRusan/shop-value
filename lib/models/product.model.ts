@@ -4,7 +4,6 @@ const productSchema = new mongoose.Schema(
   {
     url: { type: String, required: true, unique: true },
     source: { type: String, required: true },
-    sourceSrc: { type: String, required: true },
     currency: { type: String, required: true },
     image: { type: String, required: true },
     title: { type: String, required: true },
@@ -24,7 +23,8 @@ const productSchema = new mongoose.Schema(
     recommendedProduct: { type: String },
     stars: { type: Number },
     category: { type: String },
-    biggerCategory: { type: String },
+    brand: { type: String },
+    model: { type: String },
     reviewsCount: { type: Number },
     isOutOfStock: { type: Boolean, default: false },
     users: [{ email: { type: String, required: true } }],

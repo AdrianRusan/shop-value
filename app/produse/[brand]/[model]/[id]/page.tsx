@@ -15,43 +15,45 @@ import { Metadata } from "next";
 
 type Props = {
   params: {
+    brand: string,
+    model: string,
     id: string
   }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product: Product = await getProductById(params.id);
-    if (!product) return {
-      title: "Produsul nu a fost gasit.",
-      description: "Produsul nu a fost gasit."
-    }
+  if (!product) return {
+    title: "Produsul nu a fost gasit.",
+    description: "Produsul nu a fost gasit."
+  }
 
-    return {
+  return {
+    title: `ShopValue - ${product.title.split(',')[0]}`,
+    description: `ShopValue - ${product.title}`,
+    alternates: {
+      canonical: `/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`,
+      languages: {
+        "ro-RO": `/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`,
+      },
+    },
+    openGraph: {
+      url: `/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`,
       title: `ShopValue - ${product.title.split(',')[0]}`,
       description: `ShopValue - ${product.title}`,
-      alternates: {
-        canonical: `/products/${params.id}`,
-        languages:{
-          "ro-RO": `/products/${params.id}`,
-        },
-      },
-      openGraph: {
-        url: `/products/${params.id}`,
-        title: `ShopValue - ${product.title.split(',')[0]}`,
-        description: `ShopValue - ${product.title}`,
-        type: 'website',
-        siteName: 'ShopValue',
-        locale: 'ro_RO',
-        images: [
-          {
-            url: product.image,
-            width: 250,
-            height: 250,
-            alt: product.title,
-          }
-        ],
-      },
-    }
+      type: 'website',
+      siteName: 'ShopValue',
+      locale: 'ro_RO',
+      images: [
+        {
+          url: product.image,
+          width: 250,
+          height: 250,
+          alt: product.title,
+        }
+      ],
+    },
+  }
 }
 
 const formatDate = (date: Date) =>
@@ -61,10 +63,11 @@ const formatDate = (date: Date) =>
     day: 'numeric',
   });
 
-const ProductDetails = async ({ params } : Props) => {
-  const ThemedIcon = dynamic(() => import('../../../components/ThemedIcon'))
-  const PriceTableChart = dynamic(() => import('../../../components/PriceTableChart'))
-  const ProductCard = dynamic(() => import('../../../components/ProductCard'))
+const ProductDetails = async ({ params }: Props) => {
+
+  const ThemedIcon = dynamic(() => import('../../../../../components/ThemedIcon'))
+  const PriceTableChart = dynamic(() => import('../../../../../components/PriceTableChart'))
+  const ProductCard = dynamic(() => import('../../../../../components/ProductCard'))
 
   const [product, similarProducts] = await Promise.all([
     getProductById(params.id) as Promise<Product>,
@@ -98,27 +101,18 @@ const ProductDetails = async ({ params } : Props) => {
   return (
     <div className="product-container">
       <div className="flex gap-28 xl:flex-row flex-col">
-        <div className="product-image">
-          {product.source === 'emag' ? (
-            <Image
-              src={product.sourceSrc}
-              alt={product.source}
-              width={75}
-              height={75}
-              className="absolute"
-              priority
-            />
-          ) : (
+        <div className="product-image xl:mb-24">
+          {product.source === 'flip' && (
             <Image
               src={flipURL}
               alt={product.source}
               width={75}
               height={75}
-              className="absolute ml-1 -mt-"
+              className="absolute ml-1"
               priority
-            />          
+            />
           )}
-          <Image 
+          <Image
             src={product.image}
             alt={product.title}
             width={250}
@@ -142,7 +136,7 @@ const ProductDetails = async ({ params } : Props) => {
                   className="text-base text-black dark:text-white-200 opacity-75"
                   rel="preload"
                 >
-                  Visit Product
+                  Vezi Produsul
                 </Link>
 
                 <ShareModal />
@@ -158,11 +152,11 @@ const ProductDetails = async ({ params } : Props) => {
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-[34px] text-secondary dark:text-white-200 font-bold tracking-wide ">
-                  {<FormatPrices num={product.currentPrice}/>} {product.currency}
+                  {<FormatPrices num={product.currentPrice} />} {product.currency}
                 </p>
                 {product.originalPrice > 0 && (
                   <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
-                    {<FormatPrices num={product.originalPrice}/>} {product.currency}
+                    {<FormatPrices num={product.originalPrice} />} {product.currency}
                   </p>
                 )}
               </div>
@@ -171,7 +165,7 @@ const ProductDetails = async ({ params } : Props) => {
             <div className="flex flex-col">
               <div className="flex gap-3">
                 <div className="product-stars">
-                  <Image 
+                  <Image
                     src="/assets/icons/star.svg"
                     alt="star"
                     width={0}
@@ -180,12 +174,12 @@ const ProductDetails = async ({ params } : Props) => {
                     priority
                   />
                   <p className="text-sm text-secondary font-semibold">
-                    {product.stars.toFixed(2)} stars
+                    {product.stars.toFixed(2)}
                   </p>
                 </div>
 
                 <div className="product-reviews">
-                  <Image 
+                  <Image
                     src="/assets/icons/comment.svg"
                     alt="comment"
                     width={0}
@@ -198,7 +192,7 @@ const ProductDetails = async ({ params } : Props) => {
                       href={`${product.url}#shop-reviews`}
                       target="_blank"
                     >
-                      {product.reviewsCount} Review{product.reviewsCount > 1 ? 's' : ''}
+                      {product.reviewsCount} Review{product.reviewsCount > 1 ? '-uri' : ''}
                     </Link>
                   </button>
                 </div>
@@ -213,39 +207,39 @@ const ProductDetails = async ({ params } : Props) => {
           </div>
 
           <div className="text-lg font-bold text-secondary dark:text-white-200 pt-2 text-center">
-            Tracked since: {formatDate(filteredPriceHistory[0].date)}
+            Evidență ținută din: {formatDate(filteredPriceHistory[0].date)}
           </div>
           <div className="my-7 flex flex-col">
             <div className="flex gap-5 flex-wrap">
-              <PriceInfoCard 
-                title="Current Price"
+              <PriceInfoCard
+                title="Prețul Actual"
                 iconSrc="/assets/icons/price-tag.svg"
-                value={<FormatPrices num={product.currentPrice}/>}
+                value={<FormatPrices num={product.currentPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />
-              <PriceInfoCard 
-                title="Highest Price"
+              <PriceInfoCard
+                title="Cel mai Mare Preț"
                 iconSrc="/assets/icons/arrow-up.svg"
-                value={<FormatPrices num={product.highestPrice}/>}
+                value={<FormatPrices num={product.highestPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={highestPriceItem.date}
                 differentPrices={differentPrices}
               />
-              <PriceInfoCard 
-                title="Lowest Price"
+              <PriceInfoCard
+                title="Cel mai Mic Preț"
                 iconSrc="/assets/icons/arrow-down.svg"
-                value={<FormatPrices num={product.lowestPrice}/>}
+                value={<FormatPrices num={product.lowestPrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={lowestPriceItem.date}
                 differentPrices={differentPrices}
               />
-              <PriceInfoCard 
-                title="Average Price"
+              <PriceInfoCard
+                title="Media Prețurilor"
                 iconSrc="/assets/icons/chart.svg"
-                value={<FormatPrices num={product.averagePrice}/>}
+                value={<FormatPrices num={product.averagePrice} />}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />
@@ -266,23 +260,23 @@ const ProductDetails = async ({ params } : Props) => {
           <Link
             href={product.url}
             target="_blank"
-            className="text-base text-white dark-text-black"
+            className="text-base text-white dark:text-black"
           >
-            Buy Now
+            Cumpără Acum
           </Link>
         </button>
       </div>
 
       {filteredPriceHistory.length > 0 && (
         <div className="my-7">
-          <p className="section-text">Price History</p>
+          <p className="section-text">Istoricul Prețurilor</p>
           <PriceTableChart priceHistory={filteredPriceHistory} />
         </div>
       )}
 
       {sortedProducts && sortedProducts.length > 0 && (
         <div className="py-14 flex flex-col gap-2 w-full">
-          <p className="section-text">Similar Products</p>
+          <p className="section-text">Produse Similare</p>
 
           <div className="flex flex-wrap gap-8 mt-7 w-full">
             {sortedProducts.map((product) => (
