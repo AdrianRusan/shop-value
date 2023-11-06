@@ -1,6 +1,5 @@
 import HeroCarousel from "@/components/HeroCarousel"
 import Searchbar from "@/components/Searchbar"
-import TrendingSection from "@/components/TrendingSection"
 import Image from "next/image"
 import dynamic from "next/dynamic";
 
