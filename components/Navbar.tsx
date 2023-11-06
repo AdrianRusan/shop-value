@@ -20,7 +20,7 @@ const Navbar = () => {
               alt="Logo"
               priority
             />
-            <p className="dark:text-white-200">
+            <p className="nav-logo dark:text-white-200">
               Shop
               <span className="text-primary">Value</span>
             </p>
