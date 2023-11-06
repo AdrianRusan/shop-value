@@ -9,9 +9,10 @@ export type User = {
 
 export type Product = {
   _id?: string;
+  brand: string;
+  model: string;
   url: string;
   source: string;
-  sourceSrc: string;
   currency: string;
   image: string;
   title: string;
@@ -25,7 +26,6 @@ export type Product = {
   description: string;
   recommendedProduct: string;
   category: string;
-  biggerCategory: string;
   reviewsCount: number;
   stars: number;
   isOutOfStock: Boolean;
@@ -46,4 +46,6 @@ export type EmailContent = {
 export type EmailProductInfo = {
   title: string;
   url: string;
+  image?: string;
+  source?: string;
 };
