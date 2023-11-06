@@ -85,7 +85,7 @@ export async function getProductByTitle(productTitle: string) {
         'title image source category brand model isOutOfStock originalPrice currentPrice currency'
       )
       .lean()
-      .limit(8); // Convert Mongoose documents to plain JavaScript objects
+      .limit(8);
 
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
@@ -133,12 +133,12 @@ export async function getProductByModel(productModel: string) {
 
 export async function searchProducts(searchTerm: string) {
   try {
-    connectToDB(); // Assuming this is your database connection setup
+    connectToDB();
 
     const searchTerms = searchTerm.split(' ');
 
     const brands = await Product.distinct('brand', {
-      brand: { $regex: new RegExp(searchTerms.join('|'), 'i') }, // Match the brand with any search term.
+      brand: { $regex: new RegExp(searchTerms.join('|'), 'i') },
     });
 
     const orConditions = searchTerms.map((term) => ({
@@ -160,7 +160,7 @@ export async function searchProducts(searchTerm: string) {
     // Get the top 4 most searched products
     const topSearchedProducts = await Product.find(
       {
-        model: { $regex: new RegExp(searchTerms.join('|'), 'i') }, // Match the model with any search term.
+        model: { $regex: new RegExp(searchTerms.join('|'), 'i') },
       },
       'model brand -_id'
     )
@@ -170,9 +170,8 @@ export async function searchProducts(searchTerm: string) {
 
     return { brands, brandModelObjects, topSearchedProducts };
   } catch (error) {
-    // Handle errors appropriately, such as logging or returning an error response.
     console.error('An error occurred:', error);
-    throw error; // Re-throw the error to be handled at a higher level if needed.
+    throw error;
   }
 }
 

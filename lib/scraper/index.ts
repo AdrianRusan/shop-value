@@ -34,7 +34,7 @@ export async function scrapeFlipProduct(url: string) {
     const textContent = phoneTitle
       .contents()
       .filter(function () {
-        return this.nodeType === 3; // Filter text nodes
+        return this.nodeType === 3;
       })
       .text()
       .trim();
@@ -90,7 +90,6 @@ export async function scrapeFlipProduct(url: string) {
       .toLowerCase();
     const model = $('.route.content a:nth-child(3)').text().trim();
 
-    // Construct data object with scraped information
     const data = {
       url,
       source: source || 'unknown',
