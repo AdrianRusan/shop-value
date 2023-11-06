@@ -26,19 +26,19 @@ export async function generateEmailBody(
 
   switch (type) {
     case Notification.WELCOME:
-      subject = `Welcome to Price Tracking for ${shortenedTitle}`;
+      subject = `Ați început monitorizarea prețului pentru <b>${shortenedTitle}</b>`;
       body = `
         <div>
-          <h2>Welcome to ShopValue 🚀</h2>
-          <p>You are now tracking ${product.title}.</p>
-          <p>Here's an example of how you'll receive updates:</p>
+          <h2>Bun venit la ShopValue 🚀</h2>
+          <p>Ați început monitorizarea produsului <b>${product.title}</b>.</p>
+          <p>Iată un exemplu de email pe care îl veți primi cu actualizări:</p>
           <div style="border: 1px solid #ccc; padding: 10px; background-color: #f8f8f8;">
-            <h3>${product.title} is back in stock!</h3>
-            <p>We're excited to let you know that ${product.title} is now back in stock.</p>
-            <p>Don't miss out - <a href="${product.url}" target="_blank" rel="noopener noreferrer">buy it now</a>!</p>
-            <img src="https://i.ibb.co/pwFBRMC/Screenshot-2023-09-26-at-1-47-50-AM.png" alt="Product Image" style="max-width: 100%;" />
+            <h3>${product.title} este din nou în stoc!</h3>
+            <p>Suntem încântați să vă informăm că <b>${product.title}</b> este din nou în stoc.</p>
+            <p>Nu ratați - <a href="${product.url}" target="_blank" rel="noopener noreferrer">cumpărați-l acum</a>!</p>
+            <img src="${product.image}" alt="${product.title}" style="max-width: 30rem;" />
           </div>
-          <p>Stay tuned for more updates on ${product.title} and other products you're tracking.</p>
+          <p>Rămâneți conectat pentru mai multe actualizări despre <b>${product.title}</b> și alte produse pe care le monitorizați.</p>
         </div>
       `;
       break;

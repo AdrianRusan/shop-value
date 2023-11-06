@@ -10,7 +10,6 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight:['300', '400', '
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://shop-value.vercel.app/'),
-  colorScheme: 'dark light',
   applicationName: "ShopValue",
   title: 'ShopValue - Evidenta Preturilor la Produsele Flip',
   alternates: {

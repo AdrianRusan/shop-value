@@ -8,48 +8,6 @@ import { getAveragePrice, getHighestPrice, getLowestPrice } from '../utils';
 import { generateEmailBody, sendEmail } from '../nodemailer';
 import { User } from '@/types';
 
-// Not Valid
-// export async function scrapeAndScoreProductEmag(productUrl: string) {
-//   if (!productUrl) return;
-
-//   try {
-//     connectToDB();
-
-//     const scrapedProduct = await scrapeEmagProduct(productUrl);
-
-//     if (!scrapedProduct) return;
-
-//     let product = scrapedProduct;
-
-//     const existingProduct = await Product.findOne({ url: scrapedProduct.url });
-
-//     if (existingProduct) {
-//       const updatedPriceHistory: any = [
-//         ...existingProduct.priceHistory,
-//         { price: scrapedProduct.currentPrice },
-//       ];
-
-//       product = {
-//         ...scrapedProduct,
-//         priceHistory: updatedPriceHistory,
-//         lowestPrice: getLowestPrice(updatedPriceHistory),
-//         highestPrice: getHighestPrice(updatedPriceHistory),
-//         averagePrice: getAveragePrice(updatedPriceHistory),
-//       };
-//     }
-
-//     const newProduct = await Product.findOneAndUpdate(
-//       { url: scrapedProduct.url },
-//       product,
-//       { upsert: true, new: true }
-//     );
-
-//     revalidatePath(`/products/${newProduct._id}`);
-//   } catch (error: any) {
-//     throw new Error(`Failed to create/update product: ${error.message}`);
-//   }
-// }
-
 export async function scrapeAndScoreProductFlip(productUrl: string) {
   if (!productUrl) return;
 
@@ -91,7 +49,11 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
       { upsert: true, new: true }
     );
 
-    revalidatePath(`/products/${newProduct._id}`);
+    revalidatePath(
+      `/produse/${newProduct.brand}/${newProduct.model.replace(/ /g, '-')}/${
+        newProduct._id
+      }`
+    );
   } catch (error: any) {
     throw new Error(`Failed to create/update product: ${error.message}`);
   }
@@ -120,7 +82,7 @@ export async function getProductByTitle(productTitle: string) {
       title: { $regex: searchRegex },
     })
       .select(
-        'title image sourceSrc source category isOutOfStock originalPrice currentPrice currency'
+        'title image source category brand model isOutOfStock originalPrice currentPrice currency'
       )
       .lean()
       .limit(8); // Convert Mongoose documents to plain JavaScript objects
@@ -128,6 +90,89 @@ export async function getProductByTitle(productTitle: string) {
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
     console.log(error);
+  }
+}
+
+export async function getProductByBrand(productBrand: string) {
+  try {
+    connectToDB();
+    const searchRegex = new RegExp(productBrand, 'i');
+
+    const products = await Product.find({
+      brand: { $regex: searchRegex },
+    })
+      .select(
+        'title image source category brand model isOutOfStock originalPrice currentPrice currency'
+      )
+      .lean();
+
+    return JSON.parse(JSON.stringify(products));
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getProductByModel(productModel: string) {
+  try {
+    connectToDB();
+    const searchRegex = new RegExp(productModel, 'i');
+
+    const products = await Product.find({
+      model: { $regex: searchRegex },
+    })
+      .select(
+        'title image source category brand model isOutOfStock originalPrice currentPrice currency'
+      )
+      .lean();
+
+    return JSON.parse(JSON.stringify(products));
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function searchProducts(searchTerm: string) {
+  try {
+    connectToDB(); // Assuming this is your database connection setup
+
+    const searchTerms = searchTerm.split(' ');
+
+    const brands = await Product.distinct('brand', {
+      brand: { $regex: new RegExp(searchTerms.join('|'), 'i') }, // Match the brand with any search term.
+    });
+
+    const orConditions = searchTerms.map((term) => ({
+      model: { $regex: new RegExp(term, 'i') },
+    }));
+
+    const models = await Product.find(
+      {
+        $or: orConditions,
+      },
+      'brand model -_id'
+    ).limit(4);
+
+    const brandModelObjects = models.map((product) => ({
+      brand: product.brand,
+      model: product.model,
+    }));
+
+    // Get the top 4 most searched products
+    const topSearchedProducts = await Product.find(
+      {
+        model: { $regex: new RegExp(searchTerms.join('|'), 'i') }, // Match the model with any search term.
+      },
+      'model brand -_id'
+    )
+      .limit(4)
+      .sort({ hits: -1 })
+      .lean();
+
+    return { brands, brandModelObjects, topSearchedProducts };
+  } catch (error) {
+    // Handle errors appropriately, such as logging or returning an error response.
+    console.error('An error occurred:', error);
+    throw error; // Re-throw the error to be handled at a higher level if needed.
   }
 }
 
@@ -153,7 +198,7 @@ export async function getSimilarProducts(productId: string) {
 
     const similarProducts = await Product.find({
       _id: { $ne: productId },
-      biggerCategory: currentProduct.biggerCategory,
+      brand: currentProduct.brand,
     }).limit(4);
 
     return similarProducts;

@@ -84,7 +84,7 @@ const ShareModal = () => {
                 <div className='flex flex-col'>
                   <div className='flex justify-between pb-3 border-b-2'>
                     <h4 className='dialog-head_text'>
-                      Share
+                      Distribuie
                     </h4>
                     <Image 
                       src="/assets/icons/x-close.svg"
@@ -97,7 +97,7 @@ const ShareModal = () => {
                   </div>
 
                   <div className='flex flex-col gap-2 py-2 dark:text-white-200'>
-                    <p>Share this link via</p>
+                    <p>Distribuie acest link pe</p>
                     <div className='flex justify-between max-sm:flex-col items-center gap-y-2'>
                       <div className='flex justify-evenly w-full gap-1'>
                         <FacebookShareButton
@@ -152,7 +152,7 @@ const ShareModal = () => {
                   className='flex flex-col mt-5 dark:text-white-200'
                   name='share-link'
                   >
-                    <p>Or copy link</p>
+                    <p>Sau copiază link-ul</p>
                     <div className='flex flex-col gap-2'>
                       <div className='dialog-input_container'>
                         <div className='flex w-[98%]'>
@@ -170,7 +170,7 @@ const ShareModal = () => {
                           className='w-full mt-3 py-2 px-4 bg-secondary dark:bg-white-200 font-bold hover:bg-opacity-70 rounded-2xl text-white-200 dark:text-secondary text-lg;'
                           onClick={handleCopyLink}
                         >
-                          Copy
+                          Copiază
                       </button>
                     </div>
                   </form>
