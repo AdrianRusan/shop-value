@@ -26,8 +26,6 @@ export async function GET(request: Request) {
     // ======================== 1 SCRAPE LATEST PRODUCT DETAILS & UPDATE DB
     const updatedProducts = await Promise.all(
       products.map(async (currentProduct) => {
-        // Scrape product
-
         let scrapedProduct;
 
         if (currentProduct.source === 'flip') {

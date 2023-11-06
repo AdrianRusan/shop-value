@@ -13,7 +13,7 @@ const Navbar = () => {
             href="/"
             className="flex items-center justify-center gap-1"
           >
-            <Image 
+            <Image
               src="/assets/icons/logo.svg"
               width={27}
               height={27}
@@ -34,7 +34,7 @@ const Navbar = () => {
         <div className="flex justify-end max-sm:justify-start w-full md:w-1/2">
           <SearchModal />
         </div>
-        
+
         <Link
           href={'/produse'}
           className="text-base text-black dark:text-white-200 hover:scale-110 font-bold"
