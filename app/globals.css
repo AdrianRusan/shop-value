@@ -9,12 +9,6 @@
   scroll-behavior: smooth;
 }
 
-@layer base {
-  body {
-    @apply font-inter;
-  }
-}
-
 @layer utilities {
   .btn {
     @apply py-4 px-4 bg-secondary dark:bg-white-200 hover:bg-opacity-70 rounded-[30px] text-white dark:text-secondary text-lg font-semibold;
@@ -66,7 +60,7 @@
 
   /* PRODUCT DETAILS PAGE STYLES */
   .product-container {
-    @apply flex flex-col gap-16 flex-wrap px-6 md:px-20 py-12  dark:text-white-200;
+    @apply flex flex-col gap-16 flex-wrap px-6 md:px-20 py-12 dark:text-white-200;
   }
 
   .product-image {
