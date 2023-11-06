@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
 import { Metadata } from "next";
+import SimilarSection from "@/components/SimilarSection";
 
 type Props = {
   params: {
@@ -78,8 +79,6 @@ const ProductDetails = async ({ params }: Props) => {
     redirect('/');
   }
 
-  const sortedProducts: Product[] = similarProducts?.slice(0, 4).sort((a, b) => b.priceHistory.length - a.priceHistory.length) || [];
-
   const priceHistory = product.priceHistory.map((priceData) => ({
     date: new Date(priceData.date),
     price: priceData.price,
@@ -100,8 +99,8 @@ const ProductDetails = async ({ params }: Props) => {
 
   return (
     <div className="product-container">
-      <div className="flex gap-28 xl:flex-row flex-col">
-        <div className="product-image xl:mb-24">
+      <div className="flex gap-1 xl:gap-28 xl:flex-row flex-col min-h-[calc(100vh-167.5px)] md:min-h-[calc(100vh-72px)] items-center justify-center">
+        <div className="product-image xl:mb-24 object-contain">
           {product.source === 'flip' && (
             <Image
               src={flipURL}
@@ -125,11 +124,11 @@ const ProductDetails = async ({ params }: Props) => {
         <div className="flex flex-1 flex-col">
           <div className="flex justify-between items-start gap-5 flex-wrap pb-6">
             <div className="flex flex-col gap-3">
-              <p className="text-[28px] text-secondary dark:text-white-200 font-semibold">
+              <p className="text-[28px] text-secondary dark:text-white-200 font-semibold max-sm:text-center">
                 {product.title}
               </p>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 max-sm:justify-center">
                 <Link
                   href={product.url}
                   target="_blank"
@@ -144,7 +143,7 @@ const ProductDetails = async ({ params }: Props) => {
             </div>
           </div>
 
-          <div className="product-info">
+          <div className="product-info max-sm:justify-center">
             {product.isOutOfStock ? (
               <p className="text-[34px] text-primary font-bold">
                 Stoc Epuizat
@@ -274,17 +273,7 @@ const ProductDetails = async ({ params }: Props) => {
         </div>
       )}
 
-      {sortedProducts && sortedProducts.length > 0 && (
-        <div className="py-14 flex flex-col gap-2 w-full">
-          <p className="section-text">Produse Similare</p>
-
-          <div className="flex flex-wrap gap-8 mt-7 w-full">
-            {sortedProducts.map((product) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
-        </div>
-      )}
+      <SimilarSection id={params.id} />
     </div>
   );
 }

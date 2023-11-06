@@ -4,17 +4,37 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongoose'],
   },
   images: {
-    domains: [
-      'cdn.flip.ro',
-      'localhost',
-      'shop-value.vercel.app',
-      'shop-value-develop.vercel.app',
-      'shop-value-feature.vercel.app',
-      'shop-value-release.vercel.app',
-      'shop-value-hotfix.vercel.app',
-      'shopvalue-seven.vercel.app',
-    ],
-  },
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.flip.ro',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shop-value.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shop-value-feature1.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shop-value-develop.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shop-value-release.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shop-value-hotfix.vercel.app',
+      }
+    ]
+  }
 };
 
 module.exports = nextConfig;
