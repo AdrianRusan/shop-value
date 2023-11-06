@@ -20,6 +20,7 @@ const ProductCard = ({ product }: Props) => {
             width={200}
             height={200}
             className="product-card_img"
+            priority
           />
           {product.source === 'flip' && (
             <Image

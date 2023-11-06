@@ -1,12 +1,11 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter, Space_Grotesk } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import ThemeProvider from './theme-provider';
 import Navbar from '@/components/Navbar';
 
 const inter = Inter({ subsets: ['latin'] })
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight:['300', '400', '500', '600', '700'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://shop-value.vercel.app/'),
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
   title: 'ShopValue - Evidenta Preturilor la Produsele Flip',
   alternates: {
     canonical: 'https://shop-value.vercel.app/',
-    languages:{
+    languages: {
       "ro-RO": "https://shop-value.vercel.app/",
     },
   },
@@ -43,18 +42,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
 
-
   return (
-      <ThemeProvider>
-        <html lang="ro">
-          <body className={`${inter.className} dark:bg-black`}>
-            <main className='max-w-10xl mx-auto'>
-              <Navbar />
-              {children}
-              <Analytics />
-            </main>
-          </body>
-        </html>
-      </ThemeProvider>
+    <ThemeProvider>
+      <html lang="ro">
+        <body className={`${inter.className} dark:bg-black`}>
+          <main className='max-w-10xl mx-auto'>
+            <Navbar />
+            {children}
+            <Analytics />
+          </main>
+        </body>
+      </html>
+    </ThemeProvider>
   )
 }

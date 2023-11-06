@@ -4,6 +4,7 @@ import { isDesktop } from "react-device-detect";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { Carousel } from 'react-responsive-carousel';
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 const heroImages = [
   {
@@ -29,11 +30,18 @@ const heroImages = [
 ]
 
 const HeroCarousel = () => {
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    setDesktop(isDesktop);
+  }, []);
+
+
 
   return (
     <>
-      {isDesktop && (
-        <div className="hero-carousel hidden lg:block">
+      {desktop && (
+        <div className="hero-carousel">
           <Carousel
             showThumbs={false}
             autoPlay
@@ -43,7 +51,7 @@ const HeroCarousel = () => {
             showStatus={false}
             showIndicators={false}
             ariaLabel="carousel"
-            labels={{ leftArrow: "", rightArrow: "", item:  "slide item" }}
+            labels={{ leftArrow: "", rightArrow: "", item: "slide item" }}
           >
             {heroImages.map((image, index) => (
               <div key={image.alt} className="object-contain">
@@ -58,7 +66,7 @@ const HeroCarousel = () => {
             ))}
           </Carousel>
 
-          <Image 
+          <Image
             src="assets/icons/hand-drawn-arrow.svg"
             alt="arrow"
             width={175}

@@ -34,7 +34,6 @@ module.exports = {
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
-        spaceGrotesk: ['Space Grotesk', 'sans-serif'],
       },
       borderRadius: {
         10: '10px',
