@@ -1,4 +1,4 @@
-import { getProductById, getSimilarProducts } from "@/lib/actions";
+import { getSimilarProducts } from "@/lib/actions";
 import { Product } from "@/types";
 import ProductCard from "./ProductCard";
 

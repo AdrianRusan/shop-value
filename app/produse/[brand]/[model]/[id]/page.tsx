@@ -1,6 +1,6 @@
 import TrackModal from "@/components/TrackModal";
 import PriceInfoCard from "@/components/PriceInfoCard";
-import { getProductById, getSimilarProducts } from "@/lib/actions";
+import { getProductById } from "@/lib/actions";
 import { PriceHistoryItem, Product } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,7 +12,6 @@ import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
 import { Metadata } from "next";
-import SimilarSection from "@/components/SimilarSection";
 
 type Props = {
   params: {
@@ -68,12 +67,9 @@ const ProductDetails = async ({ params }: Props) => {
 
   const ThemedIcon = dynamic(() => import('../../../../../components/ThemedIcon'))
   const PriceTableChart = dynamic(() => import('../../../../../components/PriceTableChart'))
-  const ProductCard = dynamic(() => import('../../../../../components/ProductCard'))
+  const SimilarSection = dynamic(() => import('../../../../../components/SimilarSection'))
 
-  const [product, similarProducts] = await Promise.all([
-    getProductById(params.id) as Promise<Product>,
-    getSimilarProducts(params.id) as Promise<Product[]>,
-  ]);
+  const product = await getProductById(params.id) as Product;
 
   if (!product) {
     redirect('/');
@@ -99,7 +95,7 @@ const ProductDetails = async ({ params }: Props) => {
 
   return (
     <div className="product-container">
-      <div className="flex gap-1 xl:gap-28 xl:flex-row flex-col min-h-[calc(100vh-167.5px)] md:min-h-[calc(100vh-72px)] items-center justify-center">
+      <div className="flex gap-1 xl:gap-28 xl:flex-row flex-col min-h-[calc(100vh-167.5px)] xl:min-h-[calc(100vh-72px)] items-center justify-center">
         <div className="product-image xl:mb-24 object-contain">
           {product.source === 'flip' && (
             <Image
