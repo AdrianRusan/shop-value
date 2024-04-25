@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@headlessui/react": "^1.7.17",
+    "@headlessui/react": "^1.7.18",
     "@rooks/use-window-size": "^4.11.2",
     "@vercel/analytics": "^1.1.2",
     "axios": "^1.6.8",
