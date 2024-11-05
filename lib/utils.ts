@@ -49,16 +49,19 @@ export function formatDescriptionFlip($: any): string {
 
 export function getHighestPrice(
   priceList: PriceHistoryItem[],
-  originalPrice: number
+  currentPrice: number
 ) {
   let highestPriceItem: PriceHistoryItem = {
     date: new Date(),
-    price: originalPrice,
+    price: currentPrice,
   };
 
   for (const item of priceList) {
     if (item.price > highestPriceItem.price) {
-      highestPriceItem = { date: item.date, price: item.price };
+      highestPriceItem = {
+        date: item.date,
+        price: Number(item.price.toFixed(2)),
+      };
     }
   }
 
@@ -82,25 +85,25 @@ export function getLowestPrice(priceList: PriceHistoryItem[]) {
 
 export function getAveragePrice(
   priceList: PriceHistoryItem[],
-  originalPrice: number
+  currentPrice: number
 ) {
   // Create a new array with originalPrice included if it's greater than zero
-  const pricesWithOriginal =
-    originalPrice > 0
-      ? [...priceList, { date: new Date(), price: originalPrice }]
+  const pricesWithCurrent =
+    currentPrice > 0
+      ? [...priceList, { date: new Date(), price: currentPrice }]
       : priceList;
 
-  const nonZeroPrices = pricesWithOriginal.filter((item) => item.price !== 0);
+  const nonZeroPrices = pricesWithCurrent.filter((item) => item.price !== 0);
 
   // Check if there are non-zero prices
   if (nonZeroPrices.length === 0) {
-    return originalPrice;
+    return currentPrice;
   }
 
   const sumOfPrices = nonZeroPrices.reduce((acc, curr) => acc + curr.price, 0);
   const averagePrice = sumOfPrices / nonZeroPrices.length;
 
-  return averagePrice;
+  return Number(averagePrice.toFixed(2));
 }
 
 export const getEmailNotifType = (

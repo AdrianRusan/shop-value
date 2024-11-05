@@ -5,7 +5,6 @@ import { PriceHistoryItem, Product } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import FormatPrices from "@/components/FormatPrices";
 import ShareModal from "@/components/ShareModal";
 import { headers } from 'next/headers'
 import dynamic from "next/dynamic";
@@ -83,7 +82,7 @@ const ProductDetails = async ({ params }: Props) => {
   const filteredPriceHistory = priceHistory.filter((item) => item.price !== 0);
 
   const lowestPriceItem: PriceHistoryItem = getLowestPrice(priceHistory);
-  const highestPriceItem: PriceHistoryItem = getHighestPrice(priceHistory, product.originalPrice);
+  const highestPriceItem: PriceHistoryItem = getHighestPrice(priceHistory, product.currentPrice);
 
   const headersList = headers();
   const domain = headersList.get("x-forwarded-host") || "";
@@ -92,6 +91,9 @@ const ProductDetails = async ({ params }: Props) => {
 
   let differentPrices = true;
   if (product.lowestPrice === product.highestPrice) differentPrices = false;
+
+    console.log('product Average Price: ', product.averagePrice)
+
 
   return (
     <div className="product-container">
@@ -147,11 +149,11 @@ const ProductDetails = async ({ params }: Props) => {
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-[34px] text-secondary dark:text-white-200 font-bold tracking-wide ">
-                  {<FormatPrices num={product.currentPrice} />} {product.currency}
+                  {product.currentPrice} {product.currency}
                 </p>
                 {product.originalPrice > 0 && (
                   <p className="text-[21px] text-black dark:text-white-200 opacity-75 line-through">
-                    {<FormatPrices num={product.originalPrice} />} {product.currency}
+                    {product.originalPrice} {product.currency}
                   </p>
                 )}
               </div>
@@ -193,11 +195,6 @@ const ProductDetails = async ({ params }: Props) => {
                 </div>
               </div>
 
-              <p className="text-sm">
-                <span className="dark:text-[#39AA41] text-[#0B680C] font-semibold">
-                  {product.recommendedProduct}
-                </span>
-              </p>
             </div>
           </div>
 
@@ -209,14 +206,14 @@ const ProductDetails = async ({ params }: Props) => {
               <PriceInfoCard
                 title="Prețul Actual"
                 iconSrc="/assets/icons/price-tag.svg"
-                value={<FormatPrices num={product.currentPrice} />}
+                value={product.currentPrice}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />
               <PriceInfoCard
                 title="Cel mai Mare Preț"
                 iconSrc="/assets/icons/arrow-up.svg"
-                value={<FormatPrices num={product.highestPrice} />}
+                value={product.highestPrice}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={highestPriceItem.date}
@@ -225,7 +222,7 @@ const ProductDetails = async ({ params }: Props) => {
               <PriceInfoCard
                 title="Cel mai Mic Preț"
                 iconSrc="/assets/icons/arrow-down.svg"
-                value={<FormatPrices num={product.lowestPrice} />}
+                value={product.lowestPrice}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
                 date={lowestPriceItem.date}
@@ -234,7 +231,7 @@ const ProductDetails = async ({ params }: Props) => {
               <PriceInfoCard
                 title="Media Prețurilor"
                 iconSrc="/assets/icons/chart.svg"
-                value={<FormatPrices num={product.averagePrice} />}
+                value={product.averagePrice}
                 currency={product.currency}
                 outOfStock={product.isOutOfStock}
               />

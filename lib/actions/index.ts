@@ -34,11 +34,11 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
         lowestPrice: getLowestPrice(updatedPriceHistory).price,
         highestPrice: getHighestPrice(
           updatedPriceHistory,
-          existingProduct.originalPrice
+          existingProduct.currentPrice
         ).price,
         averagePrice: getAveragePrice(
           updatedPriceHistory,
-          existingProduct.originalPrice
+          existingProduct.currentPrice
         ),
       };
     }

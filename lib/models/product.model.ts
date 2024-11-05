@@ -20,7 +20,6 @@ const productSchema = new mongoose.Schema(
     averagePrice: { type: Number },
     discountRate: { type: Number },
     description: { type: String },
-    recommendedProduct: { type: String },
     stars: { type: Number },
     category: { type: String },
     brand: { type: String },

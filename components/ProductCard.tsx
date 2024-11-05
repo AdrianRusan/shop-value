@@ -1,7 +1,6 @@
 import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
-import FormatPrices from "./FormatPrices";
 
 interface Props {
   product: Product;
@@ -10,12 +9,15 @@ const ProductCard = ({ product }: Props) => {
 
   const flipURL = `/assets/images/flip.jpg`;
 
+  // TODO: Add default image
+  const productImage = product.image || flipURL;
+
   return (
     <div className="mx-0">
       <Link href={{ pathname: `/produse/${product.brand}/${product.model.replace(/ /g, '-')}/${product._id}` }} className="product-card min-h-[490px]">
         <div className="product-card_img-container border  border-slate-200 dark:bg-white">
           <Image
-            src={product.image}
+            src={productImage}
             alt={product.title}
             width={200}
             height={200}
@@ -48,11 +50,11 @@ const ProductCard = ({ product }: Props) => {
             ) : (
               <div className="flex flex-col whitespace-nowrap">
                 <p className={`text-sm text-black opacity-75 dark:text-white-200 line-through ${product.originalPrice > 0 ? '' : 'hidden'}`}>
-                  <span><FormatPrices num={product.originalPrice} /> </span>
+                  <span>{product.originalPrice} </span>
                   <span>{product?.currency}</span>
                 </p>
                 <p className="text-black text-lg font-semibold dark:text-white-200">
-                  <span><FormatPrices num={product.currentPrice} /> </span>
+                  <span>{product.currentPrice} </span>
                   <span>{product?.currency}</span>
                 </p>
               </div>
