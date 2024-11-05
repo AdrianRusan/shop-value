@@ -92,9 +92,6 @@ const ProductDetails = async ({ params }: Props) => {
   let differentPrices = true;
   if (product.lowestPrice === product.highestPrice) differentPrices = false;
 
-    console.log('product Average Price: ', product.averagePrice)
-
-
   return (
     <div className="product-container">
       <div className="flex gap-1 xl:gap-28 xl:flex-row flex-col min-h-[calc(100vh-167.5px)] xl:min-h-[calc(100vh-72px)] items-center justify-center">

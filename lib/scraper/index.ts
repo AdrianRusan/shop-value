@@ -47,9 +47,9 @@ export async function scrapeFlipProduct(url: string) {
 
     const title = productName + ', ' + variantDetails;
 
-    console.log('title', title);
-    console.log('productName', productName);
-    console.log('variantDetails', variantDetails);
+    // console.log('title', title);
+    // console.log('productName', productName);
+    // console.log('variantDetails', variantDetails);
 
     // Extract benefits (Revised)
     const benefits: string[] = [];
@@ -222,41 +222,41 @@ export async function scrapeFlipProduct(url: string) {
       }
     });
 
-    // Log or use the images array with main image information
-    console.log('Images:', images);
+    // // Log or use the images array with main image information
+    // console.log('Images:', images);
 
     // Optional: You can also filter to get only the main image like this
     const mainImage = images.find((image) => image.isMain) || null;
-    console.log('Main Image:', mainImage);
+    // console.log('Main Image:', mainImage);
 
-    // Log the extracted data
-    console.log(
-      'Breadcrumbs:',
-      breadcrumbs.filter((crumb) => !crumb.includes('/'))
-    );
+    // // Log the extracted data
+    // console.log(
+    //   'Breadcrumbs:',
+    //   breadcrumbs.filter((crumb) => !crumb.includes('/'))
+    // );
 
-    console.log('Product Name:', productName);
-    console.log('Variant Details:', variantDetails);
-    console.log('Benefits:', benefits.length ? benefits : 'No benefits found');
-    console.log('Original Price:', originalPrice);
-    console.log('Current Price:', currentPrice);
-    console.log('Discount:', discountRate);
-    console.log('Rating:', stars);
-    console.log('Review Count:', reviewsCount);
-    console.log('Delivery Info:', deliveryInfo);
-    console.log('Delivery Price:', deliveryPrice);
-    console.log(
-      'Available Colors:',
-      colors.length ? colors : 'No colors available'
-    );
-    console.log(
-      'Available Storage Options:',
-      storageOptions.length ? storageOptions : 'No storage options available'
-    );
-    console.log(
-      'Available Conditions:',
-      conditions.length ? conditions : 'No condition options available'
-    );
+    // console.log('Product Name:', productName);
+    // console.log('Variant Details:', variantDetails);
+    // console.log('Benefits:', benefits.length ? benefits : 'No benefits found');
+    // console.log('Original Price:', originalPrice);
+    // console.log('Current Price:', currentPrice);
+    // console.log('Discount:', discountRate);
+    // console.log('Rating:', stars);
+    // console.log('Review Count:', reviewsCount);
+    // console.log('Delivery Info:', deliveryInfo);
+    // console.log('Delivery Price:', deliveryPrice);
+    // console.log(
+    //   'Available Colors:',
+    //   colors.length ? colors : 'No colors available'
+    // );
+    // console.log(
+    //   'Available Storage Options:',
+    //   storageOptions.length ? storageOptions : 'No storage options available'
+    // );
+    // console.log(
+    //   'Available Conditions:',
+    //   conditions.length ? conditions : 'No condition options available'
+    // );
 
     const outOfStockElement = $(
       'span.badge.stoc-alert-new.py-2.mb-3.badge-secondary'
@@ -291,7 +291,7 @@ export async function scrapeFlipProduct(url: string) {
       averagePrice: Number(currentPrice.toFixed(2)) || 0,
     };
 
-    console.log('data', data);
+    // console.log('data', data);
 
     return data;
   } catch (error: any) {

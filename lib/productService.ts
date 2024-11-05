@@ -5,17 +5,11 @@ import { PriceHistoryItem, Product as ProductType } from '@/types';
 
 export async function fetchProducts() {
   try {
-    console.log('Attempting to fetch products...');
     const products = await Product.find({});
-    if (!products.length) {
-      console.warn('No products found');
-      throw new Error('No products found');
-    }
-    console.log('Products fetched successfully:', products);
+    if (!products.length) throw new Error('No products found');
     return products;
-  } catch (error: any) {
-    console.error('Error fetching products:', error.message);
-    console.error('Stack trace:', error.stack);
+  } catch (error) {
+    console.error('Error fetching products:', error);
     throw error;
   }
 }
