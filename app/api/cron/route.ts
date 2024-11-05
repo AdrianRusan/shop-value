@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { fetchProducts, updateProductDetails } from '@/lib/productService';
+import { connectToDB } from '@/lib/mongoose';
 
 export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
 export async function GET() {
   try {
+    await connectToDB();
     const products = await fetchProducts();
     if (!products) throw new Error('No product fetched');
 
