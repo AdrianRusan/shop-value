@@ -13,6 +13,8 @@ const TrendingSection = async () => {
       .slice(0, Math.min(12, allProducts.length));
   }
 
+  console.log('sortedProducts: ', sortedProducts.length)
+
   const dateOptions = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'Europe/Bucharest' };
 
   return (

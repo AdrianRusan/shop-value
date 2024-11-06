@@ -12,7 +12,7 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
   if (!productUrl) return;
 
   try {
-    connectToDB();
+    await connectToDB();
 
     const scrapedProduct = await scrapeFlipProduct(productUrl);
 
@@ -61,7 +61,7 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
 
 export async function getProductById(productId: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const product = await Product.findOne({ _id: productId });
 
@@ -75,7 +75,7 @@ export async function getProductById(productId: string) {
 
 export async function getProductByTitle(productTitle: string) {
   try {
-    connectToDB();
+    await connectToDB();
     const searchRegex = new RegExp(productTitle, 'i');
 
     const products = await Product.find({
@@ -95,7 +95,7 @@ export async function getProductByTitle(productTitle: string) {
 
 export async function getProductByBrand(productBrand: string) {
   try {
-    connectToDB();
+    await connectToDB();
     const searchRegex = new RegExp(productBrand, 'i');
 
     const products = await Product.find({
@@ -114,7 +114,7 @@ export async function getProductByBrand(productBrand: string) {
 
 export async function getProductByModel(productModel: string) {
   try {
-    connectToDB();
+    await connectToDB();
     const searchRegex = new RegExp(productModel, 'i');
 
     const products = await Product.find({
@@ -133,7 +133,7 @@ export async function getProductByModel(productModel: string) {
 
 export async function searchProducts(searchTerm: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const searchTerms = searchTerm.split(' ');
 
@@ -177,7 +177,7 @@ export async function searchProducts(searchTerm: string) {
 
 export async function getAllProducts() {
   try {
-    connectToDB();
+    await connectToDB();
 
     const products = await Product.find();
 
@@ -189,7 +189,7 @@ export async function getAllProducts() {
 
 export async function getSimilarProducts(productId: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const currentProduct = await Product.findById(productId);
 
