@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { fetchProducts, updateProductDetails } from '@/lib/productService';
 import { connectToDB } from '@/lib/mongoose';
+import Bottleneck from 'bottleneck';
+import { Product } from '@/types';
 
-export const maxDuration = 150;
+export const maxDuration = 250;
 export const dynamic = 'force-dynamic'; // static by default, unless reading the request
+
+const limiter = new Bottleneck({
+  minTime: 200, // Minimum time between requests in milliseconds
+});
+
+async function updateProductWithLimiter(product: Product) {
+  return limiter.schedule(() => updateProductDetails(product));
+}
 
 export async function GET() {
   try {
@@ -13,7 +23,7 @@ export async function GET() {
 
     const updatedProducts = await Promise.all(
       products.map(async (product) => {
-        return await updateProductDetails(product);
+        return await updateProductWithLimiter(product);
       })
     );
 
