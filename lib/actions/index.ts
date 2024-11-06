@@ -115,7 +115,10 @@ export async function getProductByBrand(productBrand: string) {
 export async function getProductByModel(productModel: string) {
   try {
     await connectToDB();
-    const searchRegex = new RegExp(productModel, 'i');
+
+    // Split the productModel into individual words and create a regex to match any of them
+    const searchTerms = productModel.split(' ');
+    const searchRegex = new RegExp(searchTerms.join('|'), 'i');
 
     const products = await Product.find({
       model: { $regex: searchRegex },
@@ -168,7 +171,8 @@ export async function searchProducts(searchTerm: string) {
       .sort({ hits: -1 })
       .lean();
 
-    return { brands, brandModelObjects, topSearchedProducts };
+    // Include the searchTerm in the returned object
+    return { searchTerm, brands, brandModelObjects, topSearchedProducts };
   } catch (error) {
     console.error('An error occurred:', error);
     throw error;

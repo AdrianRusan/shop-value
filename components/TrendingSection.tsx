@@ -9,11 +9,10 @@ const TrendingSection = async () => {
 
   if (allProducts && allProducts?.length > 0) {
     sortedProducts = allProducts
+      .filter(product => product.priceHistory.length > 0)
       .sort((a, b) => b.priceHistory.length - a.priceHistory[a.priceHistory.length - 1].date)
       .slice(0, Math.min(12, allProducts.length));
   }
-
-  console.log('sortedProducts: ', sortedProducts.length)
 
   const dateOptions = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'Europe/Bucharest' };
 

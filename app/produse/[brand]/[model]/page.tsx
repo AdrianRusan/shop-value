@@ -9,7 +9,7 @@ type Props = {
 }
 
 const ModelsPage = async ({ params }: Props) => {
-  const allProducts = await getProductByModel(params.model.replace(/-/g, ' '));
+  const allProducts = await getProductByModel(params.model);
 
   return (
     <>

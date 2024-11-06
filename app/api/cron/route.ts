@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { fetchProducts, updateProductDetails } from '@/lib/productService';
 import { connectToDB } from '@/lib/mongoose';
 
+export const maxDuration = 150;
 export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 
 export async function GET() {

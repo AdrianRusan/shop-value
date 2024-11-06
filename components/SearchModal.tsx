@@ -84,8 +84,16 @@ const SearchModal = () => {
     setSearchInput(input);
   };
 
+  const handleSearchSubmit = () => {
+    if (searchInput) {
+      // Assuming the search input directly corresponds to a product path
+      window.location.href = `/produse/samsung/${searchInput.replace(/ /g, '-')}`;
+    }
+  };
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    handleSearchSubmit();
     closeModal();
   };
 
@@ -130,17 +138,20 @@ const SearchModal = () => {
     </div>
   );
 
-  const renderModelSuggestions = (item: { brand: string; model: string }) => (
-    <div className='py-2 rounded-md'>
-      <ul>
-        <Link href={`/produse/${item.brand}/${item.model.replace(/ /g, '-')}`}>
-          <li className='py-2 hover:scale-105' onClick={handleProductCardClick}>
-            {wrapMatchedText(item.model, searchInput)}
-          </li>
-        </Link>
-      </ul>
-    </div>
-  );
+  const renderModelSuggestions = (item: { brand: string; model: string }) => {
+
+      return (
+        <div className='py-2 rounded-md'>
+          <ul>
+            <Link href={`/produse/${item.brand}/${item.model.replace(/ /g, '-')}`}>
+              <li className='py-2 hover:scale-105' onClick={handleProductCardClick}>
+                {wrapMatchedText(item.model, searchInput)}
+              </li>
+            </Link>
+          </ul>
+        </div>
+      );
+  };
 
   return (
     <>
@@ -179,7 +190,9 @@ const SearchModal = () => {
                   <div className='flex justify-between items-center gap-5'>
                     <form className='flex flex-col w-full' onSubmit={handleSubmit} name='track-product'>
                       <div className='dialog-input_container flex items-center'>
-                        <ThemedIcon alt='search' />
+                        <button onClick={() => handleSearchSubmit()}>
+                          <ThemedIcon alt='search'/>
+                        </button>
                         <input
                           required
                           type='text'
