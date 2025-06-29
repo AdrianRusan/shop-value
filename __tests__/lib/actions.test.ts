@@ -8,12 +8,44 @@ jest.mock('@/lib/mongoose', () => ({
   connectToDB: jest.fn(),
 }));
 
-jest.mock('@/lib/models/product.model', () => ({
-  findOne: jest.fn(),
-  find: jest.fn(),
-  findById: jest.fn(),
-  distinct: jest.fn(),
+jest.mock('@/lib/scraper', () => ({
+  scrapeFlipProduct: jest.fn(),
 }));
+
+jest.mock('@/lib/nodemailer', () => ({
+  createTransporter: jest.fn(),
+  sendEmail: jest.fn(),
+}));
+
+jest.mock('@/lib/models/product.model', () => {
+  const createChainableMock = (finalResult: any) => ({
+    limit: jest.fn().mockReturnValue({
+      sort: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue(finalResult),
+      }),
+      lean: jest.fn().mockResolvedValue(finalResult),
+    }),
+    sort: jest.fn().mockReturnValue({
+      lean: jest.fn().mockResolvedValue(finalResult),
+      limit: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue(finalResult),
+      }),
+    }),
+    lean: jest.fn().mockResolvedValue(finalResult),
+    exec: jest.fn().mockResolvedValue(finalResult),
+  });
+
+  return {
+    __esModule: true,
+    default: {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      findById: jest.fn(),
+      distinct: jest.fn(),
+    },
+    createChainableMock,
+  };
+});
 
 const mockConnectToDB = connectToDB as jest.MockedFunction<typeof connectToDB>;
 const mockProductModel = ProductModel as jest.Mocked<typeof ProductModel>;
@@ -80,32 +112,28 @@ describe('Actions', () => {
   });
 
   describe('searchProducts', () => {
-    const mockSearchResults = {
-      searchTerm: 'samsung galaxy',
-      brands: ['Samsung', 'Apple'],
-      brandModelObjects: [
-        { brand: 'Samsung', model: 'Galaxy S24' },
-        { brand: 'Apple', model: 'iPhone 15' },
-      ],
-      topSearchedProducts: [
-        { productModel: 'Galaxy S24', brand: 'Samsung' },
-        { productModel: 'iPhone 15', brand: 'Apple' },
-      ],
-    };
-
     it('returns search results for valid query', async () => {
+      // Mock distinct call for brands
       mockProductModel.distinct.mockResolvedValue(['Samsung', 'Apple']);
-      mockProductModel.find.mockResolvedValueOnce([
+      
+      // Mock the first find call for models (no chaining, returns array directly)
+      const modelsResult = [
         { brand: 'Samsung', productModel: 'Galaxy S24' },
         { brand: 'Apple', productModel: 'iPhone 15' },
-      ]);
-      mockProductModel.find.mockReturnValue({
+      ];
+      mockProductModel.find.mockReturnValueOnce({
+        limit: jest.fn().mockResolvedValue(modelsResult),
+      } as any);
+      
+      // Mock the second find call for topSearchedProducts (with chaining)
+      const topProductsResult = [
+        { productModel: 'Galaxy S24', brand: 'Samsung' },
+        { productModel: 'iPhone 15', brand: 'Apple' },
+      ];
+      mockProductModel.find.mockReturnValueOnce({
         limit: jest.fn().mockReturnValue({
           sort: jest.fn().mockReturnValue({
-            lean: jest.fn().mockResolvedValue([
-              { productModel: 'Galaxy S24', brand: 'Samsung' },
-              { productModel: 'iPhone 15', brand: 'Apple' },
-            ]),
+            lean: jest.fn().mockResolvedValue(topProductsResult),
           }),
         }),
       } as any);
@@ -117,12 +145,15 @@ describe('Actions', () => {
       expect(result).toHaveProperty('brands');
       expect(result).toHaveProperty('brandModelObjects');
       expect(result).toHaveProperty('topSearchedProducts');
+      expect(result.brandModelObjects).toHaveLength(2);
     });
 
     it('handles empty search term', async () => {
       mockProductModel.distinct.mockResolvedValue([]);
-      mockProductModel.find.mockResolvedValueOnce([]);
-      mockProductModel.find.mockReturnValue({
+      mockProductModel.find.mockReturnValueOnce({
+        limit: jest.fn().mockResolvedValue([]),
+      } as any);
+      mockProductModel.find.mockReturnValueOnce({
         limit: jest.fn().mockReturnValue({
           sort: jest.fn().mockReturnValue({
             lean: jest.fn().mockResolvedValue([]),
@@ -144,10 +175,13 @@ describe('Actions', () => {
 
     it('processes multi-word search terms correctly', async () => {
       mockProductModel.distinct.mockResolvedValue(['Samsung']);
-      mockProductModel.find.mockResolvedValueOnce([
+      const modelsResult = [
         { brand: 'Samsung', productModel: 'Galaxy S24 Ultra' },
-      ]);
-      mockProductModel.find.mockReturnValue({
+      ];
+      mockProductModel.find.mockReturnValueOnce({
+        limit: jest.fn().mockResolvedValue(modelsResult),
+      } as any);
+      mockProductModel.find.mockReturnValueOnce({
         limit: jest.fn().mockReturnValue({
           sort: jest.fn().mockReturnValue({
             lean: jest.fn().mockResolvedValue([

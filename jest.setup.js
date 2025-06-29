@@ -1,10 +1,12 @@
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 // Mock next/image
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props) => {
-    return <img {...props} />
+    // Filter out Next.js specific props that shouldn't be passed to img
+    const { priority, ...imgProps } = props;
+    return <img {...imgProps} />
   },
 }))
 
@@ -51,4 +53,24 @@ global.IntersectionObserver = class IntersectionObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
+}
+
+// Mock setImmediate for nodemailer
+global.setImmediate = jest.fn((callback) => setTimeout(callback, 0))
+
+// Mock TextEncoder/TextDecoder for MongoDB
+global.TextEncoder = global.TextEncoder || class TextEncoder {
+  encode(str) {
+    const buf = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+      buf[i] = str.charCodeAt(i);
+    }
+    return buf;
+  }
+}
+
+global.TextDecoder = global.TextDecoder || class TextDecoder {
+  decode(buf) {
+    return String.fromCharCode(...new Uint8Array(buf));
+  }
 }

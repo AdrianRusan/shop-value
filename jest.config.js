@@ -9,7 +9,7 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
-  moduleNameMapping: {
+  moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you based on your tsconfig.json paths)
     '^@/(.*)$': '<rootDir>/$1',
   },
@@ -17,6 +17,9 @@ const customJestConfig = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/tests/e2e/'
+  ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(cheerio.*|parse5.*|htmlparser2.*|dom-serializer.*|domelementtype.*|entities.*)/)'
   ],
   collectCoverageFrom: [
     'components/**/*.{js,jsx,ts,tsx}',

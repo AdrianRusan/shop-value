@@ -11,7 +11,7 @@ describe('ProductCard Component', () => {
       expect(screen.getByText(mockProduct.title)).toBeInTheDocument();
       expect(screen.getByText(mockProduct.category)).toBeInTheDocument();
       expect(screen.getByText(`${mockProduct.currentPrice}`)).toBeInTheDocument();
-      expect(screen.getByText(mockProduct.currency)).toBeInTheDocument();
+      expect(screen.getAllByText(mockProduct.currency)).toHaveLength(2); // Both original and current price show currency
     });
 
     it('displays product image with correct attributes', () => {
@@ -216,7 +216,7 @@ describe('ProductCard Component', () => {
       
       render(<ProductCard product={productZeroPrice} />);
       
-      expect(screen.getByText('0')).toBeInTheDocument();
+      expect(screen.getAllByText('0')).toHaveLength(2); // Both original and current price show 0
     });
 
     it('handles very high prices', () => {

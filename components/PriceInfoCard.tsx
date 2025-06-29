@@ -37,7 +37,7 @@ const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date, diff
         />
         {(outOfStock && title === "Current Price") ? (
           <p className="text-lg text-primary font-semibold">
-            Stoc Epuizat
+            N/A
           </p>
         ) : (
           <p className="text-2xl [word-spacing:-0.125rem] font-bold text-secondary dark:text-white-200">
@@ -45,8 +45,8 @@ const PriceInfoCard = ({ title, iconSrc, value, currency, outOfStock, date, diff
           </p>
         )}
       </div>
-      {differentPrices && (
-        <p >{date ? `${formatDate(date)}` : ''}</p>
+      {date && (
+        <p>{formatDate(date)}</p>
       )}
     </div>
   )
