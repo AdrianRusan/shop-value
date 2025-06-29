@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:clean": "node scripts/db-setup.js clean",
+    "db:migrate": "node scripts/db-setup.js migrate",
+    "db:seed": "node scripts/db-setup.js seed",
+    "db:setup": "node scripts/db-setup.js setup",
+    "db:health": "node scripts/db-setup.js health"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
@@ -17,6 +22,7 @@
     "chart.js": "^4.4.4",
     "chartjs-adapter-date-fns": "^3.0.0",
     "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.3.1",
     "mongoose": "^8.7.0",
     "next": "14.2.14",
     "next-share": "^0.27.0",
