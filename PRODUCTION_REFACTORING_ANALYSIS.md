@@ -85,7 +85,7 @@ productSchema.index({ tenantId: 1, isActive: 1 });
 2. Scraping Service (Queue-based with Redis)
 3. Notification Service (Email/SMS/Push)
 4. Analytics Service (Data insights)
-5. Payment Service (Stripe integration)
+5. Payment Service (Stripe Payment Integration)
 ```
 
 ## 2. Authentication & Authorization System
