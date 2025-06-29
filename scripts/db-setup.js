@@ -46,14 +46,14 @@ async function createIndexes() {
     try {
       await users.createIndex({ email: 1 }, { unique: true });
     } catch (error) {
-      if (error.code !== 11000) throw error;
+      if (error.code !== 11000 && error.code !== 86) throw error;
       console.log('👤 Email index already exists');
     }
     
     try {
       await users.createIndex({ clerkId: 1 }, { unique: true, sparse: true });
     } catch (error) {
-      if (error.code !== 11000) throw error;
+      if (error.code !== 11000 && error.code !== 86) throw error;
       console.log('👤 ClerkId index already exists');
     }
     
@@ -69,7 +69,7 @@ async function createIndexes() {
     try {
       await products.createIndex({ url: 1 }, { unique: true });
     } catch (error) {
-      if (error.code !== 11000) throw error;
+      if (error.code !== 11000 && error.code !== 86) throw error;
       console.log('📱 URL index already exists');
     }
     
@@ -99,7 +99,7 @@ async function createIndexes() {
     try {
       await products.createIndex({ urlHash: 1 }, { unique: true, sparse: true });
     } catch (error) {
-      if (error.code !== 11000) throw error;
+      if (error.code !== 11000 && error.code !== 86) throw error;
       console.log('📱 urlHash index already exists');
     }
     
