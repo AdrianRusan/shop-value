@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "db:clean": "node scripts/db-setup.js clean",
     "db:migrate": "node scripts/db-setup.js migrate",
     "db:seed": "node scripts/db-setup.js seed",
     "db:setup": "node scripts/db-setup.js setup",
