@@ -23,12 +23,23 @@ export type Product = {
   lowestPrice: number;
   averagePrice: number;
   discountRate: number;
-  description: string;
+  description?: string;
   category: string;
   reviewsCount: number;
   stars: number;
   isOutOfStock: Boolean;
   users?: User[];
+  urlHash?: string;
+  availability?: 'in_stock' | 'out_of_stock' | 'limited' | 'discontinued';
+  tenantId?: string;
+  isActive?: boolean;
+  trackingStatus?: 'active' | 'paused' | 'failed' | 'archived';
+  lastScrapedAt?: Date;
+  nextScrapeAt?: Date;
+  scraperVersion?: string;
+  slug?: string;
+  keywords?: string[];
+  deletedAt?: Date;
 };
 
 export type NotificationType =

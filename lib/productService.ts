@@ -5,7 +5,7 @@ import { PriceHistoryItem, Product as ProductType } from '@/types';
 
 export async function fetchProducts() {
   try {
-    const products = await Product.find({});
+    const products = await Product.find({}).lean();
     if (!products.length) throw new Error('No products found');
     return products;
   } catch (error) {
