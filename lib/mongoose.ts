@@ -15,7 +15,7 @@ let connectionAttempts = 0;
 const MAX_CONNECTION_ATTEMPTS = 5;
 const CONNECTION_RETRY_DELAY = 5000; // 5 seconds
 
-// Enhanced connection options for production
+// Enhanced connection options for production (compatible with latest MongoDB driver)
 const mongoOptions: mongoose.ConnectOptions = {
   // Connection pooling
   maxPoolSize: 10, // Maximum number of connections in the connection pool
@@ -23,30 +23,12 @@ const mongoOptions: mongoose.ConnectOptions = {
   socketTimeoutMS: 45000, // How long a send or receive on a socket can take before timing out
   maxIdleTimeMS: 30000, // Close connections after this many milliseconds of inactivity
   
-  // Buffer commands until connected
-  bufferCommands: false, // Disable mongoose buffering
-  bufferMaxEntries: 0, // Disable mongoose buffering, close connection immediately on 27017 mongodb default connection
-  
-  // Write concern
-  writeConcern: {
-    w: 'majority',
-    j: true, // Wait for journal acknowledgment
-    wtimeout: 30000
-  },
-  
-  // Read preference
-  readPreference: 'primary',
-  
   // Retry writes
   retryWrites: true,
   retryReads: true,
   
   // Compression
-  compressors: ['zlib'],
-  
-  // Connection events
-  autoIndex: process.env.NODE_ENV !== 'production', // Disable auto-indexing in production
-  autoCreate: process.env.NODE_ENV !== 'production' // Disable auto-collection creation in production
+  compressors: ['zlib']
 };
 
 // Connection state management

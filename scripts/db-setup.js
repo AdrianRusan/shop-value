@@ -6,20 +6,12 @@ const path = require('path');
 // Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
 
-// Enhanced connection options
+// Enhanced connection options (compatible with latest MongoDB driver)
 const mongoOptions = {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
   maxIdleTimeMS: 30000,
-  bufferCommands: false,
-  bufferMaxEntries: 0,
-  writeConcern: {
-    w: 'majority',
-    j: true,
-    wtimeout: 30000
-  },
-  readPreference: 'primary',
   retryWrites: true,
   retryReads: true
 };
