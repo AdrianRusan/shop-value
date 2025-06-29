@@ -12,7 +12,6 @@ export type Product = {
   brand: string;
   model: string;
   url: string;
-  urlFormat: string;
   source: string;
   currency: string;
   image: string;
