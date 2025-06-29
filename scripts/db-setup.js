@@ -114,12 +114,12 @@ async function createIndexes() {
     // Text search index for products
     try {
       await products.createIndex({
-        title: 'text',
-        description: 'text',
-        brand: 'text',
-        model: 'text'
-      }, {
-        weights: { title: 10, brand: 5, model: 5, description: 1 }
+              title: 'text',
+      description: 'text',
+      brand: 'text',
+      productModel: 'text'
+    }, {
+      weights: { title: 10, brand: 5, productModel: 5, description: 1 }
       });
     } catch (error) {
       console.log('📱 Text search index already exists or failed');
@@ -291,7 +291,7 @@ async function seedDevelopmentData() {
         source: 'flip',
         title: 'iPhone 15 Pro Max 256GB Titanium Natural',
         brand: 'apple',
-        model: 'iphone-15-pro-max',
+        productModel: 'iphone-15-pro-max',
         category: 'telefoane-mobile',
         currentPrice: 6999.99,
         originalPrice: 7499.99,

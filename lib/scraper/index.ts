@@ -281,7 +281,7 @@ export async function scrapeFlipProduct(url: string) {
       discountRate: Number(discountRate) || 0,
       category: category || '',
       brand: brand || '',
-      model: model || '',
+      productModel: model || '',
       reviewsCount: reviewsCount || 0,
       stars: stars || 0,
       isOutOfStock: isoutOfStock,

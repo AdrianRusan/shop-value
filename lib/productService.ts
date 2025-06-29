@@ -3,11 +3,15 @@ import { scrapeFlipProduct } from '@/lib/scraper';
 import { getLowestPrice, getHighestPrice, getAveragePrice } from '@/lib/utils';
 import { PriceHistoryItem, Product as ProductType } from '@/types';
 
-export async function fetchProducts() {
+export async function fetchProducts(): Promise<ProductType[]> {
   try {
     const products = await Product.find({}).lean();
     if (!products.length) throw new Error('No products found');
-    return products;
+    // Type assertion to convert Mongoose lean results to Product type
+    return products.map(product => ({
+      ...product,
+      _id: product._id?.toString(), // Convert ObjectId to string
+    })) as ProductType[];
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;

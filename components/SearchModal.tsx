@@ -49,7 +49,7 @@ const SearchModal = () => {
         if (topProducts && topProducts.topSearchedProducts) {
           const defaultSuggestionObjects = topProducts.topSearchedProducts.map(product => ({
             brand: product.brand,
-            model: product.model,
+            model: product.productModel,
           }));
           setDefaultSuggestions(defaultSuggestionObjects);
         }

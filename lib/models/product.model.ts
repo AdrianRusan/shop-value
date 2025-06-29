@@ -53,7 +53,7 @@ interface IProduct extends Document {
   // Product details
   category: string;
   brand: string;
-  model: string;
+  productModel: string;
   stars: number;
   reviewsCount: number;
   
@@ -221,7 +221,7 @@ const productSchema = new mongoose.Schema<IProduct>({
     lowercase: true,
     trim: true
   },
-  model: { 
+  productModel: { 
     type: String, 
     required: [true, 'Model is required'],
     index: true,
@@ -362,7 +362,7 @@ productSchema.index({ tenantId: 1, isActive: 1 });
 productSchema.index({ tenantId: 1, trackingStatus: 1 });
 productSchema.index({ source: 1, lastScrapedAt: 1 });
 productSchema.index({ category: 1, currentPrice: 1 });
-productSchema.index({ brand: 1, model: 1, isActive: 1 });
+productSchema.index({ brand: 1, productModel: 1, isActive: 1 });
 productSchema.index({ 'analytics.popularityScore': -1, isActive: 1 });
 productSchema.index({ nextScrapeAt: 1, trackingStatus: 1 });
 productSchema.index({ createdAt: 1, tenantId: 1 });
@@ -372,13 +372,13 @@ productSchema.index({
   title: 'text',
   description: 'text',
   brand: 'text',
-  model: 'text',
+  productModel: 'text',
   keywords: 'text'
 }, {
   weights: {
     title: 10,
     brand: 5,
-    model: 5,
+    productModel: 5,
     keywords: 3,
     description: 1
   }
@@ -522,7 +522,7 @@ productSchema.methods.updatePriceHistory = async function(newPrice: number, sour
 productSchema.methods.calculateAveragePrice = function() {
   if (this.priceHistory.length === 0) return this.currentPrice;
   
-  const total = this.priceHistory.reduce((sum, item) => sum + item.price, 0);
+  const total = this.priceHistory.reduce((sum: number, item: IPriceHistory) => sum + item.price, 0);
   return total / this.priceHistory.length;
 };
 
@@ -570,6 +570,6 @@ productSchema.methods.incrementViewCount = async function() {
   return this.save();
 };
 
-const Product: IProductModel = mongoose.models.Product || mongoose.model<IProduct, IProductModel>('Product', productSchema);
+const Product = (mongoose.models.Product || mongoose.model<IProduct>('Product', productSchema)) as IProductModel;
 
 export default Product;

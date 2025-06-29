@@ -21,7 +21,7 @@ type Props = {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product: Product = await getProductById(params.id);
+  const product = await getProductById(params.id);
   if (!product) return {
     title: "Produsul nu a fost gasit.",
     description: "Produsul nu a fost gasit."
@@ -68,7 +68,7 @@ const ProductDetails = async ({ params }: Props) => {
   const PriceTableChart = dynamic(() => import('../../../../../components/PriceTableChart'))
   const SimilarSection = dynamic(() => import('../../../../../components/SimilarSection'))
 
-  const product = await getProductById(params.id) as Product;
+  const product = await getProductById(params.id);
 
   if (!product) {
     redirect('/');

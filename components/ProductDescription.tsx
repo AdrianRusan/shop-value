@@ -4,11 +4,21 @@ import Image from 'next/image';
 import React, { useState } from 'react';
 
 type ProductDescriptionProps = {
-  description: string;
+  description?: string;
 };
 
 const ProductDescription: React.FC<ProductDescriptionProps> = ({ description }) => {
   const [showAll, setShowAll] = useState(false);
+  
+  // If no description is provided, show a default message
+  if (!description) {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-gray-500 italic">Nu este disponibilă o descriere pentru acest produs.</p>
+      </div>
+    );
+  }
+
   const characterLimit = 1500;
   const isTextOverLimit = description.length > characterLimit;
 

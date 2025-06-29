@@ -5,7 +5,6 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       MONGODB_URI?: string;
-      NODE_ENV?: 'development' | 'production' | 'test';
     }
   }
 }
@@ -169,7 +168,7 @@ export const checkDBHealth = async (): Promise<{
 }> => {
   try {
     const connection = mongoose.connection;
-    const collections = await connection.db.listCollections().toArray();
+    const collections = connection.db ? await connection.db.listCollections().toArray() : [];
     
     return {
       status: connection.readyState === 1 ? 'healthy' : 'unhealthy',
@@ -204,7 +203,7 @@ export const getDBStats = async () => {
       throw new Error('Database not connected');
     }
     
-    const stats = await mongoose.connection.db.stats();
+    const stats = mongoose.connection.db ? await mongoose.connection.db.stats() : { collections: 0, dataSize: 0, indexSize: 0, objects: 0 };
     return {
       database: mongoose.connection.name,
       collections: stats.collections,

@@ -2,6 +2,7 @@ import { connectToDB } from '../mongoose';
 import User from '../models/user.model';
 import Product from '../models/product.model';
 import Analytics from '../models/analytics.model';
+import { Types } from 'mongoose';
 
 // Migration interface
 interface Migration {
@@ -145,9 +146,9 @@ export class DatabaseMigration {
       title: 'text',
       description: 'text',
       brand: 'text',
-      model: 'text'
+      productModel: 'text'
     }, {
-      weights: { title: 10, brand: 5, model: 5, description: 1 }
+      weights: { title: 10, brand: 5, productModel: 5, description: 1 }
     });
     
     console.log('📊 Essential indexes created successfully');
@@ -230,7 +231,7 @@ export class DatabaseMigration {
     for (const product of productsWithUsers) {
       if (product.users && Array.isArray(product.users) && product.users.length > 0) {
         const trackingUsers = product.users.map((user: any) => ({
-          userId: new require('mongoose').Types.ObjectId(),
+          userId: new Types.ObjectId(),
           email: user.email,
           addedAt: new Date(),
           alertSettings: {
@@ -397,7 +398,7 @@ export class DatabaseSeeder {
         source: 'flip',
         title: 'iPhone 15 Pro Max 256GB Titanium Natural',
         brand: 'apple',
-        model: 'iphone-15-pro-max',
+        productModel: 'iphone-15-pro-max',
         category: 'telefoane-mobile',
         currentPrice: 6999.99,
         originalPrice: 7499.99,
@@ -417,7 +418,7 @@ export class DatabaseSeeder {
         source: 'flip',
         title: 'Dell XPS 13 2024 Intel i7 16GB 512GB SSD',
         brand: 'dell',
-        model: 'xps-13-2024',
+        productModel: 'xps-13-2024',
         category: 'laptopuri',
         currentPrice: 4999.99,
         originalPrice: 5499.99,
@@ -445,7 +446,7 @@ export class DatabaseSeeder {
   }
   
   // Create sample analytics data
-  private async createAnalyticsData(): Promise<void> => {
+  private async createAnalyticsData(): Promise<void> {
     const existingAnalytics = await Analytics.findOne({ tenantId: 'default' });
     
     if (!existingAnalytics) {
@@ -571,7 +572,7 @@ export class DatabaseMaintenance {
   }
   
   // Compact collections
-  private async compactCollections(db: any): Promise<void> => {
+  private async compactCollections(db: any): Promise<void> {
     const collections = ['users', 'products', 'analytics'];
     
     for (const collectionName of collections) {

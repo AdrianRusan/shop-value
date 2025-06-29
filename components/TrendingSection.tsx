@@ -1,20 +1,28 @@
 import { getAllProducts } from "@/lib/actions";
 import ProductCard from "./ProductCard";
+import { Product } from "@/types";
 
 const TrendingSection = async () => {
 
   const allProducts = await getAllProducts();
 
-  let sortedProducts = [];
+  let sortedProducts: Product[] = [];
 
   if (allProducts && allProducts?.length > 0) {
     sortedProducts = allProducts
       .filter(product => product.priceHistory.length > 0)
-      .sort((a, b) => b.priceHistory.length - a.priceHistory[a.priceHistory.length - 1].date)
+      .sort((a, b) => b.priceHistory.length - a.priceHistory.length)
       .slice(0, Math.min(12, allProducts.length));
   }
 
-  const dateOptions = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'Europe/Bucharest' };
+  const dateOptions: Intl.DateTimeFormatOptions = { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric', 
+    hour: 'numeric', 
+    minute: 'numeric', 
+    timeZone: 'Europe/Bucharest' 
+  };
 
   return (
     <>
@@ -25,7 +33,7 @@ const TrendingSection = async () => {
           <div className={`flex flex-wrap gap-x-8 md:gap-x-24 lg:gap-x-7 xl:gap-x-16 gap-y-16 justify-start`}>
             {sortedProducts.map((product) => (
               <div key={product._id} className="flex flex-col">
-                <p>{product.priceHistory[product.priceHistory.length - 1].date.toLocaleString('ro-RO', dateOptions)}</p>
+                <p>{new Date(product.priceHistory[product.priceHistory.length - 1].date).toLocaleString('ro-RO', dateOptions)}</p>
                 <ProductCard product={product} />
               </div>
             ))}

@@ -9,7 +9,7 @@ export default async function sitemap() {
 
   const productPaths = products.map((product) => {
     return {
-      url: `${baseUrl}/product/${product.id}`,
+      url: `${baseUrl}/product/${product._id}`,
       lastModified: new Date(),
     };
   });
