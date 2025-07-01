@@ -5,7 +5,7 @@ import { connectToDB } from '@/lib/mongoose';
 import Product from '@/lib/models/product.model';
 import UserProductTracking from '@/lib/models/user-product-tracking.model';
 import User from '@/lib/models/user.model';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 
 // Mock dependencies
 jest.mock('@/lib/mongoose');
@@ -13,7 +13,7 @@ jest.mock('@/lib/models/product.model');
 jest.mock('@/lib/models/user-product-tracking.model');
 jest.mock('@/lib/models/user.model');
 jest.mock('@clerk/nextjs');
-jest.mock('@/lib/redis', () => ({
+jest.mock('@/lib/upstash', () => ({
   redis: {
     incr: jest.fn(),
     setex: jest.fn(),

@@ -3,10 +3,10 @@ import { connectToDB } from '@/lib/mongoose';
 import Product from '@/lib/models/product.model';
 import UserProductTracking from '@/lib/models/user-product-tracking.model';
 import User from '@/lib/models/user.model';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis } from '@/lib/redis';
+import { redis } from '@/lib/upstash';
 import * as Sentry from '@sentry/nextjs';
 
 // Rate limiting
@@ -156,8 +156,8 @@ export async function GET(
         },
         summary: {
           totalTracked: totalCount,
-          activeTracked: validTrackings.filter(t => t.isActive).length,
-          averagePriceChange: trackedProducts.reduce((acc, p) => acc + p.priceChangePercentage, 0) / trackedProducts.length || 0
+          activeTracked: validTrackings.filter((t: any) => t.isActive).length,
+          averagePriceChange: trackedProducts.reduce((acc: number, p: any) => acc + p.priceChangePercentage, 0) / trackedProducts.length || 0
         }
       },
       timestamp: new Date().toISOString()
