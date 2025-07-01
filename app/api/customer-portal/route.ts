@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Parse optional return URL from request body
     const body = await request.json().catch(() => ({}));
-    const returnUrl = body.returnUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard`;
+    const returnUrl = body.returnUrl || `${(globalThis as any)?.process?.env?.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard`;
 
     // Create customer portal session
     const portalSession = await createCustomerPortalSession(
