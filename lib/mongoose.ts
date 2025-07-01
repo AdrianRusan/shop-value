@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { redis } from './upstash';
 
 // Add Node.js types
 declare global {
@@ -11,23 +12,33 @@ declare global {
 
 let isConnected = false;
 let connectionAttempts = 0;
-const MAX_CONNECTION_ATTEMPTS = 5;
-const CONNECTION_RETRY_DELAY = 5000; // 5 seconds
 
-// Enhanced connection options for production (compatible with latest MongoDB driver)
+// Enhanced connection options for production SaaS scale
 const mongoOptions: mongoose.ConnectOptions = {
-  // Connection pooling
-  maxPoolSize: 10, // Maximum number of connections in the connection pool
-  serverSelectionTimeoutMS: 5000, // How long to try selecting a server
-  socketTimeoutMS: 45000, // How long a send or receive on a socket can take before timing out
-  maxIdleTimeMS: 30000, // Close connections after this many milliseconds of inactivity
+  // Connection pooling optimized for SaaS workloads
+  maxPoolSize: process.env.NODE_ENV === 'production' ? 20 : 10, // Increased for production
+  minPoolSize: process.env.NODE_ENV === 'production' ? 5 : 2,   // Maintain minimum connections
+  serverSelectionTimeoutMS: 8000, // Increased for better reliability
+  socketTimeoutMS: 60000, // 1 minute for long operations
+  maxIdleTimeMS: 30000, // Close idle connections
+  connectTimeoutMS: 10000, // Connection timeout
   
-  // Retry writes
+  // Retry configuration for resilience
   retryWrites: true,
   retryReads: true,
   
-  // Compression
-  compressors: ['zlib']
+  // Compression for bandwidth efficiency
+  compressors: ['zlib'],
+  
+  // Read preference for better performance
+  readPreference: 'primary',
+  
+  // Write concern for data consistency
+  writeConcern: {
+    w: 'majority',
+    j: true, // Journal writes for durability
+    wtimeout: 5000
+  }
 };
 
 // Connection state management
@@ -36,16 +47,18 @@ interface ConnectionState {
   connectionPromise: Promise<typeof mongoose> | null;
   lastConnectedAt: Date | null;
   connectionAttempts: number;
+  reconnectionCount: number;
 }
 
 const connectionState: ConnectionState = {
   isConnected: false,
   connectionPromise: null,
   lastConnectedAt: null,
-  connectionAttempts: 0
-};
+  connectionAttempts: 0,
+  reconnectionCount: 0
+  };
 
-// Enhanced connection function with retry logic and monitoring
+// Enhanced connection function with retry logic
 export const connectToDB = async (): Promise<typeof mongoose | null> => {
   // Validate environment variables
   if (!process.env.MONGODB_URI) {
@@ -80,13 +93,16 @@ export const connectToDB = async (): Promise<typeof mongoose | null> => {
 
 // Connection function with retry logic
 const connectWithRetry = async (): Promise<typeof mongoose> => {
-  while (connectionState.connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
+  const MAX_ATTEMPTS = 5;
+  const BASE_DELAY = 2000; // 2 seconds
+  
+  while (connectionState.connectionAttempts < MAX_ATTEMPTS) {
     try {
       connectionState.connectionAttempts++;
       
-      console.log(`🔄 Attempting MongoDB connection (${connectionState.connectionAttempts}/${MAX_CONNECTION_ATTEMPTS})`);
+      console.log(`🔄 Attempting MongoDB connection (${connectionState.connectionAttempts}/${MAX_ATTEMPTS})`);
       
-      // Set mongoose configuration
+      // Set mongoose configuration for production
       mongoose.set('strictQuery', true);
       mongoose.set('debug', process.env.NODE_ENV === 'development');
       
@@ -99,7 +115,7 @@ const connectWithRetry = async (): Promise<typeof mongoose> => {
       connectionState.connectionAttempts = 0;
       
       console.log('✅ Successfully connected to MongoDB');
-      console.log(`📊 Connection pool size: ${mongoOptions.maxPoolSize}`);
+      console.log(`📊 Connection pool: min=${mongoOptions.minPoolSize}, max=${mongoOptions.maxPoolSize}`);
       console.log(`🏠 Database: ${mongooseInstance.connection.name}`);
       
       return mongooseInstance;
@@ -107,24 +123,28 @@ const connectWithRetry = async (): Promise<typeof mongoose> => {
     } catch (error) {
       console.error(`🔥 MongoDB connection attempt ${connectionState.connectionAttempts} failed:`, error);
       
-      if (connectionState.connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
+      if (connectionState.connectionAttempts >= MAX_ATTEMPTS) {
         console.error('❌ Max connection attempts reached. Could not connect to MongoDB');
-        throw new Error(`Failed to connect to MongoDB after ${MAX_CONNECTION_ATTEMPTS} attempts`);
+        throw new Error(`Failed to connect to MongoDB after ${MAX_ATTEMPTS} attempts`);
       }
       
-      // Wait before retrying
-      console.log(`⏱️ Retrying connection in ${CONNECTION_RETRY_DELAY}ms...`);
-      await new Promise(resolve => setTimeout(resolve, CONNECTION_RETRY_DELAY));
+      // Exponential backoff
+      const delay = BASE_DELAY * Math.pow(2, connectionState.connectionAttempts - 1);
+      console.log(`⏱️ Retrying connection in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
   throw new Error('Unable to connect to MongoDB');
 };
 
+
+
 // Connection event handlers
 mongoose.connection.on('connected', () => {
   console.log('🎉 Mongoose connected to MongoDB');
   connectionState.isConnected = true;
+  connectionState.lastConnectedAt = new Date();
 });
 
 mongoose.connection.on('error', (error: Error) => {
@@ -140,23 +160,28 @@ mongoose.connection.on('disconnected', () => {
 mongoose.connection.on('reconnected', () => {
   console.log('🔄 Mongoose reconnected to MongoDB');
   connectionState.isConnected = true;
+  connectionState.reconnectionCount++;
+  connectionState.lastConnectedAt = new Date();
 });
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  try {
-    await mongoose.connection.close();
-    console.log('👋 MongoDB connection closed through app termination');
-    process.exit(0);
-  } catch (error) {
-    console.error('Error during MongoDB connection closure:', error);
-    process.exit(1);
-  }
-});
+// Graceful shutdown handler (if running in Node.js environment)
+if (typeof process !== 'undefined' && process.on) {
+  process.on('SIGINT', async () => {
+    try {
+      console.log('📝 Gracefully shutting down MongoDB connection...');
+      await mongoose.connection.close(false);
+      console.log('👋 MongoDB connection closed through app termination');
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during MongoDB connection closure:', error);
+      process.exit(1);
+    }
+  });
+}
 
 // Health check function
 export const checkDBHealth = async (): Promise<{
-  status: 'healthy' | 'unhealthy';
+  status: 'healthy' | 'unhealthy' | 'degraded';
   details: {
     readyState: number;
     host: string;
@@ -164,22 +189,34 @@ export const checkDBHealth = async (): Promise<{
     name: string;
     collections: number;
     lastConnected: Date | null;
+    reconnectionCount: number;
   };
+  timestamp: string;
 }> => {
   try {
     const connection = mongoose.connection;
     const collections = connection.db ? await connection.db.listCollections().toArray() : [];
     
+    let status: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
+    
+    if (connection.readyState !== 1) {
+      status = 'unhealthy';
+    } else if (connectionState.reconnectionCount > 3) {
+      status = 'degraded';
+    }
+    
     return {
-      status: connection.readyState === 1 ? 'healthy' : 'unhealthy',
+      status,
       details: {
         readyState: connection.readyState,
-        host: connection.host,
-        port: connection.port,
-        name: connection.name,
+        host: connection.host || 'unknown',
+        port: connection.port || 0,
+        name: connection.name || 'unknown',
         collections: collections.length,
-        lastConnected: connectionState.lastConnectedAt
-      }
+        lastConnected: connectionState.lastConnectedAt,
+        reconnectionCount: connectionState.reconnectionCount
+      },
+      timestamp: new Date().toISOString()
     };
   } catch (error) {
     return {
@@ -190,28 +227,38 @@ export const checkDBHealth = async (): Promise<{
         port: 0,
         name: 'unknown',
         collections: 0,
-        lastConnected: null
-      }
+        lastConnected: null,
+        reconnectionCount: connectionState.reconnectionCount
+      },
+      timestamp: new Date().toISOString()
     };
   }
 };
 
-// Database statistics function
+// Enhanced database statistics function
 export const getDBStats = async () => {
   try {
     if (!connectionState.isConnected) {
       throw new Error('Database not connected');
     }
     
-    const stats = mongoose.connection.db ? await mongoose.connection.db.stats() : { collections: 0, dataSize: 0, indexSize: 0, objects: 0 };
+    const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error('Database instance not available');
+    }
+    
+    const stats = await db.stats();
+    
     return {
       database: mongoose.connection.name,
-      collections: stats.collections,
-      documents: stats.objects,
-      dataSize: Math.round(stats.dataSize / 1024 / 1024 * 100) / 100, // MB
-      storageSize: Math.round(stats.storageSize / 1024 / 1024 * 100) / 100, // MB
-      indexes: stats.indexes,
-      indexSize: Math.round(stats.indexSize / 1024 / 1024 * 100) / 100 // MB
+      collections: stats.collections || 0,
+      documents: stats.objects || 0,
+      dataSize: Math.round((stats.dataSize || 0) / 1024 / 1024 * 100) / 100, // MB
+      storageSize: Math.round((stats.storageSize || 0) / 1024 / 1024 * 100) / 100, // MB
+      indexes: stats.indexes || 0,
+      indexSize: Math.round((stats.indexSize || 0) / 1024 / 1024 * 100) / 100, // MB
+      averageObjSize: Math.round(stats.avgObjSize || 0), // bytes
+      timestamp: new Date().toISOString()
     };
   } catch (error) {
     console.error('Error getting database statistics:', error);
@@ -222,9 +269,14 @@ export const getDBStats = async () => {
 // Connection utilities
 export const disconnectDB = async (): Promise<void> => {
   if (connectionState.isConnected) {
-    await mongoose.disconnect();
-    connectionState.isConnected = false;
-    console.log('🔌 Disconnected from MongoDB');
+    try {
+      await mongoose.disconnect();
+      connectionState.isConnected = false;
+      console.log('🔌 Disconnected from MongoDB');
+    } catch (error) {
+      console.error('Error disconnecting from MongoDB:', error);
+      throw error;
+    }
   }
 };
 
@@ -232,8 +284,11 @@ export const getConnectionState = () => ({
   isConnected: connectionState.isConnected,
   readyState: mongoose.connection.readyState,
   lastConnectedAt: connectionState.lastConnectedAt,
-  connectionAttempts: connectionState.connectionAttempts
+  connectionAttempts: connectionState.connectionAttempts,
+  reconnectionCount: connectionState.reconnectionCount
 });
+
+
 
 // Export for compatibility
 export const connectToDatabase = connectToDB;
