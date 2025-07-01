@@ -8,19 +8,32 @@ declare global {
       STRIPE_PRO_YEARLY_PRICE_ID?: string;
       STRIPE_ENTERPRISE_MONTHLY_PRICE_ID?: string;
       STRIPE_ENTERPRISE_YEARLY_PRICE_ID?: string;
-      NEXT_PUBLIC_APP_URL: string;
+      STRIPE_WEBHOOK_SECRET?: string;
+      NEXT_PUBLIC_APP_URL?: string;
     }
   }
 }
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+// Initialize Stripe
+let stripe: Stripe;
+
+try {
+  const stripeSecretKey = (globalThis as any)?.process?.env?.STRIPE_SECRET_KEY || '';
+  if (stripeSecretKey) {
+    stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2024-06-20',
+      typescript: true,
+    });
+  } else {
+    // Fallback for build time
+    stripe = {} as Stripe;
+  }
+} catch (error) {
+  // Fallback for build time when environment isn't available
+  stripe = {} as Stripe;
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
-  typescript: true,
-});
+export { stripe };
 
 // Subscription plans configuration as per PRD
 export const SUBSCRIPTION_PLANS = {
@@ -62,7 +75,8 @@ export const getPriceId = (plan: SubscriptionPlan, billing: BillingCycle): strin
   if (plan === 'free') return null;
   
   const planConfig = SUBSCRIPTION_PLANS[plan];
-  return billing === 'monthly' ? planConfig.priceIdMonthly : planConfig.priceIdYearly;
+  const priceId = billing === 'monthly' ? planConfig.priceIdMonthly : planConfig.priceIdYearly;
+  return priceId || null;
 };
 
 // Helper function to create or retrieve Stripe customer
@@ -73,6 +87,11 @@ export const createOrRetrieveCustomer = async (
   lastName?: string,
   existingCustomerId?: string
 ): Promise<Stripe.Customer> => {
+  const stripeKey = (globalThis as any)?.process?.env?.STRIPE_SECRET_KEY;
+  if (!stripeKey) {
+    throw new Error('Stripe is not configured');
+  }
+
   try {
     if (existingCustomerId) {
       // Retrieve existing customer
@@ -108,6 +127,10 @@ export const createCheckoutSession = async (
   billing: BillingCycle,
   userId: string
 ): Promise<Stripe.Checkout.Session> => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Stripe is not configured');
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -119,8 +142,8 @@ export const createCheckoutSession = async (
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/pricing?canceled=true`,
       metadata: {
         userId,
         planId: plan,
@@ -159,10 +182,14 @@ export const createCustomerPortalSession = async (
   customerId: string,
   returnUrl?: string
 ): Promise<Stripe.BillingPortal.Session> => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Stripe is not configured');
+  }
+
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard`,
     });
 
     return session;
@@ -176,6 +203,10 @@ export const createCustomerPortalSession = async (
 export const cancelSubscriptionAtPeriodEnd = async (
   subscriptionId: string
 ): Promise<Stripe.Subscription> => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Stripe is not configured');
+  }
+
   try {
     const subscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
@@ -192,6 +223,10 @@ export const cancelSubscriptionAtPeriodEnd = async (
 export const reactivateSubscription = async (
   subscriptionId: string
 ): Promise<Stripe.Subscription> => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Stripe is not configured');
+  }
+
   try {
     const subscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: false,
