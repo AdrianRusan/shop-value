@@ -1,8 +1,27 @@
 {
+  "functions": {
+    "app/api/cron/**/*": { "maxDuration": 300 },
+    "app/api/webhooks/**/*": { "maxDuration": 60 },
+    "app/api/scraping/**/*": { "maxDuration": 180 },
+    "app/api/checkout/**/*": { "maxDuration": 30 },
+    "app/api/products/**/*": { "maxDuration": 30 }
+  },
   "crons": [
     {
-      "path": "/api/cron",
-      "schedule": "*/10 * * * *"
+      "path": "/api/cron/scrape-products",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/process-alerts", 
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-data",
+      "schedule": "0 2 * * 0"
+    },
+    {
+      "path": "/api/cron/weekly-reports",
+      "schedule": "0 10 * * 1"
     }
   ]
 }
