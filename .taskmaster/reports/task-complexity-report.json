@@ -1,0 +1,213 @@
+{
+	"meta": {
+		"generatedAt": "2025-07-01T19:54:00.858Z",
+		"tasksAnalyzed": 25,
+		"totalTasks": 25,
+		"analysisCount": 25,
+		"thresholdScore": 6,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Setup Next.js Project with TypeScript",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the Next.js project setup into steps for initialization, configuration, folder structure creation, dependency installation, and Git setup.",
+			"reasoning": "Moderate complexity due to multiple configurations and setup steps, but well-documented processes available."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Implement Clerk Authentication",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Divide the Clerk authentication implementation into subtasks for installation, provider setup, page creation, email verification, role-based access control, webhook configuration, and state management.",
+			"reasoning": "Higher complexity due to multiple authentication flows, role management, and integration with external service."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Set Up MongoDB with Optimized Schema",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down MongoDB setup into connection configuration, schema implementation for each model, index creation, CRUD operations, and cloud hosting setup.",
+			"reasoning": "High complexity due to database design, optimization requirements, and cloud integration."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Implement Stripe Subscription Management",
+			"complexityScore": 8,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Divide Stripe integration into subtasks for installation, product/price setup, checkout implementation, webhook handling, user status updates, and customer portal creation.",
+			"reasoning": "High complexity due to integration with external payment system, webhook handling, and subscription lifecycle management."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Develop Product Tracking System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down product tracking system into URL parsing, API endpoint creation, data extraction logic, duplicate detection, and bulk management operations.",
+			"reasoning": "High complexity due to data extraction challenges, duplicate detection algorithms, and bulk operation handling."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Implement Automated Scraping System",
+			"complexityScore": 9,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Divide scraping system implementation into queue setup, scraping logic, error handling, proxy rotation, scheduling, and integration with external proxy service.",
+			"reasoning": "Very high complexity due to distributed system design, error handling, and need for robust, scalable architecture."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Set Up Caching with Upstash Redis",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down Redis caching setup into connection configuration, caching implementation for different data types, cache invalidation strategies, and cache warming.",
+			"reasoning": "Moderate to high complexity due to need for efficient caching strategies and invalidation logic."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Develop Notification System with Resend",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Divide notification system development into email template creation, queue system setup, trigger implementation, and preference management.",
+			"reasoning": "High complexity due to need for reliable email delivery, template management, and integration with user actions."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Implement Admin Dashboard",
+			"complexityScore": 8,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Break down admin dashboard implementation into UI design, API endpoint creation, real-time updates, data visualization, and admin tools development.",
+			"reasoning": "High complexity due to need for real-time data processing, complex visualizations, and comprehensive admin functionalities."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Set Up Analytics and Error Tracking",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide analytics and error tracking setup into Amplitude configuration, Sentry setup, custom error boundary implementation, and alert configuration.",
+			"reasoning": "Moderate complexity due to integration with external services, but well-documented processes available."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Implement User Dashboard",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down user dashboard implementation into UI design, component creation for tracked products and charts, pagination/infinite scrolling, and filtering/sorting functionality.",
+			"reasoning": "High complexity due to need for efficient data presentation, interactive features, and performance optimization."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Develop Price Alert System",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Divide price alert system development into UI for setting alerts, background job for price checking, alert triggering logic, notification integration, and frequency control implementation.",
+			"reasoning": "High complexity due to real-time price monitoring, complex triggering logic, and integration with notification system."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Implement Data Quality Assurance",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down data quality assurance implementation into price validation, image URL handling, product title standardization, availability detection, and duplicate detection.",
+			"reasoning": "High complexity due to need for sophisticated algorithms for data cleaning, normalization, and duplicate detection."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Set Up Security Measures",
+			"complexityScore": 9,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Divide security measure implementation into input validation, rate limiting, query escaping, XSS protection, CORS setup, session management, and environment variable handling.",
+			"reasoning": "Very high complexity due to critical nature of security features and need for comprehensive protection against various attack vectors."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Implement GDPR Compliance Features",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down GDPR compliance implementation into consent management, data export functionality, account deletion process, audit logging, and data retention policy enforcement.",
+			"reasoning": "High complexity due to legal requirements, need for thorough data handling, and potential impact on existing systems."
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Develop API Documentation",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide API documentation development into tool setup, endpoint documentation, example creation, versioning strategy, and developer portal implementation.",
+			"reasoning": "Moderate complexity due to comprehensive documentation requirements, but straightforward implementation process."
+		},
+		{
+			"taskId": 17,
+			"taskTitle": "Implement Progressive Web App (PWA) Features",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down PWA feature implementation into service worker setup, web app manifest creation, push notification implementation, responsive design, and app shell architecture.",
+			"reasoning": "Moderate to high complexity due to need for offline functionality and optimized performance across devices."
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Set Up Automated Testing Suite",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Divide automated testing setup into Jest configuration, React Testing Library setup, Playwright implementation, unit test creation, integration test development, E2E test implementation, and CI/CD integration.",
+			"reasoning": "High complexity due to need for comprehensive test coverage across different testing types and CI/CD integration."
+		},
+		{
+			"taskId": 19,
+			"taskTitle": "Implement Internationalization (i18n)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down i18n implementation into next-i18next setup, translation file creation, language switching functionality, and RTL support consideration.",
+			"reasoning": "Moderate complexity due to need for comprehensive text extraction and potential layout adjustments for different languages."
+		},
+		{
+			"taskId": 20,
+			"taskTitle": "Optimize Performance and Core Web Vitals",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Divide performance optimization into code splitting implementation, image optimization, resource hint setup, main-thread work optimization, and Core Web Vitals improvement strategies.",
+			"reasoning": "High complexity due to need for deep understanding of performance metrics and implementation of various optimization techniques."
+		},
+		{
+			"taskId": 21,
+			"taskTitle": "Implement Advanced Product Categorization",
+			"complexityScore": 9,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down advanced categorization implementation into model selection, training pipeline creation, API endpoint development, feedback loop implementation, and integration with external AI service.",
+			"reasoning": "Very high complexity due to machine learning component, need for ongoing model improvement, and integration challenges."
+		},
+		{
+			"taskId": 22,
+			"taskTitle": "Develop Affiliate Integration System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Divide affiliate integration into research and selection of networks, automated tag addition system, tracking dashboard creation, conversion attribution implementation, and compliance verification.",
+			"reasoning": "High complexity due to integration with multiple external systems and need for accurate tracking and reporting."
+		},
+		{
+			"taskId": 23,
+			"taskTitle": "Implement Advanced Analytics and Reporting",
+			"complexityScore": 9,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down advanced analytics implementation into event tracking setup, data warehouse creation, ETL process development, dashboard creation, and advanced metric calculation implementation.",
+			"reasoning": "Very high complexity due to need for robust data processing pipeline, complex calculations, and scalable data storage solutions."
+		},
+		{
+			"taskId": 24,
+			"taskTitle": "Set Up Continuous Integration and Deployment (CI/CD)",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Divide CI/CD setup into tool selection and configuration, automated testing integration, environment setup, deployment automation, database migration integration, and feature flag implementation.",
+			"reasoning": "High complexity due to need for robust, automated processes across multiple environments and potential for deployment issues."
+		},
+		{
+			"taskId": 25,
+			"taskTitle": "Conduct Security Audit and Penetration Testing",
+			"complexityScore": 9,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down security audit into engagement of third-party firm, code review process, automated vulnerability scanning, manual testing for business logic issues, and security policy review and update.",
+			"reasoning": "Very high complexity due to critical nature of security, need for comprehensive testing, and potential for uncovering complex vulnerabilities."
+		}
+	]
+}

@@ -1,0 +1,11 @@
+# Task ID: 18
+# Title: Set Up Automated Testing Suite
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Implement comprehensive automated testing for the application.
+# Details:
+Set up Jest for unit and integration testing. Implement React Testing Library for component tests. Set up Playwright for end-to-end testing. Create unit tests for utility functions and hooks. Implement integration tests for API endpoints. Create E2E tests for critical user flows (registration, product tracking, payments). Set up CI/CD pipeline for running tests on each commit.
+
+# Test Strategy:
+Aim for >80% test coverage. Ensure all critical paths are covered by E2E tests. Verify that CI/CD pipeline correctly runs all tests.

@@ -1,0 +1,680 @@
+# ShopValue MVP SaaS Platform - Enhanced Product Requirements Document
+## Stage 1: Revenue-Generating MVP for Solo Development (8-12 weeks)
+
+### 1. EXECUTIVE SUMMARY
+
+**Vision:** Transform ShopValue from a basic price tracking tool into a fully automated, revenue-generating SaaS platform that serves Romanian consumers with reliable price tracking and alerts while minimizing manual intervention for the solo developer.
+
+**Success Metrics:**
+- €2-5K Monthly Recurring Revenue (MRR) by month 6
+- 1,000+ registered users
+- 500+ tracked products across platform
+- 15% trial-to-paid conversion rate
+- 5% monthly churn rate
+- <2 hours/week manual maintenance time
+
+**Target Market:** Romanian consumers aged 25-45 who shop online regularly and want to save money on purchases.
+
+**Solo Development Principles:**
+- Maximum automation using managed services
+- Zero manual user management via webhooks
+- Automated billing and subscription management
+- Automated error monitoring and alerting
+- Automated deployment and scaling
+
+---
+
+## 2. CORE FEATURES WITH TECHNICAL SPECIFICATIONS
+
+### 2.1 User Authentication & Management (Clerk Integration)
+**Requirement:** Zero-code authentication system with automated user lifecycle management
+
+**Technical Implementation:**
+```typescript
+npm install @clerk/nextjs
+// Features Required:
+- Email/password authentication with email verification
+- Password reset and account recovery
+- User profile management with preferences
+- Role-based access control (user, admin)
+- Automatic user sync to MongoDB via webhooks
+```
+
+**Automated User Management via Clerk Webhooks:**
+- user.created → Create user record in MongoDB
+- user.updated → Update user profile data
+- user.deleted → Clean up user data and subscriptions
+- session.created → Update last login timestamp
+
+**User Schema in MongoDB:**
+```typescript
+interface User {
+  clerkId: string;           // Primary key from Clerk
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  subscriptionTier: 'free' | 'pro' | 'enterprise';
+  subscriptionStatus: 'active' | 'canceled' | 'past_due' | 'trialing';
+  stripeCustomerId?: string;
+  createdAt: Date;
+  lastLoginAt: Date;
+  preferences: {
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    weeklyDigest: boolean;
+    theme: 'light' | 'dark';
+    language: 'ro' | 'en';
+  };
+  usage: {
+    trackedProducts: number;
+    maxProducts: number;
+    alertsSent: number;
+    lastResetDate: Date;
+  };
+  metadata: {
+    signupSource?: string;
+    referralCode?: string;
+    firstProductAdded?: Date;
+    onboardingCompleted?: boolean;
+  };
+}
+```
+
+### 2.2 Subscription Management (Stripe Integration)
+**Requirement:** Fully automated subscription lifecycle with zero manual billing management
+
+**Pricing Tiers:**
+- **Free:** 5 products tracked, basic email alerts, daily price checks
+- **Pro:** €19.99/month, 50 products tracked, real-time alerts, price history charts, 4x daily checks
+- **Enterprise:** €49.99/month, unlimited products, API access, priority support, hourly checks
+
+**Technical Implementation:**
+```typescript
+npm install stripe @stripe/stripe-js
+// Stripe Products Configuration
+const stripeProducts = {
+  pro: {
+    priceId: 'price_pro_monthly',
+    amount: 1999, // €19.99
+    features: ['50 products', 'Real-time alerts', 'Price history', '4x daily checks']
+  },
+  enterprise: {
+    priceId: 'price_enterprise_monthly', 
+    amount: 4999, // €49.99
+    features: ['Unlimited products', 'API access', 'Priority support', 'Hourly checks']
+  }
+};
+```
+
+**Automated Stripe Workflow:**
+1. User clicks upgrade → Stripe Checkout session
+2. Payment success → Stripe webhook → Update user subscription in DB
+3. Payment failure → Automatic retry + customer notification
+4. Subscription changes → Automatic tier adjustment
+5. Cancellation → Automatic downgrade at period end
+
+**Required Stripe Webhooks (app/api/webhooks/stripe/route.ts):**
+- customer.subscription.created
+- customer.subscription.updated
+- customer.subscription.deleted
+- invoice.payment_succeeded
+- invoice.payment_failed
+- customer.subscription.trial_will_end
+
+### 2.3 Enhanced Product Tracking System
+**Requirement:** Intelligent product tracking with automated data management
+
+**Core Functionality:**
+- One-click product addition via URL parsing
+- Automatic product information extraction (title, price, image, brand)
+- Smart duplicate detection and prevention
+- Bulk product management operations
+- AI-powered product categorization
+- Comprehensive price history tracking
+- User-specific price alert configuration
+
+**Database Schema Optimization:**
+```typescript
+interface Product {
+  _id: ObjectId;
+  url: string;                    // Unique index
+  title: string;                  // Text index for search
+  brand: string;                  // Index for filtering
+  category: string;               // Auto-categorized, indexed
+  image: string;
+  currentPrice: number;           // Index for price queries
+  originalPrice: number;
+  currency: 'RON' | 'EUR';
+  discount: number;
+  availability: 'in_stock' | 'out_of_stock' | 'limited';
+  lastChecked: Date;             // Index for stale data cleanup
+  checkFrequency: number;        // Hours between checks
+  metadata: {
+    description?: string;
+    rating?: number;
+    reviewCount?: number;
+    seller?: string;
+    sku?: string;
+  };
+  tracking: {
+    totalTrackers: number;       // Count of users tracking
+    isActive: boolean;           // For cleanup
+    popularity: number;          // Tracking frequency
+  };
+  scraping: {
+    selector: string;            // Price element selector
+    lastSuccessful: Date;
+    failureCount: number;
+    isBlocked: boolean;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface UserProductTracking {
+  _id: ObjectId;
+  userId: string;                // Clerk user ID, indexed
+  productId: ObjectId;           // Product reference, indexed
+  priceAlert: {
+    enabled: boolean;
+    threshold: number;           // Alert below this price
+    thresholdType: 'fixed' | 'percentage';
+    lastTriggered?: Date;
+  };
+  notifications: {
+    lastAlertSent?: Date;
+    alertsSent: number;
+    preferences: {
+      email: boolean;
+      push: boolean;
+      frequency: 'immediate' | 'daily' | 'weekly';
+    };
+  };
+  customName?: string;           // User's custom product name
+  tags?: string[];               // User's custom tags
+  addedAt: Date;
+  isActive: boolean;
+}
+
+interface PriceHistory {
+  _id: ObjectId;
+  productId: ObjectId;           // Indexed
+  price: number;
+  timestamp: Date;               // TTL index (90 days)
+  source: 'scraper' | 'manual' | 'api';
+  confidence: number;            // Scraping confidence score
+}
+```
+
+**Automated Data Management:**
+- TTL indexes for automatic price history cleanup (90 days retention)
+- Scheduled cleanup of products with zero active trackers
+- Automatic product deactivation for repeatedly failed scraping
+- Performance monitoring with automatic index optimization alerts
+
+### 2.4 Automated Notification System (Resend Integration)
+**Requirement:** Reliable, automated email system with React-based templates
+
+**Technical Implementation:**
+```typescript
+npm install resend react-email
+// Email templates stored in /emails directory as React components
+```
+
+**Notification Types with Automated Triggers:**
+- **Price Drop Alerts:** Triggered by price comparison in cron jobs
+- **Back-in-Stock Notifications:** Triggered when availability changes to in_stock
+- **Welcome Email Series:** Triggered by Clerk user.created webhook
+- **Subscription Confirmations:** Triggered by Stripe webhooks
+- **Weekly Deal Roundups:** Triggered by weekly cron job
+- **Billing Notifications:** Triggered by Stripe payment events
+- **Trial Expiration Warnings:** Triggered 3 days before trial ends
+
+**Email Queue System with Bull/Redis:**
+```typescript
+interface EmailJob {
+  userId: string;
+  template: 'price_alert' | 'welcome' | 'trial_ending' | 'weekly_digest' | 'billing_failed';
+  data: any;
+  scheduledFor?: Date;
+  priority: 'high' | 'normal' | 'low';
+  retryCount: number;
+}
+
+// Queue configuration with Upstash Redis
+const emailQueue = new Queue('email-processing', {
+  redis: upstashRedis,
+  defaultJobOptions: {
+    removeOnComplete: 100,
+    removeOnFail: 50,
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000
+    }
+  }
+});
+```
+
+**Required Email Templates:**
+- Welcome email with onboarding checklist
+- Price alert with product details and purchase links
+- Weekly digest with best deals and price trends
+- Subscription confirmation with billing details
+- Payment failure notification with retry link
+- Trial expiration warning with upgrade prompts
+- Account deletion confirmation
+
+### 2.5 Admin Dashboard & Analytics
+**Requirement:** Comprehensive admin interface for business monitoring
+
+**Admin Dashboard Features:**
+- Real-time user activity and registration metrics
+- Subscription analytics (MRR, churn, conversion rates)
+- Product tracking statistics and trends
+- System health monitoring (scraping success, email delivery)
+- Customer support tools (user lookup, subscription management)
+- Revenue forecasting and goal tracking
+
+**Analytics Stack Integration:**
+```typescript
+npm install @amplitude/analytics-browser @sentry/nextjs
+// Vercel Analytics included automatically
+```
+
+**Key Metrics Tracking:**
+- User engagement events (product_added, alert_configured, subscription_upgraded)
+- Business metrics (trial_started, payment_succeeded, churn_event)
+- System performance (api_response_time, scraping_success_rate, email_delivery_rate)
+- Product analytics (most_tracked_products, price_trend_accuracy)
+
+---
+
+## 3. PERFORMANCE & CACHING (Upstash Redis)
+
+### 3.1 Caching Strategy
+**Requirement:** Sub-200ms API response times with intelligent caching
+
+**Implementation:**
+```typescript
+npm install @upstash/redis
+// Automatic caching layers:
+const cacheConfig = {
+  productSearch: { ttl: 3600 },      // 1 hour
+  userSubscription: { ttl: 1800 },   // 30 minutes  
+  priceHistory: { ttl: 86400 },      // 24 hours
+  popularProducts: { ttl: 21600 },   // 6 hours
+  categoryData: { ttl: 43200 }       // 12 hours
+};
+```
+
+**Cache Invalidation Strategy:**
+- Product price updates → Clear product and search caches
+- User subscription changes → Clear user cache
+- New product additions → Clear category and popular product caches
+- Bulk price updates → Selective cache warming
+
+### 3.2 Database Optimization
+**Required MongoDB Indexes:**
+```typescript
+const mongoIndexes = {
+  products: [
+    { url: 1 },                           // Unique
+    { brand: 1, category: 1 },            // Compound filtering
+    { currentPrice: 1, brand: 1 },        // Price range queries
+    { title: "text", "metadata.description": "text" }, // Search
+    { lastChecked: 1 },                   // Stale data cleanup
+    { "tracking.isActive": 1, "tracking.popularity": -1 } // Active products
+  ],
+  users: [
+    { clerkId: 1 },                       // Primary lookup
+    { email: 1 },                         // Email searches
+    { stripeCustomerId: 1 },              // Stripe integration
+    { subscriptionTier: 1, subscriptionStatus: 1 } // Subscription queries
+  ],
+  userProductTracking: [
+    { userId: 1, isActive: 1 },           // User's products
+    { productId: 1, isActive: 1 },        // Product trackers
+    { userId: 1, productId: 1 },          // Unique constraint
+    { "priceAlert.enabled": 1, "priceAlert.threshold": 1 } // Alert processing
+  ],
+  priceHistory: [
+    { productId: 1, timestamp: -1 },      // Product timeline
+    { timestamp: 1 }                      // TTL cleanup
+  ]
+};
+```
+
+---
+
+## 4. AUTOMATED SCRAPING & DATA COLLECTION
+
+### 4.1 Enhanced Scraping Architecture
+**Requirement:** Reliable, scalable scraping with intelligent error handling
+
+**Scraping Queue System:**
+```typescript
+interface ScrapingJob {
+  productId: ObjectId;
+  url: string;
+  priority: 'high' | 'normal' | 'low';  // Based on user tier and tracking count
+  retryCount: number;
+  lastAttempt: Date;
+  checkFrequency: number;               // Hours between checks
+  userTier: 'free' | 'pro' | 'enterprise';
+}
+
+// Automated scheduling based on subscription tiers
+const checkFrequencies = {
+  free: 24,        // Once daily
+  pro: 6,          // 4 times daily
+  enterprise: 1    // Hourly
+};
+```
+
+**Error Handling & Recovery:**
+- Exponential backoff for failed attempts
+- Automatic proxy rotation on detection
+- Graceful degradation with manual price entry option
+- Success/failure rate monitoring per domain
+- Automatic alerts for sustained scraping failures
+
+### 4.2 Data Quality Assurance
+**Automated Data Validation:**
+- Price format validation and currency normalization
+- Image URL validation with CDN backup storage
+- Product title standardization and cleanup
+- Availability status detection with confidence scoring
+- Duplicate detection using URL normalization and fuzzy matching
+
+---
+
+## 5. SECURITY & COMPLIANCE
+
+### 5.1 Security Implementation
+**Security Stack:**
+```typescript
+npm install zod @clerk/nextjs
+// Input validation with Zod schemas
+// Rate limiting with Upstash Redis
+// Authentication via Clerk
+// HTTPS enforcement via Vercel
+```
+
+**Security Features:**
+- All API inputs validated with Zod schemas
+- Rate limiting per user and per IP
+- Automatic session management via Clerk
+- Secure environment variable handling
+- SQL injection prevention (NoSQL with proper escaping)
+- XSS protection via React's built-in sanitization
+
+### 5.2 GDPR Compliance Automation
+**Automated Compliance Features:**
+- Cookie consent banner with preference management
+- User-initiated data export via API endpoint
+- Automated account deletion with complete data purging
+- Audit logging for all data access and modifications
+- Automatic data retention policy enforcement (90 days for price history)
+
+---
+
+## 6. MONITORING & ERROR TRACKING
+
+### 6.1 Sentry Integration
+**Implementation:**
+```typescript
+npm install @sentry/nextjs
+// Automated monitoring for:
+- Application errors with stack traces
+- Performance monitoring and slow queries
+- User session replays for debugging
+- Release tracking and deployment monitoring
+- Custom business metrics tracking
+```
+
+**Automated Alerts:**
+- Critical errors → Immediate email/Slack notification
+- Performance degradation → Daily digest if API >500ms
+- High error rates → Alert if >1% error rate sustained
+- Failed payments → Immediate notification for manual review
+- Scraping failures → Alert if success rate <90% for 1 hour
+
+### 6.2 Business Metrics Monitoring
+**Automated Reporting:**
+- Daily revenue and user growth reports
+- Weekly cohort analysis and retention metrics
+- Monthly churn analysis and subscription health
+- Real-time alerts for unusual patterns (high churn, low conversion)
+
+---
+
+## 7. DEPLOYMENT & OPERATIONS
+
+### 7.1 Vercel Configuration
+**vercel.json Setup:**
+```json
+{
+  "buildCommand": "npm run build",
+  "functions": {
+    "app/api/cron/route.ts": { "maxDuration": 300 },
+    "app/api/webhooks/*/route.ts": { "maxDuration": 60 },
+    "app/api/scraping/route.ts": { "maxDuration": 180 }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/scrape-products",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/process-alerts",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-digest",
+      "schedule": "0 9 * * MON"
+    },
+    {
+      "path": "/api/cron/cleanup-data",
+      "schedule": "0 2 * * SUN"
+    },
+    {
+      "path": "/api/cron/usage-reset",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}
+```
+
+### 7.2 Environment Variables
+**Required Configuration:**
+```bash
+# Authentication
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_WEBHOOK_SECRET=whsec_...
+
+# Payments
+STRIPE_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/shopvalue
+
+# Email
+RESEND_API_KEY=re_...
+
+# Cache & Queue
+UPSTASH_REDIS_REST_URL=https://...
+UPSTASH_REDIS_REST_TOKEN=...
+
+# Monitoring
+SENTRY_DSN=https://...
+NEXT_PUBLIC_SENTRY_DSN=https://...
+
+# Analytics
+NEXT_PUBLIC_AMPLITUDE_API_KEY=...
+
+# Scraping
+BRIGHTDATA_USERNAME=...
+BRIGHTDATA_PASSWORD=...
+NEXT_PUBLIC_APP_URL=https://shopvalue.ro
+```
+
+---
+
+## 8. TESTING STRATEGY
+
+### 8.1 Automated Testing
+**Testing Stack:**
+```typescript
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom @playwright/test
+```
+
+**Test Coverage Requirements:**
+- Unit tests for all utility functions and components (>80% coverage)
+- Integration tests for all API endpoints
+- E2E tests for critical user flows (registration, product tracking, payments)
+- Performance tests for scraping and API response times
+
+### 8.2 Quality Gates
+**CI/CD Pipeline Checks:**
+- TypeScript compilation without errors
+- ESLint code quality validation
+- Jest unit test suite (100% passing)
+- Playwright E2E tests for critical flows
+- Performance budget validation (<2s page load)
+- Security vulnerability scanning (Snyk)
+
+---
+
+## 9. SUCCESS METRICS & KPIs
+
+### 9.1 Target Metrics (6 months post-launch)
+**User Metrics:**
+- Monthly Active Users: 1,000+
+- Daily Active Users: 200+
+- User Retention: Day 1 (80%), Day 7 (40%), Day 30 (25%)
+- Onboarding Completion: 80%
+
+**Business Metrics:**
+- Monthly Recurring Revenue: €2,000-€5,000
+- Customer Acquisition Cost: <€50
+- Customer Lifetime Value: >€200
+- Trial-to-Paid Conversion: 15%
+- Monthly Churn Rate: <5%
+
+**Product Metrics:**
+- Average Products per User: 8-12
+- Price Alert Accuracy: >90%
+- Email Delivery Rate: >95%
+- Email Engagement: 25% open rate, 5% click rate
+- API Response Time: <200ms average
+- Scraping Success Rate: >95%
+
+### 9.2 Analytics Implementation
+**Event Tracking:**
+```typescript
+const criticalEvents = {
+  user_registered: ['source', 'timestamp'],
+  product_added: ['url', 'category', 'price', 'user_tier'],
+  alert_configured: ['threshold_type', 'threshold_value'],
+  subscription_started: ['plan', 'billing_cycle', 'trial_used'],
+  price_alert_engaged: ['product_id', 'price_drop_percentage'],
+  subscription_canceled: ['reason', 'time_to_cancel', 'tier']
+};
+```
+
+---
+
+## 10. LAUNCH TIMELINE & PHASES
+
+### 10.1 Development Roadmap
+
+**Phase 1 - Foundation (Weeks 1-3):**
+- Clerk authentication integration with webhooks
+- MongoDB schema setup with optimized indexing
+- Stripe subscription flow with automated webhooks
+- Sentry error monitoring and alerting setup
+- Basic API structure with Upstash Redis caching
+
+**Phase 2 - Core Features (Weeks 4-6):**
+- Enhanced product tracking dashboard with charts
+- Complete Stripe payment flows and customer portal
+- Resend email system with automated templates
+- Advanced scraping queue with error handling
+- Admin dashboard with real-time analytics
+
+**Phase 3 - Automation & UX (Weeks 7-9):**
+- PWA implementation with push notifications
+- Automated email campaigns and user onboarding
+- Performance optimization and caching strategy
+- Mobile-responsive UI with dark theme support
+- Comprehensive testing suite implementation
+
+**Phase 4 - Launch Preparation (Weeks 10-12):**
+- Closed beta with 50 selected users
+- Load testing and performance validation
+- Security audit and penetration testing
+- Legal compliance verification (GDPR, ToS, Privacy)
+- Marketing website and launch campaign preparation
+
+### 10.2 Launch Success Criteria
+**Technical Requirements:**
+- All core features tested and functional
+- Payment processing 99.9% success rate
+- Email delivery >95% success rate
+- API consistently <200ms response time
+- Scraping >95% success rate
+- Zero critical security vulnerabilities
+- Performance budget targets met
+
+**Business Requirements:**
+- €500+ MRR from beta users
+- 10%+ trial-to-paid conversion in beta
+- 75%+ onboarding completion rate
+- <24 hour customer support response time
+- Full legal compliance verification
+- Positive user feedback (4.0+ rating)
+
+---
+
+## 11. SOLO DEVELOPER OPTIMIZATION
+
+### 11.1 Zero-Touch Automation
+**Fully Automated Systems:**
+- User lifecycle management (Clerk webhooks)
+- Subscription billing and management (Stripe)
+- Email marketing and notifications (Resend + queue)
+- Error monitoring and alerting (Sentry)
+- Deployment and scaling (Vercel)
+- Database backup and maintenance (MongoDB Atlas)
+- Cache management (Upstash Redis)
+
+### 11.2 Maintenance Requirements
+**Expected Time Investment:**
+- **Development Phase:** 40+ hours/week for 12 weeks
+- **Post-Launch Maintenance:** <2 hours/week total
+  - Monitor error alerts: 30 minutes/week
+  - Review business metrics: 30 minutes/week
+  - Customer support: 45 minutes/week
+  - Content/feature updates: 15 minutes/week
+
+### 11.3 Scaling Automation
+**Auto-scaling Infrastructure:**
+- Database: MongoDB Atlas automatic scaling
+- Caching: Upstash Redis serverless scaling
+- Email: Resend automatic volume handling
+- Hosting: Vercel serverless functions auto-scale
+- Payments: Stripe handles unlimited volume
+- Monitoring: Sentry scales with application
+
+**Cost Projections:**
+- Month 1-3: €200-300/month (development)
+- Month 4-6: €300-500/month (early growth)
+- €3K MRR: ~€400/month operational costs (13% of revenue)
+- €5K MRR: ~€600/month operational costs (12% of revenue)
+
+This comprehensive PRD provides detailed specifications for building a fully automated, revenue-generating SaaS platform optimized for solo development with minimal ongoing maintenance requirements. 
