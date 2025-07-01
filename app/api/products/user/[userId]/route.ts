@@ -137,12 +137,15 @@ export async function GET(
     const totalCount = await UserProductTracking.countDocuments(trackingQuery);
 
     // Prepare response with analytics
-    const trackedProducts = validTrackings.map(tracking => ({
-      ...tracking,
-      product: tracking.productId,
-      priceChangePercentage: tracking.productId ? 
-        ((tracking.productId.currentPrice - tracking.productId.originalPrice) / tracking.productId.originalPrice) * 100 : 0
-    }));
+    const trackedProducts = validTrackings.map(tracking => {
+      const product = tracking.productId as any; // Type assertion since populate changes the type
+      return {
+        ...tracking,
+        product: product,
+        priceChangePercentage: product && product.currentPrice && product.originalPrice ? 
+          ((product.currentPrice - product.originalPrice) / product.originalPrice) * 100 : 0
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -432,18 +435,20 @@ export async function DELETE(
 
     // Update user usage
     const user = await User.findOne({ clerkId: params.userId });
-    if (user && result.modifiedCount > 0) {
-      user.usage.productsTracked = Math.max(0, user.usage.productsTracked - result.modifiedCount);
+    const removedCount = softDelete ? (result as any).modifiedCount : (result as any).deletedCount;
+    
+    if (user && removedCount > 0) {
+      user.usage.productsTracked = Math.max(0, user.usage.productsTracked - removedCount);
       await user.save();
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        removedCount: result.modifiedCount || result.deletedCount,
+        removedCount,
         softDelete
       },
-      message: `Removed ${result.modifiedCount || result.deletedCount} products from tracking`,
+      message: `Removed ${removedCount} products from tracking`,
       timestamp: new Date().toISOString()
     });
 

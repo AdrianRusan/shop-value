@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Heart, TrendingDown, TrendingUp, Bell, BellOff, Star } from "lucide-react";
+// Using HTML symbols instead of icon library to avoid dependencies
 
 interface TrackingInfo {
   isTracked: boolean;
@@ -91,7 +91,7 @@ const ProductCardEnhanced = ({
         <div className={`absolute top-2 right-2 z-10 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
           isPriceDown ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
         }`}>
-          {isPriceDown ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
+          {isPriceDown ? <span>📉</span> : <span>📈</span>}
           {Math.abs(priceChangePercentage).toFixed(1)}%
         </div>
       )}
@@ -135,7 +135,7 @@ const ProductCardEnhanced = ({
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title={isTracking ? 'Oprește urmărirea' : 'Începe urmărirea'}
                 >
-                  <Heart size={16} fill={isTracking ? 'currentColor' : 'none'} />
+                  <span>❤️</span>
                 </button>
 
                 {isTracking && trackingInfo?.alertSettings && (
@@ -147,7 +147,7 @@ const ProductCardEnhanced = ({
                     className="p-2 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white"
                     title="Setări alerte"
                   >
-                    {trackingInfo.alertSettings.priceDecrease ? <Bell size={16} /> : <BellOff size={16} />}
+                    {trackingInfo.alertSettings.priceDecrease ? <span>🔔</span> : <span>🔕</span>}
                   </button>
                 )}
               </div>
@@ -166,15 +166,16 @@ const ProductCardEnhanced = ({
               <span className="text-xs text-gray-600 dark:text-gray-400">Rating personal:</span>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
+                  <span
                     key={star}
-                    size={12}
                     className={
                       star <= trackingInfo.personalRating! 
-                        ? 'text-yellow-500 fill-current' 
+                        ? 'text-yellow-500' 
                         : 'text-gray-300'
                     }
-                  />
+                  >
+                    ⭐
+                  </span>
                 ))}
               </div>
             </div>
@@ -210,10 +211,10 @@ const ProductCardEnhanced = ({
                     <span>{product?.currency}</span>
                   </p>
                   {isPriceDown && (
-                    <TrendingDown size={16} className="text-green-500" />
+                    <span className="text-green-500">📉</span>
                   )}
                   {isPriceUp && (
-                    <TrendingUp size={16} className="text-red-500" />
+                    <span className="text-red-500">📈</span>
                   )}
                 </div>
               </div>
@@ -241,14 +242,15 @@ const ProductCardEnhanced = ({
                   onClick={() => handleQuickRating(star)}
                   className="hover:scale-110 transition-transform"
                 >
-                  <Star
-                    size={16}
+                  <span
                     className={
                       star <= (trackingInfo?.personalRating || 0)
-                        ? 'text-yellow-500 fill-current' 
+                        ? 'text-yellow-500' 
                         : 'text-gray-300 hover:text-yellow-400'
                     }
-                  />
+                  >
+                    ⭐
+                  </span>
                 </button>
               ))}
             </div>
