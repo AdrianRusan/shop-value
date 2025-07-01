@@ -38,11 +38,7 @@ const mongoOptions: mongoose.ConnectOptions = {
     w: 'majority',
     j: true, // Journal writes for durability
     wtimeout: 5000
-  },
-  
-  // Buffer settings
-  bufferMaxEntries: 0, // Disable mongoose buffering
-  bufferCommands: false, // Disable mongoose buffering
+  }
 };
 
 // Connection state management
@@ -109,8 +105,6 @@ const connectWithRetry = async (): Promise<typeof mongoose> => {
       // Set mongoose configuration for production
       mongoose.set('strictQuery', true);
       mongoose.set('debug', process.env.NODE_ENV === 'development');
-      mongoose.set('bufferCommands', false);
-      mongoose.set('bufferMaxEntries', 0);
       
       // Connect to MongoDB
       const mongooseInstance = await mongoose.connect(process.env.MONGODB_URI!, mongoOptions);
