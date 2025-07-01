@@ -31,7 +31,7 @@
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.3.1",
     "mongoose": "^8.7.0",
-    "next": "14.2.14",
+    "next": "14.2.30",
     "next-share": "^0.27.0",
     "next-themes": "^0.3.0",
     "nodemailer": "^6.9.15",
