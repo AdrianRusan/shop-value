@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
+import { ClerkProvider } from '@clerk/nextjs'
 import ThemeProvider from './theme-provider';
 import Navbar from '@/components/Navbar';
 
@@ -43,16 +44,35 @@ export default function RootLayout({
 }) {
 
   return (
-    <ThemeProvider>
-      <html lang="ro">
-        <body className={`${inter.className} dark:bg-black`}>
-          <main className='max-w-10xl mx-auto'>
-            <Navbar />
-            {children}
-            <Analytics />
-          </main>
-        </body>
-      </html>
-    </ThemeProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: '#FF6B35',
+          colorText: '#1F2937',
+          colorBackground: '#FFFFFF',
+          colorInputBackground: '#F9FAFB',
+          colorInputText: '#1F2937',
+          borderRadius: '0.5rem',
+        },
+        elements: {
+          formButtonPrimary: 'bg-primary hover:bg-primary/90 text-white',
+          card: 'shadow-lg border border-gray-200',
+          headerTitle: 'text-xl font-bold text-gray-900',
+          headerSubtitle: 'text-gray-600',
+        },
+      }}
+    >
+      <ThemeProvider>
+        <html lang="ro">
+          <body className={`${inter.className} dark:bg-black`}>
+            <main className='max-w-10xl mx-auto'>
+              <Navbar />
+              {children}
+              <Analytics />
+            </main>
+          </body>
+        </html>
+      </ThemeProvider>
+    </ClerkProvider>
   )
 }
