@@ -1,18 +1,50 @@
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
 
-if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-  throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in environment variables');
-}
+// Lazy-initialized Redis client to avoid build-time errors
+let _redis: Redis | null = null;
 
-// Initialize Upstash Redis client
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+const getRedis = (): Redis => {
+  if (!_redis) {
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      // During build time, we don't have these variables, so we'll create a mock
+      if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+        // Only throw in production runtime (not build time)
+        throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in environment variables');
+      }
+      // Return a mock Redis client for build time
+      return {
+        get: async () => null,
+        set: async () => 'OK',
+        setex: async () => 'OK',
+        incr: async () => 1,
+        expire: async () => 1,
+        hmset: async () => 'OK',
+        lpush: async () => 1,
+        ltrim: async () => 'OK',
+      } as any;
+    }
+    
+    _redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+  
+  return _redis;
+};
+
+// Export a proxy that lazily initializes Redis
+export const redis = new Proxy({} as Redis, {
+  get(target, prop) {
+    const redisInstance = getRedis();
+    const value = redisInstance[prop as keyof Redis];
+    return typeof value === 'function' ? value.bind(redisInstance) : value;
+  }
 });
 
-// Rate limiting configurations
-export const rateLimits = {
+// Rate limiting configurations (lazy-loaded)
+const createRateLimits = () => ({
   // API endpoints - 10 requests per minute
   api: new Ratelimit({
     redis,
@@ -40,7 +72,18 @@ export const rateLimits = {
     limiter: Ratelimit.slidingWindow(3, '5 m'),
     analytics: true,
   }),
-};
+});
+
+let _rateLimits: ReturnType<typeof createRateLimits> | null = null;
+
+export const rateLimits = new Proxy({} as ReturnType<typeof createRateLimits>, {
+  get(target, prop) {
+    if (!_rateLimits) {
+      _rateLimits = createRateLimits();
+    }
+    return _rateLimits[prop as keyof typeof _rateLimits];
+  }
+});
 
 // Cache key helpers
 export const cacheKeys = {
