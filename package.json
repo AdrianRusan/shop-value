@@ -21,7 +21,7 @@
     "db:health": "node scripts/db-setup.js health"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.0.0",
+    "@clerk/nextjs": "^5.7.5",
     "@headlessui/react": "^1.7.18",
     "@rooks/use-window-size": "^4.11.2",
     "@sentry/nextjs": "^8.0.0",
@@ -50,6 +50,7 @@
     "react-responsive-carousel": "^3.2.23",
     "resend": "^4.0.0",
     "stripe": "^16.0.0",
+    "svix": "^1.68.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
