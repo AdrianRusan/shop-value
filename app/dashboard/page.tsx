@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserByClerkId } from '@/lib/clerk-sync';
+import { TrackedProductsGrid } from '@/components/dashboard/TrackedProductsGrid';
 
 export default async function DashboardPage() {
   // Check authentication
@@ -35,12 +36,12 @@ export default async function DashboardPage() {
             Bună ziua, {clerkUser.firstName || 'Utilizator'}! 👋
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Bine ai venit pe dashboard-ul tău ShopValue
+            Gestionează produsele urmărite și vezi istoricul prețurilor
           </p>
         </div>
 
         {/* User Info Cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
           {/* Clerk User Info */}
           <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
             <div className="p-6">
@@ -116,8 +117,29 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Main Dashboard Content - Tracked Products */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Produsele Tale Urmărite
+            </h2>
+            <a
+              href="/produse"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Adaugă Produs Nou
+            </a>
+          </div>
+          
+          {/* Enhanced Tracked Products Grid */}
+          <TrackedProductsGrid />
+        </div>
+
         {/* Quick Actions */}
-        <div className="mt-8">
+        <div className="mt-12">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Acțiuni Rapide
           </h2>
@@ -126,26 +148,26 @@ export default async function DashboardPage() {
               href="/produse"
               className="block rounded-lg bg-primary px-4 py-3 text-center text-white shadow hover:bg-primary/90 transition-colors"
             >
-              Vezi Produse
+              Explorează Produse
             </a>
-            <button
-              className="block rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-3 text-center text-gray-700 dark:text-gray-300 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              disabled
+            <a
+              href="/dashboard?view=analytics"
+              className="block rounded-lg bg-blue-600 px-4 py-3 text-center text-white shadow hover:bg-blue-700 transition-colors"
             >
-              Adaugă Produs (În Curând)
-            </button>
-            <button
-              className="block rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-3 text-center text-gray-700 dark:text-gray-300 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              disabled
+              Analize Prețuri
+            </a>
+            <a
+              href="/customer-portal"
+              className="block rounded-lg bg-green-600 px-4 py-3 text-center text-white shadow hover:bg-green-700 transition-colors"
             >
-              Setări (În Curând)
-            </button>
-            <button
-              className="block rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-3 text-center text-gray-700 dark:text-gray-300 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              disabled
+              Gestionează Abonament
+            </a>
+            <a
+              href="/dashboard?view=settings"
+              className="block rounded-lg bg-gray-600 px-4 py-3 text-center text-white shadow hover:bg-gray-700 transition-colors"
             >
-              Upgrade Plan (În Curând)
-            </button>
+              Setări Alerte
+            </a>
           </div>
         </div>
 
