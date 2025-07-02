@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { securityHeaders } from "@/lib/security-headers";
 
 // Define route matchers for different types of routes
 const isProtectedRoute = createRouteMatcher([
@@ -30,16 +32,47 @@ const isPublicRoute = createRouteMatcher([
   '/favicon.ico',
 ]);
 
+// Helper function to apply security headers to any response
+function applySecurityHeaders(response: Response): Response {
+  // Apply security headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  return response;
+}
+
 export default clerkMiddleware((auth, request) => {
-  // Protect routes that require authentication
+  let response: Response;
+  
+  // Handle protected routes that require authentication
   if (isProtectedRoute(request) && !auth().userId) {
-    return auth().redirectToSignIn();
+    response = auth().redirectToSignIn();
+  }
+  // Handle authenticated users on public auth pages
+  else if (auth().userId && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
+    response = Response.redirect(new URL('/dashboard', request.url));
+  }
+  // Handle normal requests
+  else {
+    response = NextResponse.next();
   }
   
-  // Redirect authenticated users away from public auth pages
-  if (auth().userId && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
-    return Response.redirect(new URL('/dashboard', request.url));
+  // Apply security headers to all responses
+  response = applySecurityHeaders(response);
+  
+  // Additional security measures for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Add API-specific security headers
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    
+    // Rate limiting headers (will be set by individual API routes)
+    if (!response.headers.has('X-RateLimit-Limit')) {
+      response.headers.set('X-RateLimit-Limit', '60');
+    }
   }
+  
+  return response;
 });
 
 export const config = {
