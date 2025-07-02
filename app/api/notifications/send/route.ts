@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import * as Sentry from '@sentry/nextjs';
-import { emailService } from '@/lib/resend';
-import { rateLimits } from '@/lib/upstash';
-import { checkEmailLimit } from '@/lib/subscription-utils';
 
 // Request validation schemas
 const sendEmailSchema = z.object({
@@ -43,14 +40,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting
-    const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
-    const { success: rateLimitOk } = await rateLimits.email.limit(ip);
-    
-    if (!rateLimitOk) {
+    // Dynamic import to avoid build-time dependency loading
+    const [{ rateLimits }, { emailService }] = await Promise.all([
+      import('@/lib/upstash').catch(() => ({ rateLimits: null })),
+      import('@/lib/resend').catch(() => ({ emailService: null }))
+    ]);
+
+    // Rate limiting (if available)
+    if (rateLimits?.email) {
+      const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
+      const { success: rateLimitOk } = await rateLimits.email.limit(ip);
+      
+      if (!rateLimitOk) {
+        return NextResponse.json(
+          { success: false, error: 'Rate limit exceeded' },
+          { status: 429 }
+        );
+      }
+    }
+
+    if (!emailService) {
       return NextResponse.json(
-        { success: false, error: 'Rate limit exceeded' },
-        { status: 429 }
+        { success: false, error: 'Email service not available' },
+        { status: 503 }
       );
     }
 
@@ -61,13 +73,13 @@ export async function POST(request: NextRequest) {
     // Handle different notification endpoints
     switch (endpoint) {
       case 'price-alert':
-        return await handlePriceAlert(body, userId);
+        return await handlePriceAlert(body, userId, emailService);
       
       case 'welcome':
-        return await handleWelcomeEmail(body, userId);
+        return await handleWelcomeEmail(body, userId, emailService);
       
       case 'general':
-        return await handleGeneralEmail(body, userId);
+        return await handleGeneralEmail(body, userId, emailService);
       
       default:
         return NextResponse.json(
@@ -78,7 +90,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in notification API:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
@@ -87,7 +101,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handlePriceAlert(body: any, userId: string) {
+async function handlePriceAlert(body: any, userId: string, emailService: any) {
   try {
     const validation = sendPriceAlertSchema.safeParse(body);
     if (!validation.success) {
@@ -109,12 +123,18 @@ async function handlePriceAlert(body: any, userId: string) {
     }
 
     // Check email limits
-    const emailLimit = await checkEmailLimit(userId);
-    if (!emailLimit.allowed) {
-      return NextResponse.json(
-        { success: false, error: emailLimit.reason, limitReached: true },
-        { status: 403 }
-      );
+    try {
+      const { checkEmailLimit } = await import('@/lib/subscription-utils');
+      const emailLimit = await checkEmailLimit(userId);
+      if (!emailLimit.allowed) {
+        return NextResponse.json(
+          { success: false, error: emailLimit.reason, limitReached: true },
+          { status: 403 }
+        );
+      }
+    } catch (error) {
+      console.warn('Email limit check failed:', error);
+      // Continue without limit check
     }
 
     // Send price alert email
@@ -141,12 +161,14 @@ async function handlePriceAlert(body: any, userId: string) {
 
   } catch (error) {
     console.error('Error sending price alert:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     throw error;
   }
 }
 
-async function handleWelcomeEmail(body: any, userId: string) {
+async function handleWelcomeEmail(body: any, userId: string, emailService: any) {
   try {
     const user = await getUser(userId);
     if (!user) {
@@ -178,12 +200,14 @@ async function handleWelcomeEmail(body: any, userId: string) {
 
   } catch (error) {
     console.error('Error sending welcome email:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     throw error;
   }
 }
 
-async function handleGeneralEmail(body: any, userId: string) {
+async function handleGeneralEmail(body: any, userId: string, emailService: any) {
   try {
     const validation = sendEmailSchema.safeParse(body);
     if (!validation.success) {
@@ -234,7 +258,9 @@ async function handleGeneralEmail(body: any, userId: string) {
 
   } catch (error) {
     console.error('Error sending general email:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     throw error;
   }
 }
@@ -242,8 +268,16 @@ async function handleGeneralEmail(body: any, userId: string) {
 // Helper function to get user data
 async function getUser(clerkUserId: string) {
   try {
-    const mongoose = await import('@/lib/mongoose');
-    const userModel = await import('@/lib/models/user.model');
+    // Dynamic imports to avoid build-time database connections
+    const [mongoose, userModel] = await Promise.all([
+      import('@/lib/mongoose').catch(() => null),
+      import('@/lib/models/user.model').catch(() => null)
+    ]);
+    
+    if (!mongoose || !userModel) {
+      console.warn('Database modules not available');
+      return null;
+    }
     
     await mongoose.connectToDB();
     

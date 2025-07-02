@@ -15,11 +15,18 @@ import {
 import { emailQueue } from '@/lib/scraper/queue';
 import { checkEmailLimit } from '@/lib/subscription-utils';
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is not set in environment variables');
-}
+// Lazy initialization of Resend client
+let resendClient: Resend | null = null;
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient(): Resend {
+  if (!resendClient) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is not set in environment variables');
+    }
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 // Email configuration
 export const emailConfig = {
@@ -112,7 +119,9 @@ export class EmailService {
       return { subject, html };
     } catch (error) {
       console.error(`Error rendering email template ${type}:`, error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
       throw error;
     }
   }
@@ -134,6 +143,7 @@ export class EmailService {
     }
   ) {
     try {
+      const resend = getResendClient();
       const result = await resend.emails.send({
         from: emailConfig.from,
         to,
@@ -147,7 +157,9 @@ export class EmailService {
       return { success: true, data: result.data };
     } catch (error) {
       console.error('Email sending failed:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -168,6 +180,7 @@ export class EmailService {
     try {
       // Check email limits for user
       if (options?.userId && !options?.bypassLimits) {
+        const { checkEmailLimit } = await import('@/lib/subscription-utils');
         const limitCheck = await checkEmailLimit(options.userId);
         if (!limitCheck.allowed) {
           console.log(`Email limit reached for user ${options.userId}: ${limitCheck.reason}`);
@@ -198,7 +211,9 @@ export class EmailService {
       return result;
     } catch (error) {
       console.error(`Error sending templated email ${type}:`, error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -208,6 +223,8 @@ export class EmailService {
    */
   async queueEmail(jobData: EmailJobData): Promise<{ success: boolean; jobId?: string; error?: string }> {
     try {
+      // Lazy import the email queue to avoid Redis connection during build
+      const { emailQueue } = await import('@/lib/scraper/queue');
       const priority = emailPriority[jobData.priority || 'normal'];
       
       const job = await emailQueue.add(
@@ -233,7 +250,9 @@ export class EmailService {
       return { success: true, jobId: job.id as string };
     } catch (error) {
       console.error('Failed to queue email:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -314,3 +333,10 @@ export const emailService = new EmailService();
 
 // Legacy function for backward compatibility
 export const sendEmail = emailService.sendEmail.bind(emailService);
+
+// For backwards compatibility, export a getter for resend
+export const resend = {
+  get client() {
+    return getResendClient();
+  }
+};

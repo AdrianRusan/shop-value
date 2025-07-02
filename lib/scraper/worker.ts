@@ -1,22 +1,30 @@
 import { Worker, Job } from 'bullmq';
 import { redisConnection } from './queue';
 import { ScrapingJobData, ScrapingResult } from './queue';
-import { connectToDB } from '@/lib/mongoose';
 
 // Simplified worker for processing scraping jobs
 export class ScrapingWorker {
-  private worker: Worker;
+  private worker: Worker | null = null;
   private isShuttingDown = false;
 
   constructor() {
-    this.worker = new Worker('product-scraping', this.processScrapingJob.bind(this), {
-      connection: redisConnection,
-      concurrency: 5, // Process up to 5 jobs concurrently
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 50 },
-    });
+    this.initializeWorker();
+  }
 
-    this.setupEventHandlers();
+  private async initializeWorker() {
+    try {
+      const connection = redisConnection();
+      this.worker = new Worker('product-scraping', this.processScrapingJob.bind(this), {
+        connection,
+        concurrency: 5, // Process up to 5 jobs concurrently
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 50 },
+      });
+
+      this.setupEventHandlers();
+    } catch (error) {
+      console.error('Failed to initialize scraping worker:', error);
+    }
   }
 
   private async processScrapingJob(job: Job<ScrapingJobData>): Promise<ScrapingResult> {
@@ -25,8 +33,12 @@ export class ScrapingWorker {
     console.log(`Processing scraping job ${job.id} for product ${productId} (${userTier})`);
 
     try {
-      // Connect to database
-      await connectToDB();
+      // Dynamic import to avoid build-time database connections
+      const mongooseModule = await import('@/lib/mongoose').catch(() => null);
+      
+      if (mongooseModule) {
+        await mongooseModule.connectToDB();
+      }
 
       // Basic scraping result for now
       const scrapingResult: ScrapingResult = {
@@ -60,6 +72,8 @@ export class ScrapingWorker {
   }
 
   private setupEventHandlers(): void {
+    if (!this.worker) return;
+
     this.worker.on('completed', (job: Job, result: ScrapingResult) => {
       console.log(`✅ Job ${job.id} completed successfully:`, result.strategy);
     });
@@ -85,13 +99,15 @@ export class ScrapingWorker {
   public async stop(): Promise<void> {
     console.log('🛑 Stopping scraping worker...');
     this.isShuttingDown = true;
-    await this.worker.close();
+    if (this.worker) {
+      await this.worker.close();
+    }
   }
 
   public getStats() {
     return {
-      isRunning: !this.worker.isRunning(),
-      isPaused: this.worker.isPaused(),
+      isRunning: this.worker ? !this.worker.isRunning() : false,
+      isPaused: this.worker ? this.worker.isPaused() : true,
       isShuttingDown: this.isShuttingDown,
     };
   }
@@ -99,17 +115,26 @@ export class ScrapingWorker {
 
 // Simplified email worker
 export class EmailWorker {
-  private worker: Worker;
+  private worker: Worker | null = null;
 
   constructor() {
-    this.worker = new Worker('email-notifications', this.processEmailJob.bind(this), {
-      connection: redisConnection,
-      concurrency: 3,
-      removeOnComplete: { count: 50 },
-      removeOnFail: { count: 25 },
-    });
+    this.initializeWorker();
+  }
 
-    this.setupEventHandlers();
+  private async initializeWorker() {
+    try {
+      const connection = redisConnection();
+      this.worker = new Worker('email-notifications', this.processEmailJob.bind(this), {
+        connection,
+        concurrency: 3,
+        removeOnComplete: { count: 50 },
+        removeOnFail: { count: 25 },
+      });
+
+      this.setupEventHandlers();
+    } catch (error) {
+      console.error('Failed to initialize email worker:', error);
+    }
   }
 
   private async processEmailJob(job: Job): Promise<void> {
@@ -128,6 +153,8 @@ export class EmailWorker {
   }
 
   private setupEventHandlers(): void {
+    if (!this.worker) return;
+
     this.worker.on('completed', (job: Job) => {
       console.log(`✅ Email job ${job.id} completed`);
     });
@@ -139,10 +166,30 @@ export class EmailWorker {
 
   public async stop(): Promise<void> {
     console.log('🛑 Stopping email worker...');
-    await this.worker.close();
+    if (this.worker) {
+      await this.worker.close();
+    }
   }
 }
 
-// Export worker instances
-export const scrapingWorker = new ScrapingWorker();
-export const emailWorker = new EmailWorker();
+// Create lazy instances that only initialize when needed
+let scrapingWorkerInstance: ScrapingWorker | null = null;
+let emailWorkerInstance: EmailWorker | null = null;
+
+export const scrapingWorker = {
+  get instance(): ScrapingWorker {
+    if (!scrapingWorkerInstance) {
+      scrapingWorkerInstance = new ScrapingWorker();
+    }
+    return scrapingWorkerInstance;
+  }
+};
+
+export const emailWorker = {
+  get instance(): EmailWorker {
+    if (!emailWorkerInstance) {
+      emailWorkerInstance = new EmailWorker();
+    }
+    return emailWorkerInstance;
+  }
+};
