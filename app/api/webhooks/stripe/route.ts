@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import * as Sentry from '@sentry/nextjs';
 import { stripe, SUBSCRIPTION_PLANS } from '@/lib/stripe';
 import { redis } from '@/lib/upstash';
+import { emailService } from '@/lib/resend';
 import User from '@/lib/models/user.model';
 
 // Type definitions for webhook events
@@ -165,6 +166,37 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   // Track business metrics
   await trackSubscriptionMetrics('created', subscription, planId, billing);
+
+  // Send subscription confirmation email
+  try {
+    const user = await User.findOne({ clerkId: userId }).lean();
+    if (user) {
+      const features = getFeaturesByPlan(planId);
+      
+      await emailService.sendSubscriptionConfirmationEmail({
+        firstName: (user as any).firstName || '',
+        email: (user as any).email,
+        subscription: {
+          plan: planId === 'pro' ? 'pro' : 'enterprise',
+          billingCycle: billing === 'yearly' ? 'yearly' : 'monthly',
+          amount: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+          currency: subscription.currency || 'eur',
+          startDate: new Date(subscription.current_period_start * 1000).toISOString(),
+          nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+        },
+        features,
+        dashboardUrl: `${process.env.NEXTAUTH_URL || 'https://shopvalue.com'}/dashboard`,
+      }, { userId });
+
+      console.log(`Subscription confirmation email sent to: ${(user as any).email}`);
+    }
+  } catch (emailError) {
+    console.error('Failed to send subscription confirmation email:', emailError);
+    Sentry.captureException(emailError, {
+      tags: { userId, event: 'subscription_created' },
+    });
+    // Don't fail the webhook for email errors
+  }
   
   console.log(`✅ Subscription created successfully for user ${userId}`);
 }
@@ -288,6 +320,35 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   // Track failed payment metrics
   await redis.incr('metrics:payments:failed');
+
+  // Send payment failed email
+  try {
+    const user = await User.findOne({ clerkId: userId }).lean();
+    if (user) {
+      const planId = subscription.metadata.planId as keyof typeof SUBSCRIPTION_PLANS;
+      
+      await emailService.sendPaymentFailedEmail({
+        firstName: (user as any).firstName || '',
+        email: (user as any).email,
+        subscription: {
+          plan: planId === 'pro' ? 'pro' : 'enterprise',
+          amount: (invoice.amount_due || 0) / 100,
+          currency: invoice.currency || 'eur',
+          nextAttempt: invoice.next_payment_attempt ? new Date(invoice.next_payment_attempt * 1000).toISOString() : undefined,
+        },
+        failureReason: getPaymentFailureReason(invoice),
+        retryUrl: `${process.env.NEXTAUTH_URL || 'https://shopvalue.com'}/customer-portal`,
+      }, { userId });
+
+      console.log(`Payment failed email sent to: ${(user as any).email}`);
+    }
+  } catch (emailError) {
+    console.error('Failed to send payment failed email:', emailError);
+    Sentry.captureException(emailError, {
+      tags: { userId, event: 'payment_failed' },
+    });
+    // Don't fail the webhook for email errors
+  }
   
   console.log(`⚠️ Payment failed for user ${userId}, marked as past_due`);
 }
@@ -345,6 +406,56 @@ async function handleCustomerCreated(customer: Stripe.Customer) {
   );
   
   console.log(`✅ Customer created and linked for user ${clerkId}`);
+}
+
+// Helper function to get features by plan
+function getFeaturesByPlan(planId: keyof typeof SUBSCRIPTION_PLANS): string[] {
+  const features = {
+    free: [
+      'Monitorizați până la 5 produse',
+      'Verificări zilnice de preț',
+      'Alertele de bază prin email',
+      'Istoricul de prețuri pentru 30 de zile',
+    ],
+    pro: [
+      'Monitorizați până la 50 de produse',
+      'Verificări de preț de 4 ori pe zi',
+      'Alerte avansate prin email',
+      'Istoric complet de prețuri',
+      'Analize de tendințe',
+      'Comparații de magazine',
+      'Suport prioritar',
+    ],
+    enterprise: [
+      'Produse nelimitate',
+      'Verificări orare de preț',
+      'Toate alertele și funcțiile',
+      'Acces la API complet',
+      'Webhooks personalizate',
+      'Rapoarte personalizate',
+      'Manager de cont dedicat',
+      'Integrări personalizate',
+    ],
+  };
+
+  return features[planId] || features.free;
+}
+
+// Helper function to get payment failure reason
+function getPaymentFailureReason(invoice: Stripe.Invoice): string {
+  const charge = invoice.charge as Stripe.Charge;
+  if (charge && charge.failure_code) {
+    const failureReasons: Record<string, string> = {
+      'insufficient_funds': 'Fonduri insuficiente în cont',
+      'expired_card': 'Cardul a expirat',
+      'incorrect_cvc': 'Cod CVC incorect',
+      'processing_error': 'Eroare de procesare',
+      'card_declined': 'Cardul a fost refuzat',
+      'generic_decline': 'Tranzacția a fost refuzată',
+    };
+    return failureReasons[charge.failure_code] || 'Problemă cu cardul sau contul bancar';
+  }
+  return 'Problemă cu plata - vă rugăm să verificați datele cardului';
 }
 
 // Helper function to track subscription metrics

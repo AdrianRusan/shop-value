@@ -3,10 +3,7 @@
  * Integrates Amplitude for user analytics with our existing MongoDB analytics system
  */
 
-import * as amplitude from '@amplitude/analytics-browser';
 import * as Sentry from '@sentry/nextjs';
-import { connectToDatabase } from './mongoose';
-import Analytics from './models/analytics.model';
 
 // Type definitions for analytics events
 export interface UserProperties {
@@ -68,6 +65,7 @@ export type AnalyticsEvent =
 
 class AnalyticsManager {
   private isAmplitudeInitialized = false;
+  private amplitudeModule: any = null;
   private readonly isDevelopment = process.env.NODE_ENV === 'development';
   
   constructor() {
@@ -75,9 +73,9 @@ class AnalyticsManager {
   }
   
   /**
-   * Initialize Amplitude analytics
+   * Initialize Amplitude analytics (async with dynamic import)
    */
-  private initializeAmplitude(): void {
+  private async initializeAmplitude(): Promise<void> {
     try {
       const apiKey = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
       
@@ -85,49 +83,69 @@ class AnalyticsManager {
         console.warn('Amplitude API key not found. Analytics will be disabled.');
         return;
       }
+
+      // Only initialize on client side
+      if (typeof window === 'undefined') {
+        return;
+      }
       
-      amplitude.init(apiKey, {
-        defaultTracking: {
-          sessions: true,
-          pageViews: true,
-          formInteractions: true,
-          fileDownloads: true,
-        },
-        autocapture: {
-          attribution: true,
-          pageViews: true,
-          sessions: true,
-          formInteractions: true,
-        },
-      });
-      
-      this.isAmplitudeInitialized = true;
-      
-      if (this.isDevelopment) {
-        console.log('Amplitude analytics initialized');
+      // Dynamic import to prevent build errors
+      try {
+        this.amplitudeModule = await import('@amplitude/analytics-browser');
+        
+        this.amplitudeModule.init(apiKey, {
+          defaultTracking: {
+            sessions: true,
+            pageViews: true,
+            formInteractions: true,
+            fileDownloads: true,
+          },
+          autocapture: {
+            attribution: true,
+            pageViews: true,
+            sessions: true,
+            formInteractions: true,
+          },
+        });
+        
+        this.isAmplitudeInitialized = true;
+        
+        if (this.isDevelopment) {
+          console.log('Amplitude analytics initialized');
+        }
+      } catch (importError) {
+        console.warn('Amplitude package not available, analytics disabled:', importError);
+        return;
       }
     } catch (error) {
       console.error('Failed to initialize Amplitude:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
     }
   }
   
   /**
    * Set user properties for analytics tracking
    */
-  setUser(userId: string, properties: UserProperties = {}): void {
+  async setUser(userId: string, properties: UserProperties = {}): Promise<void> {
     try {
-      if (this.isAmplitudeInitialized) {
-        amplitude.setUserId(userId);
+      // Ensure Amplitude is initialized first
+      if (!this.isAmplitudeInitialized && !this.amplitudeModule) {
+        await this.initializeAmplitude();
+      }
+
+      if (this.isAmplitudeInitialized && this.amplitudeModule) {
+        this.amplitudeModule.setUserId(userId);
         
         if (Object.keys(properties).length > 0) {
-          const identify = new amplitude.Identify();
+          const identify = new this.amplitudeModule.Identify();
           Object.entries(properties).forEach(([key, value]) => {
             if (value !== undefined) {
               identify.set(key, value);
             }
           });
-          amplitude.identify(identify);
+          this.amplitudeModule.identify(identify);
         }
       }
       
@@ -136,7 +154,9 @@ class AnalyticsManager {
       }
     } catch (error) {
       console.error('Failed to set user:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
     }
   }
   
@@ -145,34 +165,48 @@ class AnalyticsManager {
    */
   async track(event: AnalyticsEvent, properties: EventProperties = {}): Promise<void> {
     try {
-      // Track in Amplitude
-      if (this.isAmplitudeInitialized) {
-        amplitude.track(event, {
+      // Ensure Amplitude is initialized first (only on client side)
+      if (typeof window !== 'undefined' && !this.isAmplitudeInitialized && !this.amplitudeModule) {
+        await this.initializeAmplitude();
+      }
+
+      // Track in Amplitude (client-side only)
+      if (this.isAmplitudeInitialized && this.amplitudeModule) {
+        this.amplitudeModule.track(event, {
           ...properties,
           timestamp: new Date().toISOString(),
           environment: process.env.NODE_ENV,
         });
       }
       
-      // Store in MongoDB for business intelligence
-      await this.storeInMongoDB(event, properties);
+      // Store in MongoDB for business intelligence (server-side only)
+      if (typeof window === 'undefined') {
+        await this.storeInMongoDB(event, properties);
+      }
       
       if (this.isDevelopment) {
         console.log('Event tracked:', { event, properties });
       }
     } catch (error) {
       console.error('Failed to track event:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
     }
   }
   
   /**
    * Track page views
    */
-  trackPageView(page: string, properties: EventProperties = {}): void {
+  async trackPageView(page: string, properties: EventProperties = {}): Promise<void> {
     try {
-      if (this.isAmplitudeInitialized) {
-        amplitude.track('page_viewed', {
+      // Ensure Amplitude is initialized first
+      if (!this.isAmplitudeInitialized && !this.amplitudeModule) {
+        await this.initializeAmplitude();
+      }
+
+      if (this.isAmplitudeInitialized && this.amplitudeModule) {
+        this.amplitudeModule.track('page_viewed', {
           page,
           ...properties,
           timestamp: new Date().toISOString(),
@@ -184,7 +218,9 @@ class AnalyticsManager {
       }
     } catch (error) {
       console.error('Failed to track page view:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
     }
   }
   
@@ -193,30 +229,39 @@ class AnalyticsManager {
    */
   async trackRevenue(userId: string, revenue: number, productId?: string): Promise<void> {
     try {
-      if (this.isAmplitudeInitialized) {
-        const revenueEvent = new amplitude.Revenue();
+      // Ensure Amplitude is initialized first
+      if (!this.isAmplitudeInitialized && !this.amplitudeModule) {
+        await this.initializeAmplitude();
+      }
+
+      if (this.isAmplitudeInitialized && this.amplitudeModule) {
+        const revenueEvent = new this.amplitudeModule.Revenue();
         revenueEvent.setPrice(revenue);
         if (productId) {
           revenueEvent.setProductId(productId);
         }
         revenueEvent.setRevenueType('subscription');
-        amplitude.revenue(revenueEvent);
+        this.amplitudeModule.revenue(revenueEvent);
       }
       
-      // Store revenue event in MongoDB
-      await this.storeInMongoDB('subscription_revenue', {
-        userId,
-        revenue,
-        productId,
-        currency: 'EUR',
-      });
+      // Store revenue event in MongoDB (server-side only)
+      if (typeof window === 'undefined') {
+        await this.storeInMongoDB('subscription_revenue', {
+          userId,
+          revenue,
+          productId,
+          currency: 'EUR',
+        });
+      }
       
       if (this.isDevelopment) {
         console.log('Revenue tracked:', { userId, revenue, productId });
       }
     } catch (error) {
       console.error('Failed to track revenue:', error);
-      Sentry.captureException(error);
+      if (Sentry?.captureException) {
+        Sentry.captureException(error);
+      }
     }
   }
   
@@ -230,13 +275,24 @@ class AnalyticsManager {
         return;
       }
       
-      await connectToDatabase();
+      // Dynamic imports to avoid build-time issues
+      const [mongooseModule, analyticsModel] = await Promise.all([
+        import('./mongoose').catch(() => null),
+        import('./models/analytics.model').catch(() => null)
+      ]);
+
+      if (!mongooseModule || !analyticsModel) {
+        console.warn('Database modules not available for analytics storage');
+        return;
+      }
+      
+      await mongooseModule.connectToDatabase();
       
       const now = new Date();
       const tenantId = 'default'; // For multi-tenancy support
       
       // Update or create analytics document
-      await Analytics.findOneAndUpdate(
+      await analyticsModel.default.findOneAndUpdate(
         { tenantId },
         {
           $push: {
@@ -265,10 +321,15 @@ class AnalyticsManager {
   /**
    * Flush all pending events (useful before page unload)
    */
-  flush(): void {
+  async flush(): Promise<void> {
     try {
-      if (this.isAmplitudeInitialized) {
-        amplitude.flush();
+      // Ensure Amplitude is initialized first
+      if (!this.isAmplitudeInitialized && !this.amplitudeModule) {
+        await this.initializeAmplitude();
+      }
+
+      if (this.isAmplitudeInitialized && this.amplitudeModule) {
+        this.amplitudeModule.flush();
       }
     } catch (error) {
       console.error('Failed to flush analytics:', error);
@@ -278,10 +339,15 @@ class AnalyticsManager {
   /**
    * Reset user (useful for logout)
    */
-  reset(): void {
+  async reset(): Promise<void> {
     try {
-      if (this.isAmplitudeInitialized) {
-        amplitude.reset();
+      // Ensure Amplitude is initialized first
+      if (!this.isAmplitudeInitialized && !this.amplitudeModule) {
+        await this.initializeAmplitude();
+      }
+
+      if (this.isAmplitudeInitialized && this.amplitudeModule) {
+        this.amplitudeModule.reset();
       }
       
       if (this.isDevelopment) {
@@ -312,12 +378,14 @@ export const trackError = (error: Error, context: string, userId?: string) => {
   });
   
   // Also send to Sentry with additional context
-  Sentry.captureException(error, {
-    tags: {
-      context,
-      userId: userId || 'anonymous',
-    },
-  });
+  if (Sentry?.captureException) {
+    Sentry.captureException(error, {
+      tags: {
+        context,
+        userId: userId || 'anonymous',
+      },
+    });
+  }
 };
 
 export const trackAPIError = (endpoint: string, statusCode: number, error: string, userId?: string) => {

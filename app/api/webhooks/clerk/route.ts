@@ -1,12 +1,5 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
-import { 
-  syncClerkUserToMongoDB, 
-  updateClerkUserInMongoDB, 
-  deleteClerkUserFromMongoDB,
-  updateUserLoginTracking,
-  type ClerkUserData 
-} from '@/lib/clerk-sync';
 import * as Sentry from '@sentry/nextjs';
 
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
@@ -40,7 +33,9 @@ export async function POST(request: Request) {
       });
     } catch (err) {
       console.error('Error verifying webhook signature:', err);
-      Sentry.captureException(err);
+      if (Sentry?.captureException) {
+        Sentry.captureException(err);
+      }
       return Response.json({ error: 'Invalid webhook signature' }, { status: 400 });
     }
 
@@ -81,7 +76,9 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Error processing Clerk webhook:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     return Response.json({ 
       success: false, 
       error: 'Internal server error' 
@@ -91,7 +88,20 @@ export async function POST(request: Request) {
 
 async function handleUserCreated(userData: any) {
   try {
-    const clerkUserData: ClerkUserData = {
+    // Dynamic imports to avoid build-time issues
+    const [clerkSyncModule, emailModule] = await Promise.all([
+      import('@/lib/clerk-sync').catch(() => null),
+      import('@/lib/resend').catch(() => null)
+    ]);
+
+    if (!clerkSyncModule) {
+      console.warn('Clerk sync module not available');
+      return;
+    }
+
+    const { syncClerkUserToMongoDB } = clerkSyncModule;
+
+    const clerkUserData = {
       id: userData.id,
       email_addresses: userData.email_addresses,
       first_name: userData.first_name,
@@ -104,19 +114,53 @@ async function handleUserCreated(userData: any) {
     const user = await syncClerkUserToMongoDB(clerkUserData);
     console.log(`User created in MongoDB: ${user.email}`);
 
-    // TODO: Send welcome email
+    // Send welcome email if email service is available
+    if (emailModule?.emailService) {
+      try {
+        await emailModule.emailService.sendWelcomeEmail({
+          firstName: user.firstName || '',
+          email: user.email,
+          dashboardUrl: `${process.env.NEXTAUTH_URL || 'https://shopvalue.com'}/dashboard`,
+        }, { userId: user.clerkId });
+        
+        console.log(`Welcome email sent to: ${user.email}`);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        if (Sentry?.captureException) {
+          Sentry.captureException(emailError, {
+            tags: { userId: user.clerkId, email: user.email },
+          });
+        }
+        // Don't fail the webhook for email errors
+      }
+    } else {
+      console.warn('Email service not available, skipping welcome email');
+    }
+
     // TODO: Track user creation event in analytics
     
   } catch (error) {
     console.error('Error handling user created webhook:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     throw error;
   }
 }
 
 async function handleUserUpdated(userData: any) {
   try {
-    const clerkUserData: ClerkUserData = {
+    // Dynamic import to avoid build-time issues
+    const clerkSyncModule = await import('@/lib/clerk-sync').catch(() => null);
+    
+    if (!clerkSyncModule) {
+      console.warn('Clerk sync module not available');
+      return;
+    }
+
+    const { updateClerkUserInMongoDB } = clerkSyncModule;
+
+    const clerkUserData = {
       id: userData.id,
       email_addresses: userData.email_addresses,
       first_name: userData.first_name,
@@ -133,13 +177,25 @@ async function handleUserUpdated(userData: any) {
     
   } catch (error) {
     console.error('Error handling user updated webhook:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     throw error;
   }
 }
 
 async function handleUserDeleted(userData: any) {
   try {
+    // Dynamic import to avoid build-time issues
+    const clerkSyncModule = await import('@/lib/clerk-sync').catch(() => null);
+    
+    if (!clerkSyncModule) {
+      console.warn('Clerk sync module not available');
+      return;
+    }
+
+    const { deleteClerkUserFromMongoDB } = clerkSyncModule;
+
     await deleteClerkUserFromMongoDB(userData.id);
     console.log(`User soft deleted in MongoDB: ${userData.id}`);
     
@@ -148,7 +204,9 @@ async function handleUserDeleted(userData: any) {
     
   } catch (error) {
     console.error('Error handling user deleted webhook:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     throw error;
   }
 }
@@ -156,6 +214,16 @@ async function handleUserDeleted(userData: any) {
 async function handleSessionCreated(sessionData: any) {
   try {
     if (sessionData.user_id) {
+      // Dynamic import to avoid build-time issues
+      const clerkSyncModule = await import('@/lib/clerk-sync').catch(() => null);
+      
+      if (!clerkSyncModule) {
+        console.warn('Clerk sync module not available');
+        return;
+      }
+
+      const { updateUserLoginTracking } = clerkSyncModule;
+
       await updateUserLoginTracking(sessionData.user_id);
       console.log(`Updated login tracking for user: ${sessionData.user_id}`);
     }
@@ -164,7 +232,9 @@ async function handleSessionCreated(sessionData: any) {
     
   } catch (error) {
     console.error('Error handling session created webhook:', error);
-    Sentry.captureException(error);
+    if (Sentry?.captureException) {
+      Sentry.captureException(error);
+    }
     // Don't throw here as this is not critical
   }
 }

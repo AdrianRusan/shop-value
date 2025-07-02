@@ -1,6 +1,5 @@
 import { Queue, Worker, Job, QueueEvents } from 'bullmq';
 import { Redis } from 'ioredis';
-import { redis } from '@/lib/upstash';
 
 // Job data interfaces
 export interface ScrapingJobData {
@@ -28,14 +27,39 @@ export interface ScrapingResult {
   confidence?: number;
 }
 
-// Redis connection for BullMQ - simplified for now
-const redisConnection = new Redis({
-  host: 'localhost',
-  port: 6379,
-  maxRetriesPerRequest: 3,
-  enableReadyCheck: false,
-  lazyConnect: true,
-});
+// Lazy Redis connection - only create when needed
+let redisConnection: Redis | null = null;
+
+function getRedisConnection(): Redis {
+  if (!redisConnection) {
+    const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL;
+    
+    if (redisUrl && redisUrl.startsWith('redis://')) {
+      // Use external Redis (Upstash or similar)
+      redisConnection = new Redis(redisUrl, {
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        lazyConnect: true,
+      });
+    } else {
+      // Fallback to local Redis for development
+      redisConnection = new Redis({
+        host: 'localhost',
+        port: 6379,
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        lazyConnect: true,
+      });
+    }
+  }
+  return redisConnection;
+}
+
+// Lazy queue initialization
+let scrapingQueueInstance: Queue<ScrapingJobData> | null = null;
+let emailQueueInstance: Queue | null = null;
+let analyticsQueueInstance: Queue | null = null;
+let scrapingQueueEventsInstance: QueueEvents | null = null;
 
 // Queue configuration based on subscription tiers
 const getQueuePriority = (userTier: string): number => {
@@ -47,50 +71,148 @@ const getQueuePriority = (userTier: string): number => {
   }
 };
 
-// Create scraping queue
-export const scrapingQueue = new Queue<ScrapingJobData>('product-scraping', {
-  connection: redisConnection,
-  defaultJobOptions: {
-    removeOnComplete: 100,
-    removeOnFail: 50,
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
-    delay: 0,
+// Lazy getters for queues
+export const scrapingQueue = {
+  get instance(): Queue<ScrapingJobData> {
+    if (!scrapingQueueInstance) {
+      scrapingQueueInstance = new Queue<ScrapingJobData>('product-scraping', {
+        connection: getRedisConnection(),
+        defaultJobOptions: {
+          removeOnComplete: 100,
+          removeOnFail: 50,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+          delay: 0,
+        },
+      });
+    }
+    return scrapingQueueInstance;
   },
-});
-
-// Email notification queue for alerts
-export const emailQueue = new Queue('email-notifications', {
-  connection: redisConnection,
-  defaultJobOptions: {
-    removeOnComplete: 50,
-    removeOnFail: 25,
-    attempts: 5,
-    backoff: {
-      type: 'exponential',
-      delay: 5000,
-    },
+  
+  // Proxy methods to the actual queue instance
+  async add(name: string, data: ScrapingJobData, options?: any) {
+    return this.instance.add(name, data, options);
   },
-});
-
-// Analytics queue for tracking scraping metrics
-export const analyticsQueue = new Queue('scraping-analytics', {
-  connection: redisConnection,
-  defaultJobOptions: {
-    removeOnComplete: 200,
-    removeOnFail: 50,
-    attempts: 2,
-    delay: 1000,
+  
+  async addBulk(jobs: any[]) {
+    return this.instance.addBulk(jobs);
   },
-});
+  
+  async getJob(jobId: string) {
+    return this.instance.getJob(jobId);
+  },
+  
+  async getWaiting() {
+    return this.instance.getWaiting();
+  },
+  
+  async getActive() {
+    return this.instance.getActive();
+  },
+  
+  async getCompleted() {
+    return this.instance.getCompleted();
+  },
+  
+  async getFailed() {
+    return this.instance.getFailed();
+  },
+  
+  async getDelayed() {
+    return this.instance.getDelayed();
+  },
+  
+  async clean(grace: number, limit: number, type: string) {
+    return this.instance.clean(grace, limit, type as any);
+  },
+  
+  async close() {
+    if (scrapingQueueInstance) {
+      await scrapingQueueInstance.close();
+      scrapingQueueInstance = null;
+    }
+  }
+};
 
-// Queue events for monitoring
-export const scrapingQueueEvents = new QueueEvents('product-scraping', {
-  connection: redisConnection,
-});
+export const emailQueue = {
+  get instance(): Queue {
+    if (!emailQueueInstance) {
+      emailQueueInstance = new Queue('email-notifications', {
+        connection: getRedisConnection(),
+        defaultJobOptions: {
+          removeOnComplete: 50,
+          removeOnFail: 25,
+          attempts: 5,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+        },
+      });
+    }
+    return emailQueueInstance;
+  },
+  
+  async add(name: string, data: any, options?: any) {
+    return this.instance.add(name, data, options);
+  },
+  
+  async close() {
+    if (emailQueueInstance) {
+      await emailQueueInstance.close();
+      emailQueueInstance = null;
+    }
+  }
+};
+
+export const analyticsQueue = {
+  get instance(): Queue {
+    if (!analyticsQueueInstance) {
+      analyticsQueueInstance = new Queue('scraping-analytics', {
+        connection: getRedisConnection(),
+        defaultJobOptions: {
+          removeOnComplete: 200,
+          removeOnFail: 50,
+          attempts: 2,
+          delay: 1000,
+        },
+      });
+    }
+    return analyticsQueueInstance;
+  },
+  
+  async add(name: string, data: any, options?: any) {
+    return this.instance.add(name, data, options);
+  },
+  
+  async close() {
+    if (analyticsQueueInstance) {
+      await analyticsQueueInstance.close();
+      analyticsQueueInstance = null;
+    }
+  }
+};
+
+export const scrapingQueueEvents = {
+  get instance(): QueueEvents {
+    if (!scrapingQueueEventsInstance) {
+      scrapingQueueEventsInstance = new QueueEvents('product-scraping', {
+        connection: getRedisConnection(),
+      });
+    }
+    return scrapingQueueEventsInstance;
+  },
+  
+  async close() {
+    if (scrapingQueueEventsInstance) {
+      await scrapingQueueEventsInstance.close();
+      scrapingQueueEventsInstance = null;
+    }
+  }
+};
 
 // Add a scraping job with user-based priority
 export const addScrapingJob = async (
@@ -138,9 +260,15 @@ export const addScrapingJob = async (
       }
     );
 
-    // Track job creation
-    await redis.incr('scraping:jobs:created');
-    await redis.incr(`scraping:jobs:${jobData.userTier}`);
+    // Track job creation (lazy import redis to avoid build-time connection)
+    try {
+      const { redis } = await import('@/lib/upstash');
+      await redis.incr('scraping:jobs:created');
+      await redis.incr(`scraping:jobs:${jobData.userTier}`);
+    } catch (error) {
+      console.warn('Failed to track scraping job creation:', error);
+      // Don't fail the job creation for this
+    }
 
     console.log(`Created scraping job ${job.id} for product ${jobData.productId} (${jobData.userTier})`);
     return job;
@@ -211,9 +339,14 @@ export const addBulkScrapingJobs = async (
 
     const addedJobs = await scrapingQueue.addBulk(jobs);
 
-    // Track bulk job creation
-    await redis.incr('scraping:jobs:bulk_created');
-    await redis.incrby('scraping:jobs:created', addedJobs.length);
+    // Track bulk job creation (lazy import redis)
+    try {
+      const { redis } = await import('@/lib/upstash');
+      await redis.incr('scraping:jobs:bulk_created');
+      await redis.incrby('scraping:jobs:created', addedJobs.length);
+    } catch (error) {
+      console.warn('Failed to track bulk scraping job creation:', error);
+    }
 
     console.log(`Added ${addedJobs.length} scraping jobs in bulk`);
     return addedJobs;
@@ -271,7 +404,11 @@ export const shutdownQueues = async (): Promise<void> => {
     await emailQueue.close();
     await analyticsQueue.close();
     await scrapingQueueEvents.close();
-    await redisConnection.quit();
+    
+    if (redisConnection) {
+      await redisConnection.quit();
+      redisConnection = null;
+    }
     
     console.log('Queues shut down gracefully');
   } catch (error) {
@@ -279,5 +416,5 @@ export const shutdownQueues = async (): Promise<void> => {
   }
 };
 
-// Export queue instances for use in workers
-export { redisConnection };
+// Export the connection getter for use in workers
+export { getRedisConnection as redisConnection };

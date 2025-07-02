@@ -10,6 +10,7 @@ try {
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['mongoose'],
+    instrumentationHook: true,
   },
   images: {
     remotePatterns: [
@@ -45,7 +46,7 @@ const nextConfig = {
   },
   
   // Webpack configuration for better optimization
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev, webpack }) => {
     // Optimize for production
     if (!isServer) {
       config.resolve.fallback = {
@@ -53,7 +54,41 @@ const nextConfig = {
         fs: false,
         net: false,
         tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
       };
+    }
+
+    // Prevent build-time execution of Redis/BullMQ code
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        'process.env.BUILDING': JSON.stringify('true'),
+      })
+    );
+
+    // Ignore BullMQ and Redis during build for client-side
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'bullmq': false,
+        'ioredis': false,
+      };
+    }
+
+    // External dependencies for server-side to prevent bundling issues
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'bullmq': 'commonjs bullmq',
+        'ioredis': 'commonjs ioredis',
+      });
     }
     
     return config;
@@ -86,6 +121,11 @@ const nextConfig = {
         ],
       },
     ];
+  },
+
+  // Environment variables for build time
+  env: {
+    BUILDING: 'true',
   },
 };
 
