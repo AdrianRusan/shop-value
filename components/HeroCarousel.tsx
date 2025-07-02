@@ -1,82 +1,95 @@
 'use client'
 
-import { isDesktop } from "react-device-detect";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { Carousel } from 'react-responsive-carousel';
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const heroImages = [
-  {
-    imgUrl: 'assets/images/hero-1.svg',
-    alt: 'smart watch'
-  },
-  {
-    imgUrl: 'assets/images/hero-2.svg',
-    alt: 'bag'
-  },
-  {
-    imgUrl: 'assets/images/hero-3.svg',
-    alt: 'lamp'
-  },
-  {
-    imgUrl: 'assets/images/hero-4.svg',
-    alt: 'air fryer'
-  },
-  {
-    imgUrl: 'assets/images/hero-5.svg',
-    alt: 'chair'
-  }
-]
+  '/assets/images/hero-1.svg',
+  '/assets/images/hero-2.svg',
+  '/assets/images/hero-3.svg',
+  '/assets/images/hero-4.svg',
+  '/assets/images/hero-5.svg'
+];
 
 const HeroCarousel = () => {
-  const [desktop, setDesktop] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
-    setDesktop(isDesktop);
+    // Only run on client side
+    setIsMounted(true);
+    
+    // Check if it's desktop without external libraries
+    const checkDesktop = () => {
+      if (typeof window !== 'undefined') {
+        setIsDesktop(window.innerWidth >= 1024);
+      }
+    };
+
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    
+    return () => {
+      window.removeEventListener('resize', checkDesktop);
+    };
   }, []);
 
+  useEffect(() => {
+    if (!isMounted || !isDesktop) return;
 
+    // Simple auto-rotation
+    const interval = setInterval(() => {
+      setCurrentImage((prev: number) => (prev + 1) % heroImages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isMounted, isDesktop]);
+
+  // Don't render anything during SSR or on mobile
+  if (!isMounted || !isDesktop) {
+    return null;
+  }
 
   return (
-    <>
-      {desktop && (
-        <div className="hero-carousel">
-          <Carousel
-            showThumbs={false}
-            autoPlay
-            infiniteLoop
-            interval={2000}
-            showArrows={false}
-            showStatus={false}
-            showIndicators={false}
-            ariaLabel="carousel"
-            labels={{ leftArrow: "", rightArrow: "", item: "slide item" }}
+    <div className="hero-carousel relative">
+      <div className="w-[484px] h-[484px] relative overflow-hidden rounded-[30px] bg-[#F2F4F7]">
+        {heroImages.map((image, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              index === currentImage ? 'opacity-100' : 'opacity-0'
+            }`}
           >
-            {heroImages.map((image, index) => (
-              <div key={image.alt} className="object-contain">
-                <Image
-                  src={image.imgUrl}
-                  alt={image.alt}
-                  width={484}
-                  height={484}
-                  priority={index === 0}
-                />
-              </div>
-            ))}
-          </Carousel>
+            <Image
+              src={image}
+              alt={`Product showcase ${index + 1}`}
+              width={484}
+              height={484}
+              priority={index === 0}
+              placeholder="blur"
+              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDg0IiBoZWlnaHQ9IjQ4NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciPjxzdG9wIHN0b3AtY29sb3I9IiNmMGYwZjAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlMGUwZTAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDg0IiBoZWlnaHQ9IjQ4NCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg=="
+              className="object-contain w-full h-full"
+              style={{
+                objectFit: 'contain',
+                objectPosition: 'center',
+              }}
+            />
+          </div>
+        ))}
+      </div>
 
-          <Image
-            src="assets/icons/hand-drawn-arrow.svg"
-            alt="arrow"
-            width={175}
-            height={175}
-            className="absolute -left-[15%] bottom-0 z-0 w-auto h-auto hidden xl:block"
-          />
-        </div>
-      )}
-    </>
-  )
-}
+      {/* Decorative arrow */}
+      <Image
+        src="/assets/icons/hand-drawn-arrow.svg"
+        alt="decorative arrow"
+        width={175}
+        height={175}
+        className="absolute -left-[15%] bottom-0 z-0 w-auto h-auto hidden xl:block"
+        priority={false}
+      />
+    </div>
+  );
+};
 
-export default HeroCarousel
+export default HeroCarousel;

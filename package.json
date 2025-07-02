@@ -21,7 +21,9 @@
     "db:migrate": "node scripts/db-setup.js migrate",
     "db:seed": "node scripts/db-setup.js seed",
     "db:setup": "node scripts/db-setup.js setup",
-    "db:health": "node scripts/db-setup.js health"
+    "db:health": "node scripts/db-setup.js health",
+    "build:analyze": "cross-env ANALYZE=true next build",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.18.0",
@@ -54,7 +56,6 @@
     "nodemailer": "^6.9.15",
     "react": "^18",
     "react-chartjs-2": "^5.3.0",
-    "react-device-detect": "^2.2.3",
     "react-dom": "^18",
     "react-responsive-carousel": "^3.2.23",
     "resend": "^4.0.0",
@@ -85,6 +86,8 @@
     "postcss": "^8",
     "tailwindcss": "^3",
     "task-master-ai": "^0.18.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "cross-env": "^7.0.3"
   }
 }
