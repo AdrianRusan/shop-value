@@ -21,7 +21,20 @@ You are implementing a task for **ShopValue**, a Romanian price tracking SaaS pl
 - .cursor/rules/risk-mitigation.mdc (business protection)
 ```
 
-### **2. ANALYZE EXISTING CODEBASE**
+### **2. TRACK TASK STATUS WITH TASK-MASTER**
+```bash
+# MANDATORY: Update task status as you work
+# At start of work:
+task-master set-status --id=X --status=in-progress
+
+# During implementation:
+task-master update-subtask --id=X.Y --prompt="Progress update: [details]"
+
+# Upon completion:
+task-master set-status --id=X --status=done
+```
+
+### **3. ANALYZE EXISTING CODEBASE**
 ```bash
 # Study existing implementation:
 - lib/models/ (User, Product, Analytics models)
@@ -31,7 +44,7 @@ You are implementing a task for **ShopValue**, a Romanian price tracking SaaS pl
 - scripts/db-setup.js (migration scripts)
 ```
 
-### **3. FOLLOW EXACT TECH STACK (NO SUBSTITUTIONS)**
+### **4. FOLLOW EXACT TECH STACK (NO SUBSTITUTIONS)**
 - **Authentication:** ONLY Clerk (no custom auth, no NextAuth)
 - **Payments:** ONLY Stripe (no other processors)
 - **Database:** ONLY MongoDB with Mongoose (no PostgreSQL)
@@ -39,6 +52,15 @@ You are implementing a task for **ShopValue**, a Romanian price tracking SaaS pl
 - **Email:** ONLY Resend with React Email templates
 - **Monitoring:** ONLY Sentry for error tracking
 - **Styling:** ONLY Tailwind CSS (no CSS modules, no styled-components)
+
+### **5. VALIDATE BUILD SUCCESS**
+```bash
+# CRITICAL: Always ensure project builds successfully
+npm run build  # Must pass without errors
+npm run type-check  # Must pass TypeScript validation
+npm run lint  # Must pass linting
+npm test  # Must pass all tests
+```
 
 ---
 
@@ -51,6 +73,7 @@ You are implementing a task for **ShopValue**, a Romanian price tracking SaaS pl
 4. **Error Scenarios:** Test all failure modes and edge cases
 5. **Performance Tests:** Ensure <200ms API response times
 6. **Security Tests:** Validate input sanitization and auth
+7. **Build Validation:** `npm run build` must succeed
 
 ### **Test Files Structure:**
 ```
@@ -185,6 +208,7 @@ const rateLimiter = new Ratelimit({
 - [ ] No breaking changes to existing functionality
 - [ ] All error scenarios handled gracefully
 - [ ] Performance meets <200ms API response requirement
+- [ ] `npm run build` completes successfully
 
 ### **Quality Requirements:**
 - [ ] 100% TypeScript strict mode compliance
@@ -192,6 +216,7 @@ const rateLimiter = new Ratelimit({
 - [ ] All Cursor rules followed exactly
 - [ ] Sentry error tracking implemented
 - [ ] Rate limiting and input validation in place
+- [ ] Task status properly tracked in task-master
 
 ### **Documentation Requirements:**
 - [ ] Code is self-documenting with clear variable names
@@ -204,22 +229,27 @@ const rateLimiter = new Ratelimit({
 ## 🔄 DEVELOPMENT WORKFLOW
 
 ### **Implementation Process:**
-1. **Analyze:** Read existing code, understand current implementation
-2. **Plan:** Design solution that integrates with existing architecture  
-3. **Code:** Implement following all Cursor rules and patterns
-4. **Test:** Write comprehensive tests for all scenarios
-5. **Integrate:** Ensure seamless integration with existing features
-6. **Validate:** Run full test suite and manual validation
-7. **Document:** Add any necessary documentation
+1. **Start Task:** `task-master set-status --id=X --status=in-progress`
+2. **Analyze:** Read existing code, understand current implementation
+3. **Plan:** Design solution that integrates with existing architecture  
+4. **Code:** Implement following all Cursor rules and patterns
+5. **Test:** Write comprehensive tests for all scenarios
+6. **Build:** Validate with `npm run build` (must succeed)
+7. **Integrate:** Ensure seamless integration with existing features
+8. **Validate:** Run full test suite and manual validation
+9. **Complete:** `task-master set-status --id=X --status=done`
+10. **Document:** Add any necessary documentation
 
 ### **Quality Checkpoints:**
 - ✅ Cursor rules compliance verified
 - ✅ TypeScript strict mode passing
+- ✅ `npm run build` succeeds without errors
 - ✅ All tests passing (unit + integration + e2e)
 - ✅ Performance requirements met
 - ✅ Security requirements implemented
 - ✅ Error handling with Sentry working
 - ✅ Integration with existing code validated
+- ✅ Task status updated in task-master
 
 ---
 
@@ -236,6 +266,7 @@ const rateLimiter = new Ratelimit({
 - All external API calls must have proper error handling
 - All database operations must be optimized and indexed
 - All user inputs must be validated and sanitized
+- `npm run build` must always succeed
 
 ### **Automation Focus:**
 - Implement automated testing for all new functionality
@@ -249,6 +280,12 @@ const rateLimiter = new Ratelimit({
 - Must maintain compatibility with existing components in `components/`
 - Must follow existing database schema and migration patterns
 
+### **Task Management:**
+- Update task status to "in-progress" when starting work
+- Log progress using `task-master update-subtask` during implementation
+- Update task status to "done" upon successful completion
+- Ensure all subtasks are properly tracked and completed
+
 ---
 
-**Remember:** This is a production SaaS application targeting real revenue. Code quality, security, and reliability are non-negotiable. Follow the Cursor rules exactly, test thoroughly, and build for scale from day one. 
+**Remember:** This is a production SaaS application targeting real revenue. Code quality, security, reliability, and proper task tracking are non-negotiable. Follow the Cursor rules exactly, test thoroughly, validate builds, and build for scale from day one. 
