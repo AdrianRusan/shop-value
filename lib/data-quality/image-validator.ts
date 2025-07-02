@@ -101,9 +101,10 @@ class ImageValidator {
     }
     
     // Test image accessibility
+    let timeoutId: NodeJS.Timeout | undefined;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), options.timeout || IMAGE_CONFIG.TIMEOUT);
+      timeoutId = setTimeout(() => controller.abort(), options.timeout || IMAGE_CONFIG.TIMEOUT);
       
       const response = await fetch(imageUrl, {
         method: 'HEAD',
@@ -112,8 +113,6 @@ class ImageValidator {
           'User-Agent': 'ShopValue Bot 1.0'
         }
       });
-      
-      clearTimeout(timeoutId);
       
       if (!response.ok) {
         issues.push({
@@ -181,6 +180,11 @@ class ImageValidator {
       }
       
       return { isValid: false, issues };
+    } finally {
+      // Always clear the timeout to prevent memory leaks
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
