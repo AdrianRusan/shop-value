@@ -11,7 +11,20 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['mongoose'],
     instrumentationHook: true,
+    // Enable optimizations for performance
+    optimizePackageImports: [
+      '@react-email/components',
+      '@upstash/redis'
+    ],
   },
+
+  // Optimize compilation for better performance
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
+  // Enhanced image optimization
   images: {
     remotePatterns: [
       {
@@ -42,10 +55,17 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'shop-value-hotfix.vercel.app',
       }
-    ]
+    ],
+    // Optimize image formats and sizes
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 31536000, // 1 year
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Webpack configuration for better optimization
+  // Simplified webpack configuration
   webpack: (config, { isServer, dev, webpack }) => {
     // Optimize for production
     if (!isServer) {
@@ -90,13 +110,26 @@ const nextConfig = {
         'ioredis': 'commonjs ioredis',
       });
     }
+
+    // Bundle analyzer for production builds (optional) - only in development
+    if (process.env.ANALYZE === 'true' && dev) {
+      try {
+        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+        config.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            openAnalyzer: false,
+          })
+        );
+      } catch (error) {
+        console.warn('Bundle analyzer not available:', error.message);
+      }
+    }
     
     return config;
   },
   
-  // SWC minification is enabled by default in Next.js 13+
-  
-  // Security headers
+  // Enhanced security headers with performance considerations
   async headers() {
     return [
       {
@@ -153,6 +186,26 @@ const nextConfig = {
           },
         ],
       },
+      // Cache static assets aggressively
+      {
+        source: '/assets/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache API routes with shorter duration
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, stale-while-revalidate=300',
+          },
+        ],
+      },
     ];
   },
 
@@ -160,6 +213,12 @@ const nextConfig = {
   env: {
     BUILDING: 'true',
   },
+
+  // Enable compression
+  compress: true,
+
+  // Optimize page extensions
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 };
 
 // Sentry configuration
