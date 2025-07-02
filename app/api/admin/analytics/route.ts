@@ -8,6 +8,9 @@ import UserProductTracking from '@/lib/models/user-product-tracking.model';
 import { redis } from '@/lib/upstash';
 import { startOfDay, startOfWeek, startOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Admin-only endpoint for analytics
 export async function GET(request: NextRequest) {
   try {

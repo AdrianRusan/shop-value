@@ -1,4 +1,7 @@
 {
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
   "functions": {
     "app/api/cron/**/*": { "maxDuration": 300 },
     "app/api/webhooks/**/*": { "maxDuration": 60 },
