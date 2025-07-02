@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis } from '@/lib/upstash';
 import * as Sentry from '@sentry/nextjs';
+import { userCache, productCache, cacheInvalidation } from '@/lib/cache';
 
 // Rate limiting
 const ratelimit = new Ratelimit({
@@ -106,6 +107,20 @@ export async function GET(
     const sortBy = searchParams.get('sortBy') || 'addedAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 1 : -1;
 
+    // Create cache key based on filters
+    const filters = { page, limit, category, status, sortBy, sortOrder };
+    
+    // Try to get cached data first
+    const cachedData = await userCache.getCachedUserProducts(params.userId, filters);
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        data: cachedData.products,
+        cached: true,
+        timestamp: cachedData.timestamp
+      });
+    }
+
     // Build query
     const trackingQuery: any = {
       userId: params.userId,
@@ -147,22 +162,28 @@ export async function GET(
       };
     });
 
+    const responseData = {
+      products: trackedProducts,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit)
+      },
+      summary: {
+        totalTracked: totalCount,
+        activeTracked: validTrackings.filter((t: any) => t.isActive).length,
+        averagePriceChange: trackedProducts.reduce((acc: number, p: any) => acc + p.priceChangePercentage, 0) / trackedProducts.length || 0
+      }
+    };
+
+    // Cache the response data
+    await userCache.cacheUserProducts(params.userId, responseData, filters);
+
     return NextResponse.json({
       success: true,
-      data: {
-        products: trackedProducts,
-        pagination: {
-          page,
-          limit,
-          total: totalCount,
-          pages: Math.ceil(totalCount / limit)
-        },
-        summary: {
-          totalTracked: totalCount,
-          activeTracked: validTrackings.filter((t: any) => t.isActive).length,
-          averagePriceChange: trackedProducts.reduce((acc: number, p: any) => acc + p.priceChangePercentage, 0) / trackedProducts.length || 0
-        }
-      },
+      data: responseData,
+      cached: false,
       timestamp: new Date().toISOString()
     });
 
@@ -266,6 +287,9 @@ export async function POST(
     // Populate product data for response
     await tracking.populate('productId', 'title brand category currentPrice currency image');
 
+    // Invalidate user caches since we added a new product
+    await cacheInvalidation.invalidateUser(params.userId);
+
     return NextResponse.json({
       success: true,
       data: tracking,
@@ -347,6 +371,9 @@ export async function PUT(
         }
       }
     );
+
+    // Invalidate user caches since we updated products
+    await cacheInvalidation.invalidateUser(params.userId);
 
     return NextResponse.json({
       success: true,
@@ -441,6 +468,9 @@ export async function DELETE(
       user.usage.productsTracked = Math.max(0, user.usage.productsTracked - removedCount);
       await user.save();
     }
+
+    // Invalidate user caches since we removed products
+    await cacheInvalidation.invalidateUser(params.userId);
 
     return NextResponse.json({
       success: true,
