@@ -28,9 +28,18 @@ const secureMiddleware = createSecurityMiddleware({
 });
 
 // Example secure API endpoint
-const secureHandler = async (request: NextRequest, validatedData: z.infer<typeof exampleSchema>) => {
+const secureHandler = async (request: NextRequest, validatedData?: z.infer<typeof exampleSchema>) => {
   try {
     await connectToDB();
+    
+    // Check if validation was performed and data is available
+    if (!validatedData) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid request data or missing content',
+        code: 'VALIDATION_FAILED'
+      }, { status: 400 });
+    }
     
     // Sanitize the validated data for XSS protection
     const sanitizedData = {

@@ -262,30 +262,74 @@ export const createSecurityMiddleware = (options: {
           const contentLength = request.headers.get('content-length');
           const contentType = request.headers.get('content-type');
           
-          // Methods that typically don't have request bodies
-          const methodsWithoutBodies = ['GET', 'HEAD', 'OPTIONS', 'DELETE'];
+          // Methods that should never have request bodies for validation
+          const methodsWithoutBodies = ['GET', 'HEAD', 'OPTIONS'];
           
-          // Determine if we should expect and validate a request body
-          const hasContentLength = contentLength && parseInt(contentLength) > 0;
-          const hasJsonContentType = contentType?.includes('application/json');
+          // Determine if this method typically requires body validation
           const methodSupportsBody = !methodsWithoutBodies.includes(method);
           
-          // Only validate input if:
-          // 1. The method typically supports bodies (POST, PUT, PATCH)
-          // 2. AND there's actually content to parse (content-length > 0 and JSON content-type)
-          if (methodSupportsBody && hasContentLength && hasJsonContentType) {
+          if (methodSupportsBody) {
+            // For methods that can have bodies (POST, PUT, PATCH, DELETE), we need to be strict
+            const hasJsonContentType = contentType?.includes('application/json');
+            const hasContentLength = contentLength && parseInt(contentLength) > 0;
+            
+            // Check if request body has already been consumed
+            let bodyAlreadyConsumed = false;
+            try {
+              // Clone request to test if body is readable
+              const clonedRequest = request.clone();
+              await clonedRequest.text();
+            } catch (error) {
+              bodyAlreadyConsumed = true;
+            }
+            
+            if (bodyAlreadyConsumed) {
+              return NextResponse.json({
+                success: false,
+                error: 'Request body has already been consumed'
+              }, { status: 400 });
+            }
+            
+            if (!hasJsonContentType) {
+              return NextResponse.json({
+                success: false,
+                error: 'Content-Type must be application/json for body validation'
+              }, { status: 400 });
+            }
+            
+            if (!hasContentLength) {
+              return NextResponse.json({
+                success: false,
+                error: 'Content-Length header is required'
+              }, { status: 400 });
+            }
+            
+            // Parse and validate the body
             const body = await request.json();
             validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
           } else {
-            // For methods without bodies or when no content is present,
-            // skip validation entirely to avoid schema errors
+            // For GET, HEAD, OPTIONS - no body validation needed
             validatedData = undefined;
           }
         } catch (error) {
+          if (error instanceof z.ZodError) {
+            return NextResponse.json({
+              success: false,
+              error: 'Invalid input data',
+              details: error.errors
+            }, { status: 400 });
+          }
+          
+          if (error instanceof SyntaxError) {
+            return NextResponse.json({
+              success: false,
+              error: 'Invalid JSON in request body'
+            }, { status: 400 });
+          }
+          
           return NextResponse.json({
             success: false,
-            error: 'Invalid input data',
-            details: error instanceof z.ZodError ? error.errors : undefined
+            error: 'Failed to validate request data'
           }, { status: 400 });
         }
       }
