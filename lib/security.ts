@@ -265,32 +265,44 @@ export const createSecurityMiddleware = (options: {
           // Methods that should never have request bodies for validation
           const methodsWithoutBodies = ['GET', 'HEAD', 'OPTIONS'];
           
-          // Determine if this method typically requires body validation
+          // Determine if this method typically supports body validation
           const methodSupportsBody = !methodsWithoutBodies.includes(method);
           
           if (methodSupportsBody) {
-            // For methods that can have bodies (POST, PUT, PATCH, DELETE), we need to be strict
+            // Check if there's actually a body to validate
             const hasJsonContentType = contentType?.includes('application/json');
-            const hasContentLength = contentLength && parseInt(contentLength) > 0;
+            const contentLengthNum = contentLength ? parseInt(contentLength) : 0;
+            const hasTransferEncoding = request.headers.get('transfer-encoding') === 'chunked';
             
-            if (!hasJsonContentType) {
-              return NextResponse.json({
-                success: false,
-                error: 'Content-Type must be application/json for body validation'
-              }, { status: 400 });
+            // Determine if a body is present or expected
+            const hasBody = contentLengthNum > 0 || hasTransferEncoding || hasJsonContentType;
+            
+            if (hasBody) {
+              // Only enforce JSON content type if there's an actual body
+              if (!hasJsonContentType) {
+                return NextResponse.json({
+                  success: false,
+                  error: 'Content-Type must be application/json when sending request body'
+                }, { status: 400 });
+              }
+              
+              try {
+                // Parse and validate the body
+                const body = await request.json();
+                validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
+              } catch (parseError) {
+                // Handle empty bodies or invalid JSON
+                if (parseError instanceof SyntaxError && parseError.message.includes('Unexpected end of JSON input')) {
+                  // Empty body case - validate empty object
+                  validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
+                } else {
+                  throw parseError;
+                }
+              }
+            } else {
+              // No body present - validate empty object for schema compliance
+              validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
             }
-            
-            if (!hasContentLength) {
-              return NextResponse.json({
-                success: false,
-                error: 'Content-Length header is required'
-              }, { status: 400 });
-            }
-            
-            // Parse and validate the body
-            // If the body was already consumed, request.json() will naturally fail
-            const body = await request.json();
-            validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
           } else {
             // For GET, HEAD, OPTIONS - no body validation needed
             validatedData = undefined;
