@@ -259,30 +259,27 @@ export const createSecurityMiddleware = (options: {
       if (options.validateInput) {
         try {
           const method = request.method.toUpperCase();
-          const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
           const contentLength = request.headers.get('content-length');
           const contentType = request.headers.get('content-type');
           
-          // Skip body parsing for methods that typically don't have bodies
-          // or when there's no content to parse
-          if (!hasBody || contentLength === '0' || contentLength === null) {
-            // For methods without bodies, validate an empty object or skip validation
-            if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
-              validatedData = undefined; // No validation needed for GET requests
-            } else {
-              // For DELETE and other methods that might optionally have bodies,
-              // try to validate an empty object
-              validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
-            }
+          // Methods that typically don't have request bodies
+          const methodsWithoutBodies = ['GET', 'HEAD', 'OPTIONS', 'DELETE'];
+          
+          // Determine if we should expect and validate a request body
+          const hasContentLength = contentLength && parseInt(contentLength) > 0;
+          const hasJsonContentType = contentType?.includes('application/json');
+          const methodSupportsBody = !methodsWithoutBodies.includes(method);
+          
+          // Only validate input if:
+          // 1. The method typically supports bodies (POST, PUT, PATCH)
+          // 2. AND there's actually content to parse (content-length > 0 and JSON content-type)
+          if (methodSupportsBody && hasContentLength && hasJsonContentType) {
+            const body = await request.json();
+            validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
           } else {
-            // Only parse JSON if content-type suggests JSON and there's content
-            if (contentType?.includes('application/json')) {
-              const body = await request.json();
-              validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
-            } else {
-              // Non-JSON content types - validate empty object or handle appropriately
-              validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
-            }
+            // For methods without bodies or when no content is present,
+            // skip validation entirely to avoid schema errors
+            validatedData = undefined;
           }
         } catch (error) {
           return NextResponse.json({
