@@ -1,6 +1,6 @@
 # Task ID: 14
 # Title: Set Up Security Measures
-# Status: pending
+# Status: done
 # Dependencies: 1, 2
 # Priority: high
 # Description: Implement security features to protect user data and prevent common vulnerabilities.

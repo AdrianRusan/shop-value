@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { securityHeaders } from "@/lib/security";
 
 // Define route matchers for different types of routes
 const isProtectedRoute = createRouteMatcher([
@@ -40,6 +42,27 @@ export default clerkMiddleware((auth, request) => {
   if (auth().userId && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
     return Response.redirect(new URL('/dashboard', request.url));
   }
+  
+  // Add security headers to all responses
+  const response = NextResponse.next();
+  
+  // Apply security headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  // Additional security measures for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Add API-specific security headers
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    
+    // Rate limiting headers (will be set by individual API routes)
+    if (!response.headers.has('X-RateLimit-Limit')) {
+      response.headers.set('X-RateLimit-Limit', '60');
+    }
+  }
+  
+  return response;
 });
 
 export const config = {
