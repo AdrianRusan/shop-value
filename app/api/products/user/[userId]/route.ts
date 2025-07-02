@@ -6,8 +6,8 @@ import User from '@/lib/models/user.model';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis } from '@/lib/upstash';
-import * as Sentry from '@sentry/nextjs';
+import { redis, cacheKeys } from '@/lib/upstash';
+import { cacheService, cacheInvalidation, CacheMetrics } from '@/lib/cache/cache-service';
 
 // Rate limiting
 const ratelimit = new Ratelimit({
@@ -106,6 +106,22 @@ export async function GET(
     const sortBy = searchParams.get('sortBy') || 'addedAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 1 : -1;
 
+    // Generate cache key for user products
+    const cacheKey = cacheKeys.userProducts(params.userId) + `:${page}:${limit}:${category || 'all'}:${status}:${sortBy}:${sortOrder}`;
+
+    // Try to get cached results first
+    const cachedResults = await cacheService.get<any>(cacheKey);
+    if (cachedResults) {
+      await CacheMetrics.incrementHit();
+      return NextResponse.json({
+        ...cachedResults,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    await CacheMetrics.incrementMiss();
+
     // Build query
     const trackingQuery: any = {
       userId: params.userId,
@@ -147,7 +163,8 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({
+    // Prepare response data
+    const responseData = {
       success: true,
       data: {
         products: trackedProducts,
@@ -162,12 +179,19 @@ export async function GET(
           activeTracked: validTrackings.filter((t: any) => t.isActive).length,
           averagePriceChange: trackedProducts.reduce((acc: number, p: any) => acc + p.priceChangePercentage, 0) / trackedProducts.length || 0
         }
-      },
+      }
+    };
+
+    // Cache the results for 5 minutes
+    await cacheService.set(cacheKey, responseData, 300);
+
+    return NextResponse.json({
+      ...responseData,
+      cached: false,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    Sentry.captureException(error);
     console.error('Error fetching user products:', error);
     
     return NextResponse.json({
@@ -263,6 +287,14 @@ export async function POST(
       $set: { 'analytics.lastViewed': new Date() }
     });
 
+    // Invalidate relevant caches
+    await cacheInvalidation.invalidateUserCache(params.userId);
+    await cacheInvalidation.invalidateProductCache(productId, { 
+      userId: params.userId, 
+      category: product.category, 
+      brand: product.brand 
+    });
+
     // Populate product data for response
     await tracking.populate('productId', 'title brand category currentPrice currency image');
 
@@ -347,6 +379,9 @@ export async function PUT(
         }
       }
     );
+
+    // Invalidate user cache after bulk update
+    await cacheInvalidation.invalidateUserCache(params.userId);
 
     return NextResponse.json({
       success: true,
@@ -441,6 +476,9 @@ export async function DELETE(
       user.usage.productsTracked = Math.max(0, user.usage.productsTracked - removedCount);
       await user.save();
     }
+
+    // Invalidate user cache after deletion
+    await cacheInvalidation.invalidateUserCache(params.userId);
 
     return NextResponse.json({
       success: true,
