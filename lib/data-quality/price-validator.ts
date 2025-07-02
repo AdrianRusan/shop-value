@@ -79,23 +79,26 @@ class PriceValidator {
     let price = 0;
     
     try {
-      // Pattern 1: 1.234,56 (European format)
+      // Pattern 1 & 3: Handle formats with both dots and commas
       if (cleanText.includes('.') && cleanText.includes(',')) {
-        const lastComma = cleanText.lastIndexOf(',');
-        const beforeComma = cleanText.substring(0, lastComma).replace(/[.,]/g, '');
-        const afterComma = cleanText.substring(lastComma + 1);
-        price = parseFloat(`${beforeComma}.${afterComma}`);
+        const lastDotIndex = cleanText.lastIndexOf('.');
+        const lastCommaIndex = cleanText.lastIndexOf(',');
+        
+        if (lastCommaIndex > lastDotIndex) {
+          // European format: 1.234,56 (comma is decimal separator)
+          const beforeComma = cleanText.substring(0, lastCommaIndex).replace(/[.,]/g, '');
+          const afterComma = cleanText.substring(lastCommaIndex + 1);
+          price = parseFloat(`${beforeComma}.${afterComma}`);
+        } else {
+          // US format: 1,234.56 (dot is decimal separator)
+          const beforeDot = cleanText.substring(0, lastDotIndex).replace(/[.,]/g, '');
+          const afterDot = cleanText.substring(lastDotIndex + 1);
+          price = parseFloat(`${beforeDot}.${afterDot}`);
+        }
       }
       // Pattern 2: 1234,56 (Romanian format)
       else if (cleanText.includes(',') && !cleanText.includes('.')) {
         price = parseFloat(cleanText.replace(',', '.'));
-      }
-      // Pattern 3: 1,234.56 (US format)
-      else if (cleanText.includes(',') && cleanText.includes('.')) {
-        const lastDot = cleanText.lastIndexOf('.');
-        const beforeDot = cleanText.substring(0, lastDot).replace(/[.,]/g, '');
-        const afterDot = cleanText.substring(lastDot + 1);
-        price = parseFloat(`${beforeDot}.${afterDot}`);
       }
       // Pattern 4: 1234.56 (simple decimal)
       else if (cleanText.includes('.') && !cleanText.includes(',')) {
@@ -103,9 +106,7 @@ class PriceValidator {
       }
       // Pattern 5: Plain number
       else {
-        const numericPrice = parseInt(cleanText, 10);
-        // If it's a large number, treat last two digits as decimals
-        price = numericPrice > 999 ? numericPrice / 100 : numericPrice;
+        price = parseFloat(cleanText);
       }
       
       return isNaN(price) ? 0 : Math.round(price * 100) / 100; // Round to 2 decimals

@@ -190,7 +190,7 @@ describe('DataQualityAssurance', () => {
       expect(report.summary.totalProducts).toBe(2);
       expect(report.summary.validProducts).toBe(1);
       expect(report.summary.averageConfidence).toBe(0.75);
-      expect(report.summary.commonIssues).toEqual({ image: 1, price: 1 });
+      expect(report.summary.commonIssues).toEqual({ 'image:error': 1, 'price:info': 1 });
       expect(report.recommendations).toContain('Fix image URL');
     });
   });
@@ -250,6 +250,71 @@ describe('PriceValidator', () => {
       expect(result.issues.some(issue => 
         issue.message.includes('suspicious discount')
       )).toBe(true);
+    });
+  });
+
+  describe('parsePrice - Price Text Parsing', () => {
+    it('should parse European format correctly (1.234,56)', async () => {
+      const result = await priceValidator.parsePrice('1.234,56', 'EUR');
+      expect(result).toBe(1234.56);
+    });
+
+    it('should parse US format correctly (1,234.56)', async () => {
+      const result = await priceValidator.parsePrice('1,234.56', 'USD');
+      expect(result).toBe(1234.56);
+    });
+
+    it('should parse Romanian format correctly (1234,56)', async () => {
+      const result = await priceValidator.parsePrice('1234,56', 'RON');
+      expect(result).toBe(1234.56);
+    });
+
+    it('should parse simple decimal correctly (1234.56)', async () => {
+      const result = await priceValidator.parsePrice('1234.56', 'USD');
+      expect(result).toBe(1234.56);
+    });
+
+    it('should parse plain numbers correctly', async () => {
+      const result1 = await priceValidator.parsePrice('1500', 'RON');
+      expect(result1).toBe(1500);
+      
+      const result2 = await priceValidator.parsePrice('999', 'RON');
+      expect(result2).toBe(999);
+      
+      const result3 = await priceValidator.parsePrice('10000', 'RON');
+      expect(result3).toBe(10000);
+    });
+
+    it('should handle text with currency symbols', async () => {
+      const result1 = await priceValidator.parsePrice('1.234,56 lei', 'RON');
+      expect(result1).toBe(1234.56);
+      
+      const result2 = await priceValidator.parsePrice('$1,234.56', 'USD');
+      expect(result2).toBe(1234.56);
+      
+      const result3 = await priceValidator.parsePrice('€1.234,56', 'EUR');
+      expect(result3).toBe(1234.56);
+    });
+
+    it('should distinguish between European and US formats correctly', async () => {
+      // European: thousands separator is dot, decimal separator is comma
+      const european = await priceValidator.parsePrice('2.345,67', 'EUR');
+      expect(european).toBe(2345.67);
+      
+      // US: thousands separator is comma, decimal separator is dot
+      const us = await priceValidator.parsePrice('2,345.67', 'USD');
+      expect(us).toBe(2345.67);
+    });
+
+    it('should handle edge cases', async () => {
+      const result1 = await priceValidator.parsePrice('', 'RON');
+      expect(result1).toBe(0);
+      
+      const result2 = await priceValidator.parsePrice('abc', 'RON');
+      expect(result2).toBe(0);
+      
+      const result3 = await priceValidator.parsePrice('0', 'RON');
+      expect(result3).toBe(0);
     });
   });
 });
