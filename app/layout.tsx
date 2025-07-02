@@ -9,7 +9,13 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import AnalyticsProvider from '@/components/providers/AnalyticsProvider';
 import MonitoringSetup from '@/components/monitoring/MonitoringSetup';
 
-const inter = Inter({ subsets: ['latin'] })
+// Optimize font loading with display swap for better CLS
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://shop-value.vercel.app/'),
@@ -37,6 +43,25 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'ShopValue',
     locale: 'ro_RO',
+  },
+  // Performance optimization metadata
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_VERIFICATION_ID as string,
+  },
+  // Additional metadata for performance
+  other: {
+    'preconnect': 'https://fonts.googleapis.com, https://api.clerk.com, https://api.stripe.com',
   },
 }
 
@@ -66,8 +91,8 @@ export default function RootLayout({
       }}
     >
       <ThemeProvider>
-        <html lang="ro">
-          <body className={`${inter.className} dark:bg-black`}>
+        <html lang="ro" className={inter.variable}>
+          <body className={`${inter.className} dark:bg-black antialiased`}>
             <ErrorBoundary context="app-layout">
               <AnalyticsProvider>
                 <main className='max-w-10xl mx-auto'>
@@ -75,6 +100,7 @@ export default function RootLayout({
                   {children}
                   <Analytics />
                 </main>
+                {/* Load monitoring setup as non-critical */}
                 <MonitoringSetup />
               </AnalyticsProvider>
             </ErrorBoundary>

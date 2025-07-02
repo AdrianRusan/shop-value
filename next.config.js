@@ -11,7 +11,34 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['mongoose'],
     instrumentationHook: true,
+    // Enable optimizations for performance
+    optimizePackageImports: [
+      '@react-email/components',
+      '@upstash/redis',
+      'react-chartjs-2',
+      'chart.js'
+    ],
+    // Enable parallel route generation for faster builds
+    parallelServerCompiles: true,
+    parallelServerBuildTraces: true,
+    // Enable turbo for faster development
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
+
+  // Optimize compilation for better performance
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
+  // Enhanced image optimization
   images: {
     remotePatterns: [
       {
@@ -42,11 +69,67 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'shop-value-hotfix.vercel.app',
       }
-    ]
+    ],
+    // Optimize image formats and sizes
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 31536000, // 1 year
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
   // Webpack configuration for better optimization
   webpack: (config, { isServer, dev, webpack }) => {
+    // Production optimizations
+    if (!dev) {
+      // Enable aggressive splitting for better caching
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            // Framework chunk for React/Next.js
+            framework: {
+              chunks: 'all',
+              name: 'framework',
+              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            // Libraries chunk for other vendor code
+            lib: {
+              test(module) {
+                return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
+              },
+              name(module) {
+                const hash = require('crypto').createHash('sha1');
+                hash.update(module.libIdent ? module.libIdent({context: config.context}) : module.identifier());
+                return hash.digest('hex').substring(0, 8);
+              },
+              priority: 30,
+              minChunks: 1,
+              reuseExistingChunk: true,
+            },
+            // Commons chunk for shared code
+            commons: {
+              name: 'commons',
+              minChunks: 2,
+              priority: 20,
+              reuseExistingChunk: true,
+            },
+            // Shared chunk for components
+            shared: {
+              test: /[\\/]components[\\/]/,
+              name: 'shared',
+              priority: 10,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      };
+    }
+
     // Optimize for production
     if (!isServer) {
       config.resolve.fallback = {
@@ -90,13 +173,22 @@ const nextConfig = {
         'ioredis': 'commonjs ioredis',
       });
     }
+
+    // Bundle analyzer for production builds (optional)
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false,
+        })
+      );
+    }
     
     return config;
   },
   
-  // SWC minification is enabled by default in Next.js 13+
-  
-  // Security headers
+  // Enhanced security headers with performance considerations
   async headers() {
     return [
       {
@@ -151,6 +243,31 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
+          // Performance headers
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache static assets aggressively
+      {
+        source: '/assets/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache API routes with shorter duration
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, stale-while-revalidate=300',
+          },
         ],
       },
     ];
@@ -160,6 +277,15 @@ const nextConfig = {
   env: {
     BUILDING: 'true',
   },
+
+  // Enable compression
+  compress: true,
+
+  // Optimize page extensions
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+
+  // Production URL for optimized builds
+  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : undefined,
 };
 
 // Sentry configuration
