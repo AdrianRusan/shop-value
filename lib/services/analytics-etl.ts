@@ -78,19 +78,27 @@ class AnalyticsETLService {
   private isInitialized = false;
 
   constructor() {
-    // Don't initialize Redis during build time
-    if (process.env.BUILDING || (process.env.NODE_ENV === 'production' && !this.isRuntimeEnvironment())) {
+    // Only skip initialization during actual build time
+    if (process.env.BUILDING) {
       console.log('Skipping ETL service initialization during build time');
       return;
     }
+    // Lazy initialization will handle missing Redis environment variables gracefully
   }
 
   /**
-   * Check if we're in a runtime environment (not build time)
+   * Check if Redis environment variables are available
+   * This is separate from runtime environment detection to avoid blocking initialization
    */
-  private isRuntimeEnvironment(): boolean {
-    return typeof window !== 'undefined' || 
-           (!!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN);
+  private hasRedisEnvironment(): boolean {
+    return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  }
+
+  /**
+   * Check if we're in a server-side environment (not browser)
+   */
+  private isServerSide(): boolean {
+    return typeof window === 'undefined';
   }
 
   /**
@@ -380,22 +388,20 @@ class AnalyticsETLService {
 
       // Calculate retention for each week after signup
       for (let week = 1; week <= 12; week++) {
-        // Calculate the start and end of the retention week
-        // Week 1 = days 1-7 after signup, Week 2 = days 8-14, etc.
-        const weekStart = new Date(cohortStart);
-        weekStart.setDate(weekStart.getDate() + ((week - 1) * 7));
-        
-        const weekEnd = new Date(cohortStart);
-        weekEnd.setDate(weekEnd.getDate() + (week * 7) - 1);
+        // Calculate the start of the retention period
+        // Week 1 = day 1 onwards, Week 2 = day 8 onwards, etc.
+        const retentionPeriodStart = new Date(cohortStart);
+        retentionPeriodStart.setDate(retentionPeriodStart.getDate() + ((week - 1) * 7));
 
         // Don't calculate retention for future weeks
-        if (weekStart > new Date()) break;
+        if (retentionPeriodStart > new Date()) break;
 
-        // Count users who were active during this specific week
+        // Count users who were active AT ANY POINT from the retention period start onwards
+        // This is the correct cohort retention methodology: users are considered retained
+        // if they were active at any time during or after the retention period
         const activeUsers = cohortUsers.filter(user => 
           user.lastLoginAt && 
-          user.lastLoginAt >= weekStart && 
-          user.lastLoginAt <= weekEnd
+          user.lastLoginAt >= retentionPeriodStart
         ).length;
 
         cohortData.retentionWeeks[week] = activeUsers;

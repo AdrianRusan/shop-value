@@ -60,8 +60,8 @@ const connectionState: ConnectionState = {
 
 // Enhanced connection function with retry logic
 export const connectToDB = async (): Promise<typeof mongoose | null> => {
-  // Skip database connection during build time
-  if (process.env.BUILDING || (process.env.NODE_ENV === 'production' && typeof window === 'undefined' && !process.env.RUNTIME)) {
+  // Skip database connection only during actual build time
+  if (process.env.BUILDING) {
     console.log('⏭️ Skipping MongoDB connection during build time');
     return null;
   }
