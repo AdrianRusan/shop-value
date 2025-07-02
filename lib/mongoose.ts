@@ -60,6 +60,12 @@ const connectionState: ConnectionState = {
 
 // Enhanced connection function with retry logic
 export const connectToDB = async (): Promise<typeof mongoose | null> => {
+  // Skip database connection during build time
+  if (process.env.BUILDING || (process.env.NODE_ENV === 'production' && typeof window === 'undefined' && !process.env.RUNTIME)) {
+    console.log('⏭️ Skipping MongoDB connection during build time');
+    return null;
+  }
+
   // Validate environment variables
   if (!process.env.MONGODB_URI) {
     console.error('❌ MONGODB_URI is not defined in environment variables');
