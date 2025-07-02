@@ -7,6 +7,7 @@ import {
   updateUserLoginTracking,
   type ClerkUserData 
 } from '@/lib/clerk-sync';
+import { emailService } from '@/lib/resend';
 import * as Sentry from '@sentry/nextjs';
 
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
@@ -104,7 +105,23 @@ async function handleUserCreated(userData: any) {
     const user = await syncClerkUserToMongoDB(clerkUserData);
     console.log(`User created in MongoDB: ${user.email}`);
 
-    // TODO: Send welcome email
+    // Send welcome email
+    try {
+      await emailService.sendWelcomeEmail({
+        firstName: user.firstName || '',
+        email: user.email,
+        dashboardUrl: `${process.env.NEXTAUTH_URL || 'https://shopvalue.com'}/dashboard`,
+      }, { userId: user.clerkId });
+      
+      console.log(`Welcome email sent to: ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      Sentry.captureException(emailError, {
+        tags: { userId: user.clerkId, email: user.email },
+      });
+      // Don't fail the webhook for email errors
+    }
+
     // TODO: Track user creation event in analytics
     
   } catch (error) {

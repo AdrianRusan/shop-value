@@ -28,11 +28,11 @@ export interface ScrapingResult {
   confidence?: number;
 }
 
-// Redis connection for BullMQ - simplified for now
+// Redis connection for BullMQ - requires maxRetriesPerRequest: null
 const redisConnection = new Redis({
   host: 'localhost',
   port: 6379,
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: null, // Required for BullMQ blocking commands
   enableReadyCheck: false,
   lazyConnect: true,
 });
