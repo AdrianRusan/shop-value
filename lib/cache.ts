@@ -321,7 +321,7 @@ export class UserCacheService {
     const key = enhancedCacheKeys.userSubscription(userId);
     
     // Determine TTL based on subscription plan
-    let ttl = enhancedCacheTTL.subscriptionFree;
+    let ttl: number = enhancedCacheTTL.subscriptionFree;
     if (subscriptionData.plan === 'pro') {
       ttl = enhancedCacheTTL.subscriptionPro;
     } else if (subscriptionData.plan === 'enterprise') {
@@ -541,7 +541,7 @@ export class CacheHealthService {
     } catch (error) {
       Sentry.captureException(error);
       console.error('Error getting cache health:', error);
-      return { status: 'error', error: error.message };
+      return { status: 'error', error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 

@@ -1,4 +1,10 @@
-const { withSentryConfig } = require('@sentry/nextjs');
+let withSentryConfig;
+try {
+  ({ withSentryConfig } = require('@sentry/nextjs'));
+} catch (error) {
+  console.warn('Sentry not found, building without Sentry integration');
+  withSentryConfig = (config) => config;
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -53,8 +59,7 @@ const nextConfig = {
     return config;
   },
   
-  // Enable experimental features for better performance
-  swcMinify: true,
+  // SWC minification is enabled by default in Next.js 13+
   
   // Security headers
   async headers() {
