@@ -273,23 +273,6 @@ export const createSecurityMiddleware = (options: {
             const hasJsonContentType = contentType?.includes('application/json');
             const hasContentLength = contentLength && parseInt(contentLength) > 0;
             
-            // Check if request body has already been consumed
-            let bodyAlreadyConsumed = false;
-            try {
-              // Clone request to test if body is readable
-              const clonedRequest = request.clone();
-              await clonedRequest.text();
-            } catch (error) {
-              bodyAlreadyConsumed = true;
-            }
-            
-            if (bodyAlreadyConsumed) {
-              return NextResponse.json({
-                success: false,
-                error: 'Request body has already been consumed'
-              }, { status: 400 });
-            }
-            
             if (!hasJsonContentType) {
               return NextResponse.json({
                 success: false,
@@ -305,6 +288,7 @@ export const createSecurityMiddleware = (options: {
             }
             
             // Parse and validate the body
+            // If the body was already consumed, request.json() will naturally fail
             const body = await request.json();
             validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
           } else {
