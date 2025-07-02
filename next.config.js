@@ -1,15 +1,9 @@
-let withSentryConfig;
-try {
-  ({ withSentryConfig } = require('@sentry/nextjs'));
-} catch (error) {
-  console.warn('Sentry not found, building without Sentry integration');
-  withSentryConfig = (config) => config;
-}
+const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable experimental features
   experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
     instrumentationHook: true,
     // Enable optimizations for performance
     optimizePackageImports: [
@@ -21,7 +15,9 @@ const nextConfig = {
   // Optimize compilation for better performance
   compiler: {
     // Remove console logs in production
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
   },
 
   // Enhanced image optimization
@@ -54,7 +50,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'shop-value-hotfix.vercel.app',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
     ],
     // Optimize image formats and sizes
     formats: ['image/webp', 'image/avif'],
@@ -65,7 +65,7 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Simplified webpack configuration
+  // Webpack configuration
   webpack: (config, { isServer, dev, webpack }) => {
     // Optimize for production
     if (!isServer) {
@@ -102,60 +102,30 @@ const nextConfig = {
       };
     }
 
-    // External dependencies for server-side to prevent bundling issues
+    // External packages for server-side to prevent bundling issues
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push({
-        'bullmq': 'commonjs bullmq',
-        'ioredis': 'commonjs ioredis',
+        'sharp': 'commonjs sharp',
+        'canvas': 'commonjs canvas',
       });
     }
 
-    // Bundle analyzer for production builds (optional) - only in development
-    if (process.env.ANALYZE === 'true' && dev) {
-      try {
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'static',
-            openAnalyzer: false,
-          })
-        );
-      } catch (error) {
-        console.warn('Bundle analyzer not available:', error.message);
-      }
-    }
-    
     return config;
   },
-  
-  // Enhanced security headers with performance considerations
+
+  // Environment variables
+  env: {
+    SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: '1',
+    BUILDING: 'true',
+  },
+
+  // Headers for security and performance
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.stripe.com https://api.clerk.com https://api.sentry.io https://api.resend.com",
-              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests"
-            ].join('; ')
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains; preload',
-          },
           {
             key: 'X-Frame-Options',
             value: 'DENY',
@@ -165,24 +135,8 @@ const nextConfig = {
             value: 'nosniff',
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=()',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
           },
         ],
       },
@@ -208,36 +162,21 @@ const nextConfig = {
       },
     ];
   },
-
-  // Environment variables for build time
-  env: {
-    BUILDING: 'true',
-  },
-
-  // Enable compression
-  compress: true,
-
-  // Optimize page extensions
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 };
 
-// Sentry configuration
-const sentryConfig = {
-  // Additional config options for the Sentry webpack plugin
-  silent: true, // Suppresses source map uploading logs during build
+module.exports = withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  
-  // Upload source maps in production only
+  silent: true,
   widenClientFileUpload: true,
-  transpileClientSDK: true,
-  tunnelRoute: "/monitoring",
+  reactComponentAnnotation: {
+    enabled: true,
+  },
   hideSourceMaps: true,
   disableLogger: true,
   automaticVercelMonitors: true,
-};
-
-// Export the configuration with Sentry wrapper
-module.exports = process.env.NODE_ENV === 'production' 
-  ? withSentryConfig(nextConfig, sentryConfig)
-  : nextConfig;
+  sourcemaps: {
+    disable: false,
+    deleteSourcemapsAfterUpload: true,
+  },
+});

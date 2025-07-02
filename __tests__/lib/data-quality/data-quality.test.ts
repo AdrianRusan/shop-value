@@ -9,13 +9,7 @@ import { availabilityDetector } from '@/lib/data-quality/availability-detector';
 import { duplicateDetector } from '@/lib/data-quality/duplicate-detector';
 import { Product } from '@/types';
 
-// Mock dependencies
-jest.mock('@/lib/mongoose');
-jest.mock('@/lib/models/product.model');
-jest.mock('@sentry/nextjs');
-jest.mock('@/lib/upstash');
-
-// Mock Redis
+// Mock Redis first
 const mockRedis = {
   get: jest.fn(),
   set: jest.fn(),
@@ -23,6 +17,10 @@ const mockRedis = {
   del: jest.fn(),
 };
 
+// Mock dependencies
+jest.mock('@/lib/mongoose');
+jest.mock('@/lib/models/product.model');
+jest.mock('@sentry/nextjs');
 jest.mock('@/lib/upstash', () => ({
   redis: mockRedis,
 }));

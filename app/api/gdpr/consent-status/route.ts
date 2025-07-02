@@ -4,6 +4,9 @@ import { connectToDB } from '@/lib/mongoose';
 import User from '@/lib/models/user.model';
 import * as Sentry from '@sentry/nextjs';
 
+// Force dynamic rendering for this route since it uses auth
+export const dynamic = 'force-dynamic';
+
 interface ConsentStatusResponse {
   success: boolean;
   data?: {

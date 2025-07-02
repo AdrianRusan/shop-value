@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic rendering for this route since it uses request headers
+export const dynamic = 'force-dynamic';
+
 interface ClientIPResponse {
   success: boolean;
   ip: string;

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 
+// Force dynamic rendering for this route since it uses request headers
+export const dynamic = 'force-dynamic';
+
 /**
  * Cron job for processing price alerts
  * This endpoint should be called regularly (e.g., every hour) to:
