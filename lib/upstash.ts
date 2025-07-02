@@ -6,6 +6,38 @@ let _redis: Redis | null = null;
 
 const getRedis = (): Redis => {
   if (!_redis) {
+    // Check for mock/development mode
+    if (process.env.UPSTASH_REDIS_REST_URL === 'mock' || process.env.NODE_ENV === 'development') {
+      // Return a mock Redis client for development
+      console.log('Using mock Redis client for development');
+      return {
+        get: async () => null,
+        set: async () => 'OK',
+        setex: async () => 'OK',
+        incr: async () => 1,
+        expire: async () => 1,
+        hmset: async () => 'OK',
+        lpush: async () => 1,
+        ltrim: async () => 'OK',
+        del: async () => 1,
+        exists: async () => 0,
+        keys: async () => [],
+        flushall: async () => 'OK',
+        ping: async () => 'PONG',
+        hget: async () => null,
+        hset: async () => 1,
+        hdel: async () => 1,
+        hgetall: async () => ({}),
+        zadd: async () => 1,
+        zrange: async () => [],
+        zrem: async () => 1,
+        lrange: async () => [],
+        rpush: async () => 1,
+        lpop: async () => null,
+        rpop: async () => null,
+      } as any;
+    }
+
     if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
       // During build time, we don't have these variables, so we'll create a mock
       if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {

@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { format } from 'date-fns';
+import AdvancedAnalyticsDashboard from '@/components/admin/AdvancedAnalyticsDashboard';
 
 // Register Chart.js components
 ChartJS.register(
@@ -90,6 +91,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<'overview' | 'advanced'>('overview');
 
   const fetchAnalytics = async () => {
     try {
@@ -221,32 +223,62 @@ export default function AdminDashboard() {
         </div>
         
         <div className="flex items-center space-x-4">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-          </select>
-          
-          <button
-            onClick={fetchAnalytics}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
+          {activeTab === 'overview' && (
+            <>
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
+                className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+              
+              <button
+                onClick={fetchAnalytics}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Last Updated */}
-      <div className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-        Last updated: {format(lastUpdated, 'PPpp')}
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav className="-mb-px flex space-x-8">
+          {[
+            { id: 'overview', label: 'Overview Dashboard', icon: '📊' },
+            { id: 'advanced', label: 'Advanced Analytics', icon: '🔬' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
 
-      {/* Overview Cards */}
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <>
+          {/* Last Updated */}
+          <div className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+            Last updated: {format(lastUpdated, 'PPpp')}
+          </div>
+
+          {/* Overview Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-8">
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
           <div className="p-5">
@@ -485,6 +517,13 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
+
+      {/* Advanced Analytics Tab */}
+      {activeTab === 'advanced' && (
+        <AdvancedAnalyticsDashboard />
+      )}
     </div>
   );
 }
