@@ -5,6 +5,9 @@ import { Analytics } from '@vercel/analytics/react'
 import { ClerkProvider } from '@clerk/nextjs'
 import ThemeProvider from './theme-provider';
 import Navbar from '@/components/Navbar';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import AnalyticsProvider from '@/components/providers/AnalyticsProvider';
+import MonitoringSetup from '@/components/monitoring/MonitoringSetup';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -65,11 +68,16 @@ export default function RootLayout({
       <ThemeProvider>
         <html lang="ro">
           <body className={`${inter.className} dark:bg-black`}>
-            <main className='max-w-10xl mx-auto'>
-              <Navbar />
-              {children}
-              <Analytics />
-            </main>
+            <ErrorBoundary context="app-layout">
+              <AnalyticsProvider>
+                <main className='max-w-10xl mx-auto'>
+                  <Navbar />
+                  {children}
+                  <Analytics />
+                </main>
+                <MonitoringSetup />
+              </AnalyticsProvider>
+            </ErrorBoundary>
           </body>
         </html>
       </ThemeProvider>
