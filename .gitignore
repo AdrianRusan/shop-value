@@ -54,6 +54,9 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
+
+# Cursor MCP configuration (contains API keys)
+.cursor/mcp.json
 # OS specific
 
 # Task files
