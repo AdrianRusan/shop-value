@@ -30,9 +30,9 @@ interface UpdateConsentResponse {
 
 interface UserWithConsent {
   consent: {
-    functional: { granted: boolean; timestamp: Date; ipAddress?: string };
-    analytics: { granted: boolean; timestamp?: Date; ipAddress?: string };
-    marketing: { granted: boolean; timestamp?: Date; ipAddress?: string };
+    functional: { granted: boolean; timestamp: Date; ipAddress: string };
+    analytics: { granted: boolean; timestamp: Date; ipAddress: string };
+    marketing: { granted: boolean; timestamp: Date; ipAddress: string };
     lastUpdated: Date;
   };
 }
@@ -79,13 +79,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<UpdateCon
       },
       analytics: {
         granted: preferences.analytics,
-        timestamp: preferences.analytics ? now : undefined,
-        ipAddress: preferences.analytics ? (ipAddress || 'unknown') : undefined
+        timestamp: now, // Always record timestamp for GDPR compliance
+        ipAddress: ipAddress || 'unknown' // Always record IP for audit trail
       },
       marketing: {
         granted: preferences.marketing,
-        timestamp: preferences.marketing ? now : undefined,
-        ipAddress: preferences.marketing ? (ipAddress || 'unknown') : undefined
+        timestamp: now, // Always record timestamp for GDPR compliance
+        ipAddress: ipAddress || 'unknown' // Always record IP for audit trail
       },
       lastUpdated: now
     };
