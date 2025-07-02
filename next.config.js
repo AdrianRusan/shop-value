@@ -15,7 +15,9 @@ const nextConfig = {
   // Optimize compilation for better performance
   compiler: {
     // Remove console logs in production
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
   },
 
   // Enhanced image optimization
@@ -48,7 +50,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'shop-value-hotfix.vercel.app',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
     ],
     // Optimize image formats and sizes
     formats: ['image/webp', 'image/avif'],
@@ -57,10 +63,9 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1 year
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    forceSwcTransforms: true,
   },
   
-  // Simplified webpack configuration
+  // Webpack configuration
   webpack: (config, { isServer, dev, webpack }) => {
     // Optimize for production
     if (!isServer) {
@@ -97,9 +102,6 @@ const nextConfig = {
       };
     }
 
-    // External dependencies for server-side to prevent bundling issues
-  // Webpack configuration
-  webpack: (config, { isServer }) => {
     // External packages for server-side to prevent bundling issues
     if (isServer) {
       config.externals = config.externals || [];
@@ -111,8 +113,6 @@ const nextConfig = {
 
     return config;
   },
-  
-  // Enhanced security headers with performance considerations
 
   // Environment variables
   env: {
@@ -120,24 +120,7 @@ const nextConfig = {
     BUILDING: 'true',
   },
 
-  // Performance optimizations
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
-  },
-
-  // Image optimization
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
-  },
-
-  // Headers for security
+  // Headers for security and performance
   async headers() {
     return [
       {
