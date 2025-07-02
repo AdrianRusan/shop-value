@@ -5,7 +5,7 @@ import ProductModel from '../models/product.model';
 import { connectToDB } from '../mongoose';
 import { scrapeFlipProduct } from '../scraper';
 import { getAveragePrice, getHighestPrice, getLowestPrice } from '../utils';
-import { generateEmailBody, sendEmail } from '../nodemailer';
+import { emailService } from '../resend';
 import { User, Product } from '@/types';
 import { Types } from 'mongoose';
 
@@ -254,9 +254,19 @@ export async function addUserEmailToProduct(
 
       await product.save();
 
-      const emailContent = await generateEmailBody(product, 'WELCOME');
-
-      await sendEmail(emailContent, [userEmail]);
+      // Use new Resend email system
+      try {
+        const firstName = userEmail.split('@')[0]; // Extract name from email
+        await emailService.sendWelcomeEmail({
+          firstName,
+          email: userEmail,
+          dashboardUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`,
+        });
+        console.log('Welcome email sent successfully to:', userEmail);
+      } catch (emailError) {
+        // Log email error but don't fail the entire operation
+        console.error('Failed to send welcome email:', emailError);
+      }
     }
   } catch (error) {
     console.log(error);
