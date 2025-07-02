@@ -18,18 +18,7 @@ const nextConfig = {
       'react-chartjs-2',
       'chart.js'
     ],
-    // Enable parallel route generation for faster builds
-    parallelServerCompiles: true,
-    parallelServerBuildTraces: true,
-    // Enable turbo for faster development
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+    // Removed parallelServerCompiles and parallelServerBuildTraces - not compatible with Vercel
   },
 
   // Optimize compilation for better performance
@@ -174,15 +163,19 @@ const nextConfig = {
       });
     }
 
-    // Bundle analyzer for production builds (optional)
-    if (process.env.ANALYZE === 'true') {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-      config.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: 'static',
-          openAnalyzer: false,
-        })
-      );
+    // Bundle analyzer for production builds (optional) - only in development
+    if (process.env.ANALYZE === 'true' && dev) {
+      try {
+        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+        config.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            openAnalyzer: false,
+          })
+        );
+      } catch (error) {
+        console.warn('Bundle analyzer not available:', error.message);
+      }
     }
     
     return config;

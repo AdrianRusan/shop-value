@@ -22,16 +22,8 @@
     "db:seed": "node scripts/db-setup.js seed",
     "db:setup": "node scripts/db-setup.js setup",
     "db:health": "node scripts/db-setup.js health",
-    "perf:analyze": "ANALYZE=true npm run build",
-    "perf:lighthouse": "lighthouse --output=json --output=html --output-path=./lighthouse-report.html https://shop-value.vercel.app",
-    "perf:vitals": "next build && next start & sleep 5 && npx web-vitals-cli https://localhost:3000",
-    "perf:audit": "npm run perf:lighthouse && npm run perf:vitals",
-    "perf:monitor": "node scripts/performance-monitor.js",
     "build:analyze": "cross-env ANALYZE=true next build",
-    "build:production": "next build && next export",
-    "optimize:images": "imagemin 'public/assets/images/**/*.{jpg,png,svg}' --out-dir='public/assets/images/optimized'",
-    "type-check": "tsc --noEmit",
-    "performance:test": "npm run build && npm run test:e2e"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.18.0",
@@ -89,6 +81,8 @@
     "postcss": "^8",
     "tailwindcss": "^3",
     "task-master-ai": "^0.18.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "cross-env": "^7.0.3"
   }
 }
