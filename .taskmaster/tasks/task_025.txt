@@ -1,6 +1,6 @@
 # Task ID: 25
 # Title: Conduct Security Audit and Penetration Testing
-# Status: pending
+# Status: done
 # Dependencies: 14, 15
 # Priority: high
 # Description: Perform a comprehensive security audit and penetration testing of the application.
