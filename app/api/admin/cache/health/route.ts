@@ -4,6 +4,9 @@ import { cacheHealth } from '@/lib/cache';
 import { rateLimits } from '@/lib/upstash';
 import * as Sentry from '@sentry/nextjs';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/cache/health - Get cache health metrics
 export async function GET(request: NextRequest) {
   try {

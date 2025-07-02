@@ -16,7 +16,7 @@ interface PriceHistoryData {
 
 export function PriceHistoryChart({ productId, onClose }: PriceHistoryChartProps) {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
-  const chartInstanceRef = useRef<Chart<'line'> | null>(null);
+  const chartInstanceRef = useRef<Chart | null>(null);
   const [priceHistory, setPriceHistory] = useState<PriceHistoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,14 +84,14 @@ export function PriceHistoryChart({ productId, onClose }: PriceHistoryChartProps
       const ctx = chartRef.current.getContext('2d');
       if (!ctx) return;
 
-      // Prepare data
+      // Prepare data - convert dates to timestamps for Chart.js
       const chartData = priceHistory.map(item => ({
-        x: item.date,
+        x: item.date.getTime(),
         y: item.price
       }));
 
       // Calculate price range for better visualization
-      const prices = priceHistory.map(item => item.price);
+      const prices = priceHistory.map((item: PriceHistoryData) => item.price);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       const priceRange = maxPrice - minPrice;
@@ -139,10 +139,10 @@ export function PriceHistoryChart({ productId, onClose }: PriceHistoryChartProps
               borderColor: '#3B82F6',
               borderWidth: 1,
               callbacks: {
-                label: function(context) {
+                label: function(context: any) {
                   return `Preț: ${context.parsed.y} ${productInfo?.currency || 'RON'}`;
                 },
-                title: function(context) {
+                title: function(context: any[]) {
                   const date = new Date(context[0].parsed.x);
                   return date.toLocaleDateString('ro-RO', {
                     year: 'numeric',
@@ -183,7 +183,7 @@ export function PriceHistoryChart({ productId, onClose }: PriceHistoryChartProps
                 color: 'rgba(156, 163, 175, 0.3)'
               },
               ticks: {
-                callback: function(value) {
+                callback: function(value: any) {
                   return `${value} ${productInfo?.currency || 'RON'}`;
                 }
               }
@@ -208,11 +208,11 @@ export function PriceHistoryChart({ productId, onClose }: PriceHistoryChartProps
   const getPriceStats = () => {
     if (priceHistory.length === 0) return null;
 
-    const prices = priceHistory.map(item => item.price);
+    const prices = priceHistory.map((item: PriceHistoryData) => item.price);
     const currentPrice = prices[prices.length - 1];
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+    const avgPrice = prices.reduce((sum: number, price: number) => sum + price, 0) / prices.length;
     const firstPrice = prices[0];
     const priceChange = currentPrice - firstPrice;
     const priceChangePercentage = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;
