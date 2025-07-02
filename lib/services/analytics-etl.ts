@@ -380,13 +380,22 @@ class AnalyticsETLService {
 
       // Calculate retention for each week after signup
       for (let week = 1; week <= 12; week++) {
-        const weekEnd = new Date(cohortEnd);
-        weekEnd.setDate(weekEnd.getDate() + (week * 7));
+        // Calculate the start and end of the retention week
+        // Week 1 = days 1-7 after signup, Week 2 = days 8-14, etc.
+        const weekStart = new Date(cohortStart);
+        weekStart.setDate(weekStart.getDate() + ((week - 1) * 7));
+        
+        const weekEnd = new Date(cohortStart);
+        weekEnd.setDate(weekEnd.getDate() + (week * 7) - 1);
 
-        if (weekEnd > new Date()) break;
+        // Don't calculate retention for future weeks
+        if (weekStart > new Date()) break;
 
+        // Count users who were active during this specific week
         const activeUsers = cohortUsers.filter(user => 
-          user.lastLoginAt && user.lastLoginAt >= weekEnd
+          user.lastLoginAt && 
+          user.lastLoginAt >= weekStart && 
+          user.lastLoginAt <= weekEnd
         ).length;
 
         cohortData.retentionWeeks[week] = activeUsers;
