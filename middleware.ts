@@ -32,24 +32,34 @@ const isPublicRoute = createRouteMatcher([
   '/favicon.ico',
 ]);
 
-export default clerkMiddleware((auth, request) => {
-  // Protect routes that require authentication
-  if (isProtectedRoute(request) && !auth().userId) {
-    return auth().redirectToSignIn();
-  }
-  
-  // Redirect authenticated users away from public auth pages
-  if (auth().userId && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
-    return Response.redirect(new URL('/dashboard', request.url));
-  }
-  
-  // Add security headers to all responses
-  const response = NextResponse.next();
-  
+// Helper function to apply security headers to any response
+function applySecurityHeaders(response: Response): Response {
   // Apply security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+  
+  return response;
+}
+
+export default clerkMiddleware((auth, request) => {
+  let response: Response;
+  
+  // Handle protected routes that require authentication
+  if (isProtectedRoute(request) && !auth().userId) {
+    response = auth().redirectToSignIn();
+  }
+  // Handle authenticated users on public auth pages
+  else if (auth().userId && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
+    response = Response.redirect(new URL('/dashboard', request.url));
+  }
+  // Handle normal requests
+  else {
+    response = NextResponse.next();
+  }
+  
+  // Apply security headers to all responses
+  response = applySecurityHeaders(response);
   
   // Additional security measures for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
