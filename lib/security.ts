@@ -1,8 +1,16 @@
 import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
-import DOMPurify from 'isomorphic-dompurify';
-import { rateLimits } from '@/lib/upstash';
+import { rateLimits } from './upstash';
 import * as Sentry from '@sentry/nextjs';
+
+// Lazy-loaded DOMPurify to avoid Edge Runtime issues
+let DOMPurify: any = null;
+const getDOMPurify = () => {
+  if (!DOMPurify) {
+    DOMPurify = require('isomorphic-dompurify');
+  }
+  return DOMPurify;
+};
 
 // Environment validation schema
 export const envSchema = z.object({
@@ -91,7 +99,8 @@ export const corsConfig = {
 // XSS Protection utilities
 export const xssProtection = {
   sanitizeHtml: (html: string): string => {
-    return DOMPurify.sanitize(html, {
+    const domPurify = getDOMPurify();
+    return domPurify.sanitize(html, {
       ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
       ALLOWED_ATTR: ['href'],
       ALLOW_DATA_ATTR: false,
@@ -249,8 +258,32 @@ export const createSecurityMiddleware = (options: {
       let validatedData;
       if (options.validateInput) {
         try {
-          const body = await request.json();
-          validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
+          const method = request.method.toUpperCase();
+          const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
+          const contentLength = request.headers.get('content-length');
+          const contentType = request.headers.get('content-type');
+          
+          // Skip body parsing for methods that typically don't have bodies
+          // or when there's no content to parse
+          if (!hasBody || contentLength === '0' || contentLength === null) {
+            // For methods without bodies, validate an empty object or skip validation
+            if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+              validatedData = undefined; // No validation needed for GET requests
+            } else {
+              // For DELETE and other methods that might optionally have bodies,
+              // try to validate an empty object
+              validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
+            }
+          } else {
+            // Only parse JSON if content-type suggests JSON and there's content
+            if (contentType?.includes('application/json')) {
+              const body = await request.json();
+              validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
+            } else {
+              // Non-JSON content types - validate empty object or handle appropriately
+              validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
+            }
+          }
         } catch (error) {
           return NextResponse.json({
             success: false,

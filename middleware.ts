@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { securityHeaders } from "@/lib/security";
+import { securityHeaders } from "@/lib/security-headers";
 
 // Define route matchers for different types of routes
 const isProtectedRoute = createRouteMatcher([
