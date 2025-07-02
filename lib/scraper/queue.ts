@@ -33,7 +33,6 @@ const redisConnection = new Redis({
   host: 'localhost',
   port: 6379,
   maxRetriesPerRequest: 3,
-  retryDelayOnFailure: 50,
   enableReadyCheck: false,
   lazyConnect: true,
 });
