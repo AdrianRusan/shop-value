@@ -14,11 +14,8 @@ const nextConfig = {
     // Enable optimizations for performance
     optimizePackageImports: [
       '@react-email/components',
-      '@upstash/redis',
-      'react-chartjs-2',
-      'chart.js'
+      '@upstash/redis'
     ],
-    // Removed parallelServerCompiles and parallelServerBuildTraces - not compatible with Vercel
   },
 
   // Optimize compilation for better performance
@@ -68,57 +65,8 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Webpack configuration for better optimization
+  // Simplified webpack configuration
   webpack: (config, { isServer, dev, webpack }) => {
-    // Production optimizations
-    if (!dev) {
-      // Enable aggressive splitting for better caching
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            // Framework chunk for React/Next.js
-            framework: {
-              chunks: 'all',
-              name: 'framework',
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
-              priority: 40,
-              enforce: true,
-            },
-            // Libraries chunk for other vendor code
-            lib: {
-              test(module) {
-                return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
-              },
-              name(module) {
-                const hash = require('crypto').createHash('sha1');
-                hash.update(module.libIdent ? module.libIdent({context: config.context}) : module.identifier());
-                return hash.digest('hex').substring(0, 8);
-              },
-              priority: 30,
-              minChunks: 1,
-              reuseExistingChunk: true,
-            },
-            // Commons chunk for shared code
-            commons: {
-              name: 'commons',
-              minChunks: 2,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-            // Shared chunk for components
-            shared: {
-              test: /[\\/]components[\\/]/,
-              name: 'shared',
-              priority: 10,
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      };
-    }
-
     // Optimize for production
     if (!isServer) {
       config.resolve.fallback = {
@@ -236,11 +184,6 @@ const nextConfig = {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
-          // Performance headers
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
         ],
       },
       // Cache static assets aggressively
@@ -276,9 +219,6 @@ const nextConfig = {
 
   // Optimize page extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-
-  // Production URL for optimized builds
-  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : undefined,
 };
 
 // Sentry configuration
