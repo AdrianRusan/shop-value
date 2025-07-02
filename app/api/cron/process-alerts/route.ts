@@ -129,7 +129,7 @@ async function processOverdueAlerts(): Promise<{
     stats.productsProcessed = alertsByProduct.size;
 
     // Process each product's alerts
-    for (const [productId, alerts] of alertsByProduct) {
+    for (const [productId, alerts] of Array.from(alertsByProduct.entries())) {
       try {
         const result = await processProductAlerts(productId, alerts);
         stats.alertsTriggered += result.triggered;
@@ -204,9 +204,11 @@ async function checkRecentlyScrapedProducts(): Promise<{
  */
 async function cleanupOldAlerts(): Promise<{
   alertsChecked: number;
+  alertsTriggered: number;
   errors: number;
+  productsProcessed: number;
 }> {
-  const stats = { alertsChecked: 0, errors: 0 };
+  const stats = { alertsChecked: 0, alertsTriggered: 0, errors: 0, productsProcessed: 0 };
 
   try {
     console.log('Cleaning up old alerts...');
@@ -233,9 +235,11 @@ async function cleanupOldAlerts(): Promise<{
  */
 async function updateAlertStatistics(): Promise<{
   alertsChecked: number;
+  alertsTriggered: number;
   errors: number;
+  productsProcessed: number;
 }> {
-  const stats = { alertsChecked: 0, errors: 0 };
+  const stats = { alertsChecked: 0, alertsTriggered: 0, errors: 0, productsProcessed: 0 };
 
   try {
     console.log('Updating alert statistics...');

@@ -167,7 +167,6 @@ export async function POST(request: NextRequest) {
     // Create the alert
     const alert = await createAlert({
       userId,
-      productId: alertData.productId,
       email: user.email,
       ...alertData,
     });
