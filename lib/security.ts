@@ -15,26 +15,31 @@ const getDOMPurify = () => {
 // Environment validation schema
 export const envSchema = z.object({
   // Required for production
-  CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required'),
-  STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
-  MONGODB_URI: z.string().url('MONGODB_URI must be a valid URL'),
-  UPSTASH_REDIS_REST_URL: z.string().url('UPSTASH_REDIS_REST_URL must be a valid URL'),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN is required'),
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required').optional(),
+  STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required').optional(),
+  MONGODB_URI: z.string().url('MONGODB_URI must be a valid URL').optional(),
+  UPSTASH_REDIS_REST_URL: z.string().url('UPSTASH_REDIS_REST_URL must be a valid URL').optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN is required').optional(),
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required').optional(),
   SENTRY_DSN: z.string().url('SENTRY_DSN must be a valid URL').optional(),
   
   // Webhook secrets
-  STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
-  CLERK_WEBHOOK_SECRET: z.string().min(1, 'CLERK_WEBHOOK_SECRET is required'),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required').optional(),
+  CLERK_WEBHOOK_SECRET: z.string().min(1, 'CLERK_WEBHOOK_SECRET is required').optional(),
   
   // Optional
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required'),
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1, 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required'),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required').optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1, 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required').optional(),
 });
 
 // Validate environment variables on module load
 export const validateEnvironment = () => {
+  // Skip validation during build time
+  if (process.env.BUILDING === 'true' || process.env.NEXT_PHASE === 'phase-production-build') {
+    return process.env;
+  }
+  
   try {
     const result = envSchema.safeParse(process.env);
     if (!result.success) {
@@ -424,7 +429,7 @@ export const sessionSecurity = {
 
 // Initialize environment validation on module load
 // Skip during build time when environment variables may not be available
-if (process.env.NODE_ENV === 'production' && !process.env.BUILDING) {
+if (process.env.NODE_ENV === 'production' && !process.env.BUILDING && process.env.NEXT_PHASE !== 'phase-production-build') {
   validateEnvironment();
 }
 

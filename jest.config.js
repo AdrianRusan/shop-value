@@ -35,7 +35,8 @@ const customJestConfig = {
   testMatch: [
     '<rootDir>/__tests__/**/*.test.{js,jsx,ts,tsx}',
   ],
-  // Use jsdom by default, individual tests can override if needed
+  // Enable the test environment for Babel
+  testEnvironment: 'jsdom',
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
