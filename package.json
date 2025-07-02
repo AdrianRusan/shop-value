@@ -21,6 +21,7 @@
     "db:health": "node scripts/db-setup.js health"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.18.0",
     "@clerk/nextjs": "^5.7.5",
     "@headlessui/react": "^1.7.18",
     "@rooks/use-window-size": "^4.11.2",
