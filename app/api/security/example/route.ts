@@ -9,6 +9,10 @@ import {
 import { connectToDB } from '@/lib/mongoose';
 import * as Sentry from '@sentry/nextjs';
 
+// Fix build issues by forcing dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Input validation schema
 const exampleSchema = z.object({
   title: z.string().min(1).max(100),

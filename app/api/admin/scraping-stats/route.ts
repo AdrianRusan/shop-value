@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDB } from '@/lib/mongoose';
 import { redis } from '@/lib/upstash';
+import { auth } from '@clerk/nextjs/server';
+
+// Fix build issues by forcing dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add authentication and admin role check
-    // Temporarily disabled for build to work
+    // Add authentication and admin role check
+    const { userId } = auth();
+    if (!userId) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Unauthorized' 
+      }, { status: 401 });
+    }
     
     await connectToDB();
 

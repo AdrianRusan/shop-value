@@ -927,5 +927,805 @@
       "updated": "2025-07-04T11:48:44.274Z",
       "description": "Tasks for master context"
     }
+  },
+  "prd-phase1": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "User Product Tracking Interface",
+        "description": "Create user-friendly interface for tracking products with real-time price alerts and subscription tier limits",
+        "details": "Build product tracking UI components with track/untrack functionality. Implement price alert configuration (percentage/absolute thresholds). Integrate with subscription tier limits (Free: 5 products, Pro: 50 products, Premium: unlimited). Add real-time price change notifications. Create price history visualization with interactive charts. Implement bulk tracking operations for managing multiple products.",
+        "testStrategy": "Test tracking limits enforcement for each subscription tier. Verify real-time price alert functionality. Test bulk operations with large product sets. Ensure UI responsiveness on mobile devices.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Core Tracking UI Components",
+            "description": "Develop the fundamental track/untrack button components with proper state management and user feedback",
+            "dependencies": [],
+            "details": "Create reusable track/untrack button components with loading states, success/error feedback, and proper accessibility. Implement state management for tracking status and handle user interactions with appropriate visual feedback.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Price Alert Configuration Modal",
+            "description": "Build a modal interface for users to configure price alerts with validation and user-friendly controls",
+            "dependencies": [
+              1
+            ],
+            "details": "Design and implement a modal component for setting price thresholds, alert frequencies, and notification preferences. Include form validation, user input sanitization, and clear visual indicators for alert configurations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Subscription Service Integration",
+            "description": "Integrate with subscription service to enforce tracking limits based on user tier",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement business logic to check user subscription status and enforce tracking limits. Create middleware to validate tracking requests against subscription tiers and provide appropriate user messaging when limits are reached.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Real-time Price Update Mechanism",
+            "description": "Implement real-time price updates using WebSocket connections or polling mechanisms",
+            "dependencies": [
+              1
+            ],
+            "details": "Establish real-time communication for price updates using WebSockets or Server-Sent Events. Implement efficient data synchronization, connection management, and fallback mechanisms for reliable price data delivery.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Price History Chart Visualization",
+            "description": "Create interactive price history charts with multiple time ranges and data visualization features",
+            "dependencies": [
+              4
+            ],
+            "details": "Develop responsive chart components using a charting library to display price history data. Include features like zoom, pan, multiple time ranges, and tooltips. Optimize for performance with large datasets.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Bulk Track/Untrack Functionality",
+            "description": "Implement bulk operations for tracking/untracking multiple products simultaneously",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Create UI components for bulk selection and operations. Implement batch processing logic with progress indicators, error handling for partial failures, and subscription limit validation for bulk operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Mobile-Responsive Interface Design",
+            "description": "Ensure the entire tracking interface is fully responsive and optimized for mobile devices",
+            "dependencies": [
+              1,
+              2,
+              5,
+              6
+            ],
+            "details": "Implement responsive design patterns across all components. Optimize touch interactions, adjust layouts for different screen sizes, and ensure proper performance on mobile devices. Test across various devices and browsers.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 9
+      },
+      {
+        "id": 2,
+        "title": "Advanced Search & Discovery System",
+        "description": "Implement intelligent search with filters, auto-complete, and advanced discovery features",
+        "details": "Create intelligent search with filters (price range, brand, category, availability). Implement auto-complete and search suggestions with debouncing. Add advanced filtering options (sort by price, popularity, discount). Build recently viewed products feature with local storage. Implement search result relevance scoring. Add search analytics and optimization tracking.",
+        "testStrategy": "Test search performance with large product catalogs. Verify filter combinations work correctly. Test auto-complete responsiveness. Ensure search analytics capture relevant data.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Search Bar UI with Debounced Auto-complete",
+            "description": "Implement a responsive search bar component with debounced input handling and auto-complete functionality to provide real-time search suggestions while optimizing API calls.",
+            "dependencies": [],
+            "details": "Create a search input component with debouncing mechanism (300ms delay), implement auto-complete dropdown with keyboard navigation, handle loading states, and ensure mobile responsiveness. Include proper accessibility features and error handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Filter Panel Component",
+            "description": "Develop a comprehensive filter panel component that allows users to refine search results through various criteria with an intuitive interface.",
+            "dependencies": [],
+            "details": "Build collapsible filter sections, implement multi-select checkboxes, date range pickers, price sliders, and category filters. Include filter state management, clear all functionality, and responsive design for mobile devices.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Backend API for Search Queries",
+            "description": "Create robust backend API endpoints to handle search queries with advanced filtering, sorting, and pagination capabilities.",
+            "dependencies": [],
+            "details": "Implement RESTful API endpoints for search operations, integrate with database indexing, support multiple filter combinations, implement sorting options (relevance, date, price, etc.), add pagination, and optimize query performance with caching strategies.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Search Relevance Scoring Algorithm",
+            "description": "Implement an intelligent search relevance scoring algorithm to rank search results based on multiple factors and user behavior patterns.",
+            "dependencies": [
+              3
+            ],
+            "details": "Develop scoring algorithm considering text matching, popularity metrics, user engagement data, and content freshness. Implement fuzzy matching, synonym handling, and machine learning-based ranking improvements. Include A/B testing framework for algorithm optimization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Recently Viewed Feature with Local Storage",
+            "description": "Implement a recently viewed items feature that persists user browsing history using local storage for improved user experience.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create local storage management for recently viewed items, implement data persistence with size limits, add recently viewed section to search interface, handle data cleanup and privacy considerations, and ensure cross-tab synchronization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Search Analytics Tracking",
+            "description": "Implement comprehensive search analytics tracking to monitor user search behavior, popular queries, and system performance metrics.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Set up event tracking for search queries, filter usage, result clicks, and user engagement metrics. Implement analytics dashboard, create performance monitoring for search response times, track conversion rates, and generate insights for search optimization.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 8
+      },
+      {
+        "id": 3,
+        "title": "User Dashboard Enhancement",
+        "description": "Create comprehensive user dashboard with tracked products, analytics, and management tools",
+        "details": "Build personalized dashboard with tracked products grid. Add price history charts and trend analysis. Implement savings calculator and statistics display. Create wishlist and favorites management system. Add quick actions for tracking/untracking products. Implement export functionality for tracked data (CSV/PDF). Add dashboard customization options.",
+        "testStrategy": "Test dashboard performance with large numbers of tracked products. Verify chart rendering accuracy. Test export functionality with various data formats. Ensure dashboard is mobile-responsive.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Main Tracked Products Grid",
+            "description": "Develop the core grid component that displays all tracked products with essential information like product name, current price, price change indicators, and last updated timestamp",
+            "dependencies": [],
+            "details": "Create a responsive data grid with sorting, filtering, and pagination capabilities. Include product images, price trend indicators, and status badges for tracking status",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Price History Chart Widget",
+            "description": "Build an interactive chart widget that visualizes price trends over time for selected products using line charts or candlestick charts",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement chart.js or similar library for rendering price history data. Include zoom functionality, time range selectors, and hover tooltips with detailed price information",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Savings Calculator and Statistics Display",
+            "description": "Create a comprehensive statistics panel showing total savings, average discount percentages, and potential savings calculations",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop calculation algorithms for savings metrics, create visual cards/widgets for displaying statistics, and implement real-time updates based on current price data",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Wishlist Management System",
+            "description": "Implement a complete wishlist feature allowing users to add, remove, organize, and manage their desired products for price tracking",
+            "dependencies": [
+              1
+            ],
+            "details": "Create wishlist CRUD operations, drag-and-drop organization, category grouping, and integration with the main products grid for seamless tracking activation",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Quick Actions Implementation",
+            "description": "Develop quick action buttons and shortcuts for common dashboard operations like bulk actions, quick filters, and one-click operations",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Implement action buttons for bulk delete, quick price alerts setup, instant wishlist additions, and keyboard shortcuts for power users",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Data Export Functionality",
+            "description": "Build comprehensive data export capabilities supporting both CSV and PDF formats for tracked products, price history, and statistics",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Implement export libraries, create customizable export templates, allow users to select specific data ranges and columns, and generate formatted reports",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Dashboard Layout Customization",
+            "description": "Create a flexible dashboard layout system allowing users to customize widget positions, sizes, and visibility preferences",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Implement drag-and-drop layout builder, widget resize functionality, layout presets, and user preference persistence for personalized dashboard experiences",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 8
+      },
+      {
+        "id": 4,
+        "title": "Mobile Responsiveness & PWA",
+        "description": "Ensure optimal mobile experience with Progressive Web App features",
+        "details": "Implement mobile-first responsive design across all components. Create touch-friendly interfaces with proper touch targets. Optimize mobile navigation with hamburger menu and bottom navigation. Add Progressive Web App features (service worker, manifest, offline support). Implement basic offline functionality for viewing tracked products. Add push notifications for price alerts.",
+        "testStrategy": "Test on various mobile devices and screen sizes. Verify PWA installation and offline functionality. Test push notifications on different browsers. Ensure touch interactions work properly.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit and Implement Mobile-First Responsive CSS",
+            "description": "Conduct comprehensive audit of existing CSS and implement mobile-first responsive design patterns across all components and pages",
+            "dependencies": [],
+            "details": "Review current CSS architecture, identify non-responsive elements, create mobile-first breakpoint system, update all components with responsive units and flexible layouts, test across multiple device sizes and orientations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create Mobile-Specific Navigation Pattern",
+            "description": "Design and implement mobile-optimized navigation system with hamburger menu, touch-friendly interactions, and improved UX for small screens",
+            "dependencies": [
+              1
+            ],
+            "details": "Design mobile navigation wireframes, implement collapsible hamburger menu, add touch gestures support, optimize menu animations and transitions, ensure accessibility compliance for mobile navigation",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Service Worker for Caching and Offline Support",
+            "description": "Develop and deploy service worker to enable offline functionality, implement caching strategies for static and dynamic content",
+            "dependencies": [
+              1
+            ],
+            "details": "Create service worker file, implement cache-first and network-first strategies, handle offline scenarios, manage cache versioning and updates, add background sync capabilities for form submissions",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Web App Manifest File",
+            "description": "Generate comprehensive web app manifest with proper metadata, icons, and configuration for PWA installation and app-like experience",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Define app metadata (name, description, theme colors), create icon sets for various sizes and platforms, configure display modes and orientation preferences, set up start URL and scope, test installation prompts across browsers",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Set Up Push Notifications Infrastructure",
+            "description": "Implement push notification system including server-side setup, client-side subscription management, and notification handling",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Configure push notification service (Firebase/OneSignal), implement subscription management in service worker, create notification permission requests, develop server-side push API integration, test notification delivery and click handling",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 7
+      },
+      {
+        "id": 5,
+        "title": "Real-Time Price Alert System",
+        "description": "Implement comprehensive price alerting system with multiple notification channels",
+        "details": "Create price alert configuration UI with percentage and absolute thresholds. Implement multiple notification channels (email, push, in-app). Add alert frequency management (instant, daily, weekly). Create alert history and management dashboard. Implement smart alerts based on price trends and patterns. Add alert scheduling and snooze functionality.",
+        "testStrategy": "Test alert triggering accuracy with various price scenarios. Verify notification delivery across all channels. Test alert management and history features. Ensure alerts respect user preferences.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Alert Configuration UI",
+            "description": "Design and implement the user interface for creating, editing, and managing price alerts with various trigger conditions and notification preferences",
+            "dependencies": [],
+            "details": "Create forms for setting price thresholds, percentage changes, time-based conditions, and notification method selection. Include validation, preview functionality, and intuitive UX for complex alert rules.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Backend Logic for Price Trigger Evaluation",
+            "description": "Develop the core backend system that monitors price changes and evaluates user-defined alert conditions in real-time",
+            "dependencies": [],
+            "details": "Implement scalable price monitoring service, rule engine for complex conditions, database optimization for high-frequency updates, and efficient alert triggering mechanisms.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Email Notification Integration",
+            "description": "Integrate email service provider and implement email notification functionality for price alerts",
+            "dependencies": [
+              2
+            ],
+            "details": "Set up SMTP/API integration with email service, create responsive email templates, implement delivery tracking, handle bounces and failures, and ensure compliance with email regulations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Push Notification Integration",
+            "description": "Implement push notification system for mobile and web applications to deliver real-time price alerts",
+            "dependencies": [
+              2
+            ],
+            "details": "Integrate with push notification services (FCM, APNs), handle device registration, implement notification queuing and retry logic, and ensure cross-platform compatibility.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "In-App Notification Component",
+            "description": "Create in-application notification system to display price alerts within the user interface",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Build notification center UI, implement real-time updates via WebSocket/SSE, create notification badges and counters, and provide mark-as-read functionality.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Alert History and Management Dashboard",
+            "description": "Develop comprehensive dashboard for users to view alert history, manage active alerts, and analyze notification performance",
+            "dependencies": [
+              1,
+              3,
+              4,
+              5
+            ],
+            "details": "Create data visualization for alert statistics, implement filtering and search functionality, provide bulk management operations, and include performance metrics and delivery status tracking.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 8
+      },
+      {
+        "id": 6,
+        "title": "Social Features & Sharing",
+        "description": "Add social sharing capabilities and community features",
+        "details": "Implement product sharing with social media integration. Create shareable tracking lists (public/private). Add community deal sharing features. Implement social media integration for sharing deals. Create product review and rating system. Add friend system for sharing deals privately.",
+        "testStrategy": "Test social media sharing across platforms. Verify privacy settings for shared lists. Test community features for appropriate content. Ensure social features don't compromise user privacy.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Standard Social Media Share Buttons",
+            "description": "Create social media sharing functionality with buttons for major platforms (Facebook, Twitter, Instagram, etc.) allowing users to share products and deals",
+            "dependencies": [],
+            "details": "Develop reusable share button components with platform-specific APIs, implement Open Graph meta tags for rich sharing previews, and add analytics tracking for share events",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Develop Shareable Product Lists with Privacy Settings",
+            "description": "Build a system for users to create, manage, and share product lists with configurable public/private visibility settings",
+            "dependencies": [],
+            "details": "Design database schema for product lists, implement CRUD operations, create privacy controls UI, develop sharing mechanisms with unique URLs, and add list collaboration features",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Build Product Review and Rating System",
+            "description": "Create a comprehensive review system allowing users to rate products, write reviews, and view aggregated ratings",
+            "dependencies": [],
+            "details": "Design review database schema, implement star rating UI components, create review submission and moderation workflows, develop rating aggregation algorithms, and add review helpfulness voting",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create Community Deal Submission Feature",
+            "description": "Develop functionality for users to submit and share deals they discover, with community validation and moderation",
+            "dependencies": [
+              3
+            ],
+            "details": "Build deal submission forms, implement deal validation and verification processes, create community voting mechanisms, develop moderation tools, and integrate with existing review system for deal quality assessment",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Basic Friend System",
+            "description": "Create a friend/follower system allowing users to connect, follow each other's activities, and share lists privately",
+            "dependencies": [
+              2
+            ],
+            "details": "Design user relationship database schema, implement friend request/acceptance workflows, create friend discovery features, develop activity feeds, and integrate with shareable lists for friend-only sharing options",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 6
+      },
+      {
+        "id": 7,
+        "title": "AI-Powered Recommendations",
+        "description": "Implement intelligent product recommendations and price predictions",
+        "details": "Develop personalized product recommendation engine based on user behavior. Implement price prediction algorithms using historical data. Create 'best time to buy' recommendations. Add similar product suggestions. Implement trend analysis and market insights. Create AI-powered deal alerts for products user might be interested in.",
+        "testStrategy": "Test recommendation accuracy with diverse user profiles. Verify price prediction algorithms against historical data. Test recommendation performance with large product catalogs. Ensure AI features provide genuine value.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Data Pipeline for User Behavior",
+            "description": "Create a comprehensive data pipeline to collect, process, and store user behavior data including browsing patterns, purchase history, search queries, and interaction metrics for recommendation system training",
+            "dependencies": [],
+            "details": "Design and implement ETL processes for user tracking data, establish data schemas for behavior analytics, create data validation and cleaning procedures, and set up real-time data streaming capabilities",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Build and Train Personalized Product Recommendation Model",
+            "description": "Develop and train machine learning models for personalized product recommendations using collaborative filtering, content-based filtering, and hybrid approaches",
+            "dependencies": [
+              1
+            ],
+            "details": "Research and implement recommendation algorithms (matrix factorization, deep learning models), create training pipelines, perform hyperparameter tuning, and validate model performance using A/B testing frameworks",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create Price Prediction Model Using Historical Data",
+            "description": "Build a machine learning model to predict optimal pricing strategies and price trends using historical sales data, market conditions, and competitor analysis",
+            "dependencies": [
+              1
+            ],
+            "details": "Collect and preprocess historical pricing data, implement time series forecasting models, incorporate external market factors, and create price optimization algorithms with demand elasticity considerations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop API to Serve Recommendation Results",
+            "description": "Create a scalable REST API service to serve personalized recommendations and price predictions with low latency and high availability",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Design API endpoints for recommendations and pricing, implement caching strategies, create model serving infrastructure, establish monitoring and logging, and ensure API security and rate limiting",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate AI Recommendations into UI",
+            "description": "Integrate the AI-powered recommendation system into the user interface with personalized product suggestions, dynamic pricing displays, and recommendation widgets",
+            "dependencies": [
+              4
+            ],
+            "details": "Create UI components for displaying recommendations, implement real-time recommendation updates, design A/B testing interfaces for recommendation variants, and add analytics tracking for recommendation performance",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 9
+      },
+      {
+        "id": 8,
+        "title": "Multi-Currency Support",
+        "description": "Add support for multiple currencies and international markets",
+        "details": "Implement multi-currency price display with real-time exchange rates. Create currency conversion utilities and historical rate tracking. Add regional price variations and market-specific pricing. Consider international shipping costs in price comparisons. Implement localized content and currency preferences. Add currency-specific price alerts.",
+        "testStrategy": "Test currency conversion accuracy. Verify regional price variations. Test currency preference persistence. Ensure proper handling of exchange rate fluctuations.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Integrate Real-Time Currency Exchange Rate Service",
+            "description": "Research, select, and integrate a reliable third-party currency exchange rate API service to provide real-time exchange rates for multiple currencies",
+            "dependencies": [],
+            "details": "Evaluate different currency exchange rate providers (e.g., Fixer.io, CurrencyLayer, ExchangeRate-API), implement API integration with proper error handling, caching mechanisms, and fallback strategies for service unavailability",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create Global Price Display Component",
+            "description": "Develop a reusable UI component that can display prices in different currencies with automatic conversion based on current exchange rates",
+            "dependencies": [
+              1
+            ],
+            "details": "Build a flexible price display component that accepts base currency and amount, performs real-time conversion, handles formatting for different currency symbols and decimal places, and provides consistent styling across the application",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Update Backend Calculations for Currency Awareness",
+            "description": "Modify all backend services, APIs, and database operations to handle multi-currency calculations and storage",
+            "dependencies": [
+              1
+            ],
+            "details": "Update database schema to store currency information alongside prices, modify calculation logic for taxes, discounts, and totals to be currency-aware, implement currency conversion in backend services, and ensure data consistency across all financial operations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement User Currency Preferences",
+            "description": "Create user preference system allowing users to select and save their preferred currency for displaying prices throughout the application",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Add currency preference settings to user profiles, implement currency selection UI components, create middleware to apply user currency preferences across all price displays, and handle guest user currency detection based on location or browser settings",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Adapt Price Alert System for Multiple Currencies",
+            "description": "Modify the existing price alert system to handle alerts in different currencies and convert thresholds appropriately",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Update alert creation to specify currency, modify alert evaluation logic to handle currency conversions when comparing prices, ensure alert notifications display prices in user's preferred currency, and handle edge cases where exchange rate fluctuations might trigger false alerts",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 7
+      },
+      {
+        "id": 9,
+        "title": "Advanced Analytics Dashboard",
+        "description": "Create comprehensive analytics for users and admins",
+        "details": "Develop user behavior analytics dashboard. Implement product performance metrics and market trend analysis. Create cohort analysis for user subscriptions. Add revenue and growth analytics. Implement A/B testing framework for feature optimization. Create custom analytics reports and data export.",
+        "testStrategy": "Test analytics accuracy against raw data. Verify dashboard performance with large datasets. Test custom report generation. Ensure user privacy in analytics collection.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up data pipeline for analytics events",
+            "description": "Design and implement a robust data pipeline to collect, process, and store analytics events from various sources. This includes setting up event tracking, data ingestion, ETL processes, and data warehousing infrastructure.",
+            "dependencies": [],
+            "details": "Configure event collection APIs, implement data validation and cleaning processes, set up real-time and batch processing pipelines, establish data storage schemas, and ensure scalability for high-volume data ingestion.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Build admin dashboard UI",
+            "description": "Create the user interface for the analytics dashboard with intuitive navigation, responsive design, and interactive data visualization components. Focus on user experience and accessibility.",
+            "dependencies": [
+              1
+            ],
+            "details": "Design dashboard layout, implement responsive UI components, create interactive charts and graphs, build navigation system, add filtering and search capabilities, and ensure cross-browser compatibility.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Develop cohort analysis module",
+            "description": "Build a comprehensive cohort analysis system to track user behavior patterns over time, including user retention, engagement metrics, and lifecycle analysis with customizable time periods and segmentation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement cohort calculation algorithms, create cohort visualization components, build user segmentation logic, add retention rate calculations, and develop time-based analysis features.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop revenue tracking module",
+            "description": "Create a revenue analytics system to monitor financial metrics, track conversion funnels, analyze revenue trends, and provide insights into monetization performance across different user segments.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement revenue calculation engines, build financial reporting components, create conversion funnel analysis, add revenue forecasting capabilities, and integrate payment data sources.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement A/B testing framework",
+            "description": "Develop a flexible A/B testing platform that allows for experiment design, user segmentation, statistical analysis, and result interpretation with support for multiple concurrent tests.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Build experiment configuration system, implement user assignment algorithms, create statistical significance calculations, develop result visualization tools, and add experiment management interfaces.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create custom report generation feature and ensure data privacy compliance",
+            "description": "Build a flexible report generation system allowing users to create custom analytics reports while implementing comprehensive data privacy measures including GDPR compliance, data anonymization, and access controls.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Develop report builder interface, implement data export functionality, create scheduling system for automated reports, add data anonymization features, implement access control mechanisms, and ensure GDPR/privacy regulation compliance.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 8
+      },
+      {
+        "id": 10,
+        "title": "API Development & Documentation",
+        "description": "Create public API with comprehensive documentation",
+        "details": "Develop RESTful API for price data and product information. Implement API authentication and rate limiting. Create webhook system for real-time price updates. Build comprehensive API documentation with examples. Add developer portal with API keys management. Implement API versioning and backward compatibility.",
+        "testStrategy": "Test API performance and reliability. Verify authentication and rate limiting. Test webhook delivery and reliability. Ensure API documentation accuracy.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          2,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design OpenAPI Specification",
+            "description": "Create comprehensive OpenAPI 3.0 specification defining all API endpoints, request/response schemas, authentication methods, and error handling patterns",
+            "dependencies": [],
+            "details": "Define REST API structure, data models, endpoint paths, HTTP methods, status codes, and validation rules. Include examples and detailed descriptions for all operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement API Authentication & Rate Limiting",
+            "description": "Develop OAuth2 authentication system with JWT tokens and implement rate limiting middleware to protect API resources",
+            "dependencies": [
+              1
+            ],
+            "details": "Set up OAuth2 authorization server, implement token validation, create rate limiting based on API keys/user tiers, and add security headers and CORS configuration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Develop Core RESTful Endpoints",
+            "description": "Build all primary API endpoints following REST principles with proper error handling, validation, and response formatting",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement CRUD operations, search/filtering capabilities, pagination, sorting, and ensure consistent response formats across all endpoints with proper HTTP status codes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Webhook Delivery System",
+            "description": "Create reliable webhook infrastructure for real-time event notifications with retry mechanisms and delivery tracking",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Implement webhook registration endpoints, event queue system, retry logic with exponential backoff, delivery status tracking, and webhook signature verification.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Generate Interactive API Documentation",
+            "description": "Create auto-generated interactive documentation from OpenAPI spec with testing capabilities and code examples",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Set up Swagger UI or similar tool, generate code samples in multiple languages, create interactive testing interface, and ensure documentation stays synchronized with API changes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create Developer Portal for API Key Management",
+            "description": "Build web portal for developers to register, manage API keys, view usage analytics, and access documentation",
+            "dependencies": [
+              2,
+              5
+            ],
+            "details": "Develop user registration/login system, API key generation and management interface, usage dashboards with analytics, billing integration, and support ticket system.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ],
+        "complexityScore": 8
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-05T20:56:30.663Z",
+      "updated": "2025-07-05T20:56:30.663Z",
+      "description": "Phase 1 critical features from the PRD - User Experience Enhancement"
+    }
   }
 }

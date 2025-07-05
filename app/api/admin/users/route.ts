@@ -5,6 +5,10 @@ import User from '@/lib/models/user.model';
 import { redis } from '@/lib/upstash';
 import { z } from 'zod';
 
+// Fix build issues by forcing dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Admin-only endpoint for user management
 export async function GET(request: NextRequest) {
   try {

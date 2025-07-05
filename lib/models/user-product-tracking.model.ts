@@ -44,24 +44,24 @@ interface IUserProductTrackingModel extends Model<IUserProductTracking> {
 const userProductTrackingSchema = new mongoose.Schema<IUserProductTracking>({
   userId: {
     type: String,
-    required: [true, 'User ID is required'],
-    index: true
+    required: [true, 'User ID is required']
+    // Index removed - covered by compound indexes
   },
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: [true, 'Product ID is required'],
-    index: true
+    required: [true, 'Product ID is required']
+    // Index removed - covered by compound indexes
   },
   addedAt: {
     type: Date,
-    default: Date.now,
-    index: true
+    default: Date.now
+    // Index removed - covered by compound indexes
   },
   isActive: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
+    // Index removed - covered by compound indexes
   },
   
   // Enhanced alert settings
@@ -99,12 +99,12 @@ const userProductTrackingSchema = new mongoose.Schema<IUserProductTracking>({
   // Privacy controls
   isPublic: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
+    // Index removed - covered by compound indexes
   },
   sharedWith: [{
-    type: String, // Clerk user IDs
-    index: true
+    type: String // Clerk user IDs
+    // Index removed - individual array element indexes not needed
   }],
   
   // Analytics
@@ -120,8 +120,8 @@ const userProductTrackingSchema = new mongoose.Schema<IUserProductTracking>({
   
   // Soft delete
   deletedAt: {
-    type: Date,
-    index: true
+    type: Date
+    // Index removed - covered by explicit sparse index below
   }
 }, {
   timestamps: true,

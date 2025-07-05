@@ -1,15 +1,31 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
 
-export async function scrapeFlipProduct(url: string) {
-  if (!url) return;
+// Custom error class for scraping errors
+export class ScrapingError extends Error {
+  constructor(message: string, public originalError?: any, public isRetryable = true) {
+    super(message);
+    this.name = 'ScrapingError';
+  }
+}
+
+// Delay function for retries
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export async function scrapeFlipProduct(url: string, retries = 3): Promise<any> {
+  if (!url) {
+    throw new ScrapingError('URL is required for scraping', null, false);
+  }
 
   // BrightData proxy configuration
   const username = String(process.env.BRIGHTDATA_USERNAME);
   const password = String(process.env.BRIGHTDATA_PASSWORD);
-  ``;
+  
+  if (!username || !password) {
+    throw new ScrapingError('BrightData credentials not configured', null, false);
+  }
+
   const port = 22225;
-  ``;
   const session_id = (1000000 * Math.random()) | 0;
 
   const options = {
@@ -20,11 +36,31 @@ export async function scrapeFlipProduct(url: string) {
     host: 'brd.superproxy.io',
     port,
     rejectUnauthorized: false,
+    timeout: 30000, // 30 second timeout
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Accept-Encoding': 'gzip, deflate',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1'
+    }
   };
 
-  try {
-    const response = await axios.get(url, options);
-    const $ = cheerio.load(response.data);
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Scraping attempt ${attempt}/${retries} for URL: ${url}`);
+      
+      const response = await axios.get(url, options);
+      
+      if (!response.data || response.data.length < 1000) {
+        throw new ScrapingError('Response too short, likely blocked or empty page');
+      }
+      
+      const $ = cheerio.load(response.data);
 
     let source = 'flip';
 
@@ -291,10 +327,42 @@ export async function scrapeFlipProduct(url: string) {
       averagePrice: Number(currentPrice.toFixed(2)) || 0,
     };
 
-    // console.log('data', data);
-
-    return data;
-  } catch (error: any) {
-    throw new Error(`Failed to scrape product: ${error.message}`);
+      // console.log('data', data);
+      console.log(`Successfully scraped product on attempt ${attempt}: ${title}`);
+      return data;
+      
+    } catch (error: any) {
+      lastError = error;
+      console.error(`Scraping attempt ${attempt} failed:`, error.message);
+      
+      // Determine if error is retryable
+      let isRetryable = true;
+      if (error instanceof ScrapingError) {
+        isRetryable = error.isRetryable;
+      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        isRetryable = true;
+      } else if (error.response?.status === 404) {
+        isRetryable = false; // Don't retry 404s
+      } else if (error.response?.status === 403 || error.response?.status === 429) {
+        isRetryable = true; // Retry on rate limits/blocks
+      }
+      
+      if (!isRetryable || attempt === retries) {
+        // Don't retry or this is the last attempt
+        break;
+      }
+      
+      // Exponential backoff delay
+      const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+      console.log(`Waiting ${delayMs}ms before retry...`);
+      await delay(delayMs);
+    }
   }
+  
+  // If we get here, all attempts failed
+  const errorMessage = lastError instanceof ScrapingError 
+    ? lastError.message 
+    : `Failed to scrape product after ${retries} attempts: ${lastError?.message || 'Unknown error'}`;
+    
+  throw new ScrapingError(errorMessage, lastError, false);
 }
