@@ -81,6 +81,7 @@
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18",
     "autoprefixer": "^10",
+    "cross-env": "^7.0.3",
     "jest": "^30.0.3",
     "jest-environment-jsdom": "^30.0.2",
     "mongodb-memory-server": "^10.1.4",
@@ -88,7 +89,6 @@
     "tailwindcss": "^3",
     "task-master-ai": "^0.18.0",
     "typescript": "^5",
-    "webpack-bundle-analyzer": "^4.10.2",
-    "cross-env": "^7.0.3"
+    "webpack-bundle-analyzer": "^4.10.2"
   }
 }
