@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 
 // Simple utility to combine class names
@@ -34,11 +34,23 @@ const TrackingButton = ({
   const [trackingState, setTrackingState] = useState(isTracked);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackType, setFeedbackType] = useState<'success' | 'error' | null>(null);
+  
+  // Ref to store the timeout ID for cleanup
+  const feedbackTimeoutRef = useRef<number | null>(null);
 
   // Update local state when prop changes
   useEffect(() => {
     setTrackingState(isTracked);
   }, [isTracked]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleTrackingToggle = async () => {
     if (!isSignedIn || disabled || isLoading) return;
@@ -57,8 +69,13 @@ const TrackingButton = ({
       setFeedbackType('success');
       setShowFeedback(true);
 
+      // Clear any existing timeout before setting a new one
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+      
       // Hide feedback after 2 seconds
-      setTimeout(() => {
+      feedbackTimeoutRef.current = setTimeout(() => {
         setShowFeedback(false);
       }, 2000);
     } catch (error) {
@@ -66,8 +83,13 @@ const TrackingButton = ({
       setFeedbackType('error');
       setShowFeedback(true);
 
+      // Clear any existing timeout before setting a new one
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+      
       // Hide error feedback after 3 seconds
-      setTimeout(() => {
+      feedbackTimeoutRef.current = setTimeout(() => {
         setShowFeedback(false);
       }, 3000);
     } finally {
