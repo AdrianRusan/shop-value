@@ -36,7 +36,7 @@ const TrackingButton = ({
   const [feedbackType, setFeedbackType] = useState<'success' | 'error' | null>(null);
   
   // Ref to store the timeout ID for cleanup
-  const feedbackTimeoutRef = useRef<number | null>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update local state when prop changes
   useEffect(() => {
