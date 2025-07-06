@@ -71,8 +71,8 @@ class ErrorBoundary extends React.Component<Props, State> {
     try {
       analytics.track('error_boundary_triggered' as any, {
         error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
+        stack: error.stack || '',
+        componentStack: errorInfo.componentStack || '',
         level: this.props.level || 'component',
         timestamp: new Date().toISOString(),
       });
@@ -253,11 +253,11 @@ export default ErrorBoundary;
 // Hook version for functional components
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  context?: string
+  level?: 'page' | 'component' | 'feature'
 ) {
   return function WrappedComponent(props: P) {
     return (
-      <ErrorBoundary context={context}>
+      <ErrorBoundary level={level || 'component'}>
         <Component {...props} />
       </ErrorBoundary>
     );

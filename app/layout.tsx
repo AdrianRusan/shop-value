@@ -93,7 +93,7 @@ export default function RootLayout({
       <ThemeProvider>
         <html lang="ro" className={inter.variable}>
           <body className={`${inter.className} dark:bg-black antialiased`}>
-            <ErrorBoundary context="app-layout">
+            <ErrorBoundary level="page">
               <AnalyticsProvider>
                 <main className='max-w-10xl mx-auto'>
                   <Navbar />
