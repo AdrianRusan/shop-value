@@ -120,7 +120,7 @@ const PriceAlertModal = ({
       case 'percentage_drop':
         return `Vei primi alertă când prețul scade cu ${percentageThreshold}%`;
       case 'significant_drop':
-        return `Vei primi alertă când prețul scade cu ${significantDropAmount} ${currency}`;
+        return `Vei primi alertă când prețul scade cu ${formatPrice(significantDropAmount, currency)}`;
       case 'back_in_stock':
         return 'Vei primi alertă când produsul revine în stoc';
       case 'any_drop':
