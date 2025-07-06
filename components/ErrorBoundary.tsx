@@ -17,6 +17,7 @@ interface Props {
   resetOnPropsChange?: boolean;
   isolate?: boolean;
   level?: 'page' | 'component' | 'feature';
+  context?: string;
 }
 
 interface State {
@@ -24,7 +25,8 @@ interface State {
   error: Error | null;
   errorInfo: ErrorInfo | null;
   eventId: string | null;
-  resetTimeoutId: ReturnType<typeof setTimeout> | null;
+  resetCount: number;
+  lastResetTime: number | null;
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
@@ -37,7 +39,8 @@ class ErrorBoundary extends React.Component<Props, State> {
       error: null,
       errorInfo: null,
       eventId: null,
-      resetTimeoutId: null,
+      resetCount: 0,
+      lastResetTime: null,
     };
   }
 
@@ -54,16 +57,16 @@ class ErrorBoundary extends React.Component<Props, State> {
     const eventId = Sentry.captureException(error, {
       contexts: {
         react: {
-          componentStack: errorInfo.componentStack,
+          componentStack: errorInfo.componentStack || 'Unknown',
         },
       },
       tags: {
         component: 'ErrorBoundary',
         level: this.props.level || 'component',
+        context: this.props.context,
       },
       extra: {
         errorInfo,
-        props: this.props,
       },
     });
 
@@ -99,10 +102,28 @@ class ErrorBoundary extends React.Component<Props, State> {
     }
 
     // Auto-reset after 10 seconds for non-critical errors
-    if (this.props.level !== 'page' && !this.props.isolate) {
+    // But only if we haven't reset too many times recently to prevent infinite loops
+    const now = Date.now();
+    const timeSinceLastReset = this.state.lastResetTime ? now - this.state.lastResetTime : Infinity;
+    const shouldAutoReset = this.props.level !== 'page' && 
+                           !this.props.isolate && 
+                           this.state.resetCount < 3 && 
+                           timeSinceLastReset > 30000; // 30 seconds between resets
+
+    if (shouldAutoReset) {
       this.resetTimeoutId = setTimeout(() => {
         this.handleReset();
       }, 10000);
+    } else if (this.props.level !== 'page' && !this.props.isolate) {
+      // Log when auto-reset is skipped to help with debugging
+      console.warn(
+        'ErrorBoundary: Auto-reset skipped to prevent infinite loop.',
+        {
+          resetCount: this.state.resetCount,
+          timeSinceLastReset,
+          lastResetTime: this.state.lastResetTime,
+        }
+      );
     }
   }
 
@@ -134,19 +155,35 @@ class ErrorBoundary extends React.Component<Props, State> {
     }
   }
 
+  // Reset the counter after a longer period to allow normal auto-reset behavior
+  resetCounterAfterDelay = () => {
+    setTimeout(() => {
+      if (!this.state.hasError) {
+        this.setState({
+          resetCount: 0,
+          lastResetTime: null,
+        });
+      }
+    }, 300000); // 5 minutes
+  };
+
   handleReset = () => {
     if (this.resetTimeoutId) {
       clearTimeout(this.resetTimeoutId);
       this.resetTimeoutId = null;
     }
 
-    this.setState({
+    this.setState(prevState => ({
       hasError: false,
       error: null,
       errorInfo: null,
       eventId: null,
-      resetTimeoutId: null,
-    });
+      resetCount: prevState.resetCount + 1,
+      lastResetTime: Date.now(),
+    }));
+
+    // Reset counter after a delay if no more errors occur
+    this.resetCounterAfterDelay();
   };
 
   handleReportError = () => {
@@ -197,6 +234,11 @@ class ErrorBoundary extends React.Component<Props, State> {
                   : 'The error has been logged and will be investigated.'
                 }
               </p>
+              {!isPageLevel && !this.props.isolate && this.state.resetCount >= 3 && (
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                  Auto-recovery has been disabled after multiple attempts. Please use "Try Again" to manually retry.
+                </p>
+              )}
             </div>
 
             {isDevelopment && error && (
