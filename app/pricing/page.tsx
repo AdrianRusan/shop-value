@@ -94,7 +94,7 @@ const PricingPage = () => {
               >
                 Yearly
                 <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                  Save 17%
+                  Save {getYearlyDiscount(SUBSCRIPTION_PLANS.pro.amountMonthly, SUBSCRIPTION_PLANS.pro.amountYearly)}%
                 </span>
               </button>
             </div>
