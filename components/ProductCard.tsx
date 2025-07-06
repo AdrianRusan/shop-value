@@ -1,6 +1,7 @@
 import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 interface Props {
   product: Product;
@@ -10,6 +11,8 @@ interface Props {
 
 const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => {
   const flipURL = `/assets/images/flip.jpg`;
+  const [imageError, setImageError] = useState(false);
+  const [fallbackError, setFallbackError] = useState(false);
 
   // Error handling for missing required product data
   if (!product || !product._id || !product.title) {
@@ -31,7 +34,21 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
     ? Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)
     : 0;
   
-  const imageUrl = product.image || flipURL;
+  // Determine image source based on error states
+  const getImageUrl = () => {
+    if (fallbackError) {
+      // Both original and fallback failed, use a placeholder
+      return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBMMTMwIDEwMEg3MEwxMDAgNzBaTTE0MCA2MEwxNzAgOTBIMTEwTDE0MCA2MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHRleHQgeD0iMTAwIiB5PSIxMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2QjczODAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+Cjwvc3ZnPg==";
+    }
+    if (imageError) {
+      // Original failed, use fallback
+      return flipURL;
+    }
+    // Use original image
+    return product.image || flipURL;
+  };
+  
+  const imageUrl = getImageUrl();
   const linkUrl = `/produse/${product.brand || 'unknown'}/${product.productModel?.replace(/ /g, '-') || 'unknown'}/${product._id}`;
   const displayTitle = product.title.length > 60 ? `${product.title.substring(0, 60)}...` : product.title;
 
@@ -60,9 +77,12 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
             }}
             onError={(e) => {
               console.warn('Failed to load product image:', imageUrl);
-              const target = e.target as HTMLImageElement;
-              if (target) {
-                target.src = flipURL;
+              if (!imageError && product.image && product.image !== flipURL) {
+                // Original image failed, switch to fallback
+                setImageError(true);
+              } else if (imageError && !fallbackError) {
+                // Fallback image failed, switch to placeholder
+                setFallbackError(true);
               }
             }}
           />
@@ -85,9 +105,10 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
                 className="rounded-md shadow-sm"
                 onError={(e) => {
                   console.warn('Failed to load source badge image');
-                  const target = e.target as HTMLImageElement;
-                  if (target) {
-                    target.style.display = 'none';
+                  // Remove the badge from DOM by setting parent display to none
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.style.display = 'none';
                   }
                 }}
               />
