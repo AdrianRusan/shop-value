@@ -134,20 +134,27 @@ async function performHealthChecks() {
   }
 
   try {
-    // External services health check
+    // External services health check with proper timeout handling
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     const response = await fetch('https://httpbin.org/status/200', {
       signal: controller.signal,
+      // Note: Using AbortController with setTimeout for proper timeout handling
+      // The fetch API doesn't have a built-in timeout option
     });
     
     clearTimeout(timeoutId);
     checks.external = response.ok;
-  } catch (error) {
-    console.warn('External services health check failed:', error);
-    checks.external = false;
-  }
+      } catch (error) {
+      // Handle both network errors and timeout (AbortError)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('External services health check timed out after 5 seconds');
+      } else {
+        console.warn('External services health check failed:', error);
+      }
+      checks.external = false;
+    }
 
   // Overall health
   checks.overall = checks.database && checks.cache;
