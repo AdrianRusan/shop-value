@@ -177,9 +177,38 @@ async function performCleanupTasks() {
     // This replaces any potential collectgarbage() usage with safe batching
     results.oldLogs = await cleanupOldLogs('log:*', 86400, 100);
 
-    // Clean up expired sessions using safe helper
-    // This replaces the unsafe redis.eval call that might have used collectgarbage()
-    results.expiredSessions = await cleanupExpiredSessions('session:*', 86400, 100);
+    // Clean up expired sessions
+    try {
+      const expiredSessionsResult = await redis.eval(`
+        local expired = 0
+        local cursor = "0"
+        local keys = {}
+        
+        repeat
+          local result = redis.call('scan', cursor, 'match', 'session:*', 'count', 100)
+          cursor = result[1]
+          keys = result[2]
+          
+          for i=1,#keys do
+            local ttl = redis.call('ttl', keys[i])
+            -- Delete sessions that are expired (ttl <= 0) or have no expiration set (ttl == -1)
+            -- TTL of -1 means no expiration, which might indicate orphaned sessions
+            -- TTL of -2 means key doesn't exist (shouldn't happen here)
+            -- TTL of 0 or negative means expired
+            if ttl == -1 or ttl == -2 or ttl <= 0 then
+              redis.call('del', keys[i])
+              expired = expired + 1
+            end
+          end
+        until cursor == "0"
+        
+        return expired
+      `, 0);
+      
+      results.expiredSessions = expiredSessionsResult as number;
+    } catch (error) {
+      console.warn('Failed to clean expired sessions:', error);
+    }
 
     // Mark cache cleanup as successful
     results.cacheCleanup = true;
