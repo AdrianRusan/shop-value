@@ -57,6 +57,13 @@ const PricingPage = () => {
     return Math.round(savings);
   };
 
+  const getMonthsSaved = (monthly: number, yearly: number) => {
+    const monthlyTotal = monthly * 12;
+    const savings = monthlyTotal - yearly;
+    const monthsSaved = savings / monthly;
+    return Math.round(monthsSaved);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900">
       <div className="container mx-auto px-4 py-16">
@@ -152,7 +159,7 @@ const PricingPage = () => {
                 <span className="text-gray-600 dark:text-gray-300">/month</span>
                 {billingCycle === 'yearly' && (
                   <div className="text-green-600 text-sm font-medium">
-                    2 months free!
+                    {getMonthsSaved(SUBSCRIPTION_PLANS.pro.amountMonthly, SUBSCRIPTION_PLANS.pro.amountYearly)} months saved!
                   </div>
                 )}
               </div>
@@ -189,7 +196,7 @@ const PricingPage = () => {
                 <span className="text-gray-600 dark:text-gray-300">/month</span>
                 {billingCycle === 'yearly' && (
                   <div className="text-green-600 text-sm font-medium">
-                    2 months free!
+                    {getMonthsSaved(SUBSCRIPTION_PLANS.enterprise.amountMonthly, SUBSCRIPTION_PLANS.enterprise.amountYearly)} months saved!
                   </div>
                 )}
               </div>
