@@ -73,27 +73,89 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Mobile touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .hover-only:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Enhance tap target sizes for touch */
+  button, 
+  [role="button"], 
+  input[type="submit"], 
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Touch-friendly interactions */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Optimize focus states for accessibility */
 :focus-visible {
   outline: 2px solid #FF6B35;
   outline-offset: 2px;
 }
 
+/* Mobile-first responsive breakpoints */
+@media (max-width: 640px) {
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-text-scale {
+    font-size: 0.875rem;
+  }
+  
+  .mobile-button-padding {
+    padding: 0.75rem 1rem;
+  }
+}
+
 @layer utilities {
   .btn {
-    @apply py-4 px-4 bg-secondary dark:bg-white-200 hover:bg-opacity-70 rounded-[30px] text-white dark:text-secondary text-lg font-semibold;
+    @apply py-4 px-4 bg-secondary dark:bg-white-200 hover:bg-opacity-70 rounded-[30px] text-white dark:text-secondary text-lg font-semibold touch-manipulation;
   }
 
   .btn-small {
-    @apply py-2 px-2 bg-secondary dark:bg-white-200 hover:bg-opacity-70 rounded-[30px] text-white dark:text-secondary text-base font-semibold;
+    @apply py-2 px-2 bg-secondary dark:bg-white-200 hover:bg-opacity-70 rounded-[30px] text-white dark:text-secondary text-base font-semibold touch-manipulation;
+  }
+
+  /* Enhanced mobile-friendly button variants */
+  .btn-mobile {
+    @apply py-3 sm:py-4 px-4 sm:px-6 text-base sm:text-lg font-semibold rounded-lg transition-colors touch-manipulation focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-mobile-primary {
+    @apply btn-mobile bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white focus:ring-blue-500;
+  }
+
+  .btn-mobile-secondary {
+    @apply btn-mobile bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 text-gray-900 focus:ring-gray-500;
+  }
+
+  /* Mobile-optimized form elements */
+  .input-mobile {
+    @apply w-full px-3 sm:px-4 py-3 sm:py-4 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation;
+  }
+
+  .select-mobile {
+    @apply input-mobile appearance-none bg-no-repeat bg-right bg-[length:16px] bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20"%3E%3Cpath stroke="%236B7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8l4 4 4-4"/%3E%3C/svg%3E')];
   }
 
   .head-text {
-    @apply mt-4 text-6xl leading-[72px] font-bold tracking-[-1.2px] text-gray-900 dark:text-white-200;
+    @apply mt-4 text-4xl sm:text-5xl lg:text-6xl leading-tight sm:leading-[72px] font-bold tracking-[-1.2px] text-gray-900 dark:text-white-200;
   }
 
   .section-text {
-    @apply text-secondary text-[32px] font-semibold dark:text-white-200;
+    @apply text-secondary text-xl sm:text-2xl lg:text-[32px] font-semibold dark:text-white-200;
   }
 
   .small-text {
@@ -101,7 +163,7 @@ body {
   }
 
   .carousel {
-    @apply flex flex-col-reverse h-[700px];
+    @apply flex flex-col-reverse h-[500px] sm:h-[600px] lg:h-[700px];
   }
 
   .carousel .control-dots {
@@ -117,12 +179,12 @@ body {
   }
 
   .trending-section {
-    @apply flex flex-col gap-10 px-10 lg:px-10 lg:py-24 dark:text-white-200;
+    @apply flex flex-col gap-6 sm:gap-8 lg:gap-10 px-4 sm:px-6 lg:px-10 py-12 sm:py-16 lg:py-24 dark:text-white-200;
   }
 
   /* PRODUCT DETAILS PAGE STYLES */
   .product-container {
-    @apply flex flex-col gap-16 flex-wrap px-6 md:px-20 max-xl:py-3 dark:text-white-200;
+    @apply flex flex-col gap-8 sm:gap-12 lg:gap-16 flex-wrap px-4 sm:px-6 md:px-12 lg:px-20 py-4 sm:py-6 lg:py-8 dark:text-white-200;
   }
 
   .product-image {
@@ -130,71 +192,105 @@ body {
   }
 
   .product-info {
-    @apply flex items-center flex-wrap gap-5 py-6 border-y border-y-[#E4E4E4] dark:text-white-200;
+    @apply flex items-center flex-wrap gap-3 sm:gap-4 lg:gap-5 py-4 sm:py-5 lg:py-6 border-y border-y-[#E4E4E4] dark:text-white-200;
   }
 
   .product-stars {
-    @apply flex items-center gap-2 px-3 py-2 bg-white-200 rounded-[27px];
+    @apply flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white-200 rounded-[27px] text-sm sm:text-base;
   }
 
   .product-reviews {
-    @apply flex items-center gap-2 px-3 py-2 bg-white-200 rounded-[27px];
+    @apply flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white-200 rounded-[27px] text-sm sm:text-base;
   }
 
-  /* MODAL */
+  /* MODAL - Enhanced for mobile */
   .dialog-container {
-    @apply fixed inset-0 z-10 overflow-y-auto bg-black bg-opacity-60;
+    @apply fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-60;
   }
 
   .dialog-content {
-    @apply py-5 px-5 bg-white inline-block max-sm:w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl dark:bg-slate-800;
+    @apply py-4 sm:py-5 px-4 sm:px-5 bg-white inline-block w-full max-w-sm sm:max-w-md lg:max-w-7xl my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl dark:bg-slate-800;
   }
 
   .dialog-head_text {
-    @apply text-secondary text-lg leading-[24px] font-semibold mt-4 dark:text-white-200;
+    @apply text-secondary text-lg sm:text-xl leading-[24px] font-semibold mt-2 sm:mt-4 dark:text-white-200;
   }
 
   .dialog-input_container {
-    @apply px-2 py-3 mt-3 flex items-center gap-2 border border-gray-300 rounded-[27px];
+    @apply px-3 sm:px-4 py-3 sm:py-4 mt-3 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-[27px];
   }
 
   .dialog-input {
-    @apply flex-1 pl-1 border-none text-gray-500 text-base focus:outline-none border border-gray-300 rounded-[27px] shadow-xs;
+    @apply flex-1 pl-1 border-none text-gray-900 dark:text-white text-base focus:outline-none bg-transparent;
   }
 
-  /* NAVBAR */
+  /* NAVBAR - Mobile responsive */
   .nav {
-    @apply flex justify-between items-center px-6 md:px-20 py-4;
+    @apply flex justify-between items-center px-4 sm:px-6 md:px-12 lg:px-20 py-3 sm:py-4;
   }
 
   .nav-logo {
-    @apply text-[21px] text-secondary font-bold;
+    @apply text-lg sm:text-xl lg:text-[21px] text-secondary font-bold;
   }
 
-  /* PRICE INFO */
+  /* PRICE INFO - Mobile responsive */
   .price-info_card {
-    @apply flex-1 xl:min-w-[275px] flex flex-col gap-2 border-l-[3px] dark:border-neutral-black rounded-10 bg-white-100 dark:bg-neutral-black px-5 py-4;
+    @apply flex-1 sm:min-w-[200px] lg:min-w-[275px] flex flex-col gap-2 border-l-[3px] dark:border-neutral-black rounded-10 bg-white-100 dark:bg-neutral-black px-3 sm:px-4 lg:px-5 py-3 sm:py-4;
   }
 
-  /* PRODUCT CARD */
+  /* PRODUCT CARD - Enhanced mobile support */
   .product-card {
-    @apply sm:w-[292px] sm:max-w-[292px] w-full flex-1 flex flex-col gap-4 rounded-md;
+    @apply w-full sm:w-[280px] sm:max-w-[292px] flex-1 flex flex-col gap-3 sm:gap-4 rounded-md shadow-sm hover:shadow-md transition-shadow;
   }
 
   .product-title {
-    @apply text-secondary text-xl leading-6 font-semibold dark:text-white-200 line-clamp-2;
+    @apply text-secondary text-base sm:text-lg lg:text-xl leading-5 sm:leading-6 font-semibold dark:text-white-200 line-clamp-2;
   }
 
-  /* SEARCHBAR INPUT */
+  /* SEARCHBAR INPUT - Mobile optimized */
   .searchbar-input {
-    @apply flex-1 w-full lg:flex items-center text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 placeholder:text-[#415985] dark:placeholder:text-[#A7B5B9];
+    @apply input-mobile;
   }
 
   .searchbar-top {
-    @apply w-full flex items-center text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 placeholder:text-[#415985] dark:placeholder:text-[#A7B5B9];
+    @apply input-mobile;
   }
 
   .searchbar-btn {
-    @apply bg-gray-900 dark:bg-white-200 border border-gray-900 rounded-lg shadow-xs px-5 py-3 text-white dark:text-gray-900 text-base font-semibold hover:opacity-90 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40;
+    @apply btn-mobile-primary shadow-sm hover:shadow-md disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  /* Mobile-specific utility classes */
+  .mobile-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .mobile-flex {
+    @apply flex flex-col sm:flex-row gap-3 sm:gap-4;
+  }
+
+  .mobile-text {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  .mobile-heading {
+    @apply text-lg sm:text-xl lg:text-2xl font-semibold;
+  }
+
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
+  }
+
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    @apply space-y-3 sm:space-y-4;
+  }
+
+  .touch-padding {
+    @apply p-3 sm:p-4;
+  }
+
+  .touch-margin {
+    @apply m-3 sm:m-4;
   }
 }

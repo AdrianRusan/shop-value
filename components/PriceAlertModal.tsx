@@ -134,7 +134,7 @@ const PriceAlertModal = ({
     <>
       <button 
         type="button" 
-        className="btn w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+        className="btn w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 sm:py-4 px-4 rounded-lg transition-colors touch-manipulation focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         onClick={openModal}
       >
         <div className="flex items-center justify-center gap-2">
@@ -144,13 +144,13 @@ const PriceAlertModal = ({
             width={20}
             height={20}
           />
-          Setează Alertă de Preț
+          <span className="text-sm sm:text-base">Setează Alertă de Preț</span>
         </div>
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
-        <Dialog as="div" onClose={closeModal} className="dialog-container">
-          <div className='min-h-screen px-4 text-center'>
+        <Dialog as="div" onClose={closeModal} className="fixed inset-0 z-50 overflow-y-auto">
+          <div className='min-h-screen px-4 sm:px-6 md:px-8 text-center'>
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -160,7 +160,7 @@ const PriceAlertModal = ({
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+              <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
             </Transition.Child>
 
             <span className='inline-block h-screen align-middle' aria-hidden='true' />
@@ -174,48 +174,58 @@ const PriceAlertModal = ({
               leaveFrom='opacity-100 scale-100'
               leaveTo='opacity-0 scale-95'
             >
-              <div className='dialog-content max-w-md w-full'>
+              {/* Enhanced mobile-responsive modal content */}
+              <div className='inline-block w-full max-w-sm sm:max-w-md lg:max-w-lg p-4 sm:p-6 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-slate-800 shadow-xl rounded-2xl max-h-[95vh] overflow-y-auto'>
                 <div className='flex flex-col'>
-                  <div className='flex justify-between items-center mb-4'>
-                    <div className='p-3 border border-gray-300 rounded-lg'>
+                  <div className='flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-800 pb-2'>
+                    <div className='p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg'>
                       <Image 
                         src="/assets/icons/price-tag.svg"
                         alt="price alert"
-                        width={24}
-                        height={24}
+                        width={20}
+                        height={20}
+                        className="sm:w-6 sm:h-6"
                       />
                     </div>
 
-                    <Image 
-                      src="/assets/icons/x-close.svg"
-                      alt="close"
-                      width={24}
-                      height={24}
-                      className='cursor-pointer'
+                    <button
                       onClick={closeModal}
-                    />
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors touch-manipulation"
+                      aria-label="Închide"
+                    >
+                      <Image 
+                        src="/assets/icons/x-close.svg"
+                        alt="close"
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 sm:w-6 sm:h-6"
+                      />
+                    </button>
                   </div>
 
-                  <h4 className='dialog-head_text mb-2'>
+                  <h4 className='text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2'>
                     Configurează Alerta de Preț
                   </h4>
-                  <p className='text-sm text-gray-600 dark:text-gray-400 mb-6'>
-                    Pentru: {productTitle}
+                  <p className='text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4'>
+                    Pentru: <span className="font-medium">{productTitle.length > 50 ? `${productTitle.substring(0, 50)}...` : productTitle}</span>
                   </p>
 
-                  <form className='flex flex-col space-y-4' onSubmit={handleSubmit}>
+                  <form className='flex flex-col space-y-4 sm:space-y-5' onSubmit={handleSubmit}>
                     {/* Email Input */}
                     <div>
-                      <label htmlFor='email' className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
+                      <label htmlFor='email' className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                         Adresă de e-mail
                       </label>
-                      <div className='dialog-input_container'>
-                        <Image 
-                          src="/assets/icons/mail.svg"
-                          alt="mail"
-                          width={18}
-                          height={18}
-                        />
+                      <div className='relative flex items-center'>
+                        <div className="absolute left-3 flex items-center pointer-events-none">
+                          <Image 
+                            src="/assets/icons/mail.svg"
+                            alt="mail"
+                            width={16}
+                            height={16}
+                            className="text-gray-400"
+                          />
+                        </div>
                         <input
                           required
                           type='email'
@@ -223,7 +233,7 @@ const PriceAlertModal = ({
                           value={email}
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                           placeholder='Introduceți adresa de e-mail'
-                          className='dark:bg-slate-800 dialog-input flex-1'
+                          className='w-full pl-10 pr-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
                         />
                       </div>
                       {errors.email && (
@@ -233,13 +243,13 @@ const PriceAlertModal = ({
 
                     {/* Alert Type Selection */}
                     <div>
-                      <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
+                      <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                         Tipul alertei
                       </label>
                       <select
                         value={alertType}
                         onChange={(e: ChangeEvent<HTMLSelectElement>) => setAlertType(e.target.value as AlertType)}
-                        className='w-full p-2 border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-gray-600 dark:text-white'
+                        className='w-full p-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
                       >
                         <option value="target_price">Preț țintă</option>
                         <option value="percentage_drop">Scădere procentuală</option>
@@ -252,7 +262,7 @@ const PriceAlertModal = ({
                     {/* Alert Configuration */}
                     {alertType === 'target_price' && (
                       <div>
-                        <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                           Preț țintă ({currency})
                         </label>
                         <input
@@ -262,7 +272,7 @@ const PriceAlertModal = ({
                           min="0"
                           step="0.01"
                           placeholder='Introduceți prețul țintă'
-                          className='w-full p-2 border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-gray-600 dark:text-white'
+                          className='w-full p-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
                         />
                         {errors.targetPrice && (
                           <p className='text-red-500 text-xs mt-1'>{errors.targetPrice}</p>
@@ -272,7 +282,7 @@ const PriceAlertModal = ({
 
                     {alertType === 'percentage_drop' && (
                       <div>
-                        <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                           Procentul de scădere (%)
                         </label>
                         <input
@@ -282,7 +292,7 @@ const PriceAlertModal = ({
                           min="1"
                           max="90"
                           placeholder='Introduceți procentul'
-                          className='w-full p-2 border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-gray-600 dark:text-white'
+                          className='w-full p-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
                         />
                         {errors.percentageThreshold && (
                           <p className='text-red-500 text-xs mt-1'>{errors.percentageThreshold}</p>
@@ -292,7 +302,7 @@ const PriceAlertModal = ({
 
                     {alertType === 'significant_drop' && (
                       <div>
-                        <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                           Suma de scădere ({currency})
                         </label>
                         <input
@@ -301,7 +311,7 @@ const PriceAlertModal = ({
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setSignificantDropAmount(Number(e.target.value))}
                           min="1"
                           placeholder='Introduceți suma'
-                          className='w-full p-2 border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-gray-600 dark:text-white'
+                          className='w-full p-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
                         />
                         {errors.significantDropAmount && (
                           <p className='text-red-500 text-xs mt-1'>{errors.significantDropAmount}</p>
@@ -309,42 +319,45 @@ const PriceAlertModal = ({
                       </div>
                     )}
 
-                    {/* Frequency Selection */}
-                    <div>
-                      <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
-                        Frecvența alertelor
-                      </label>
-                      <select
-                        value={frequency}
-                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setFrequency(e.target.value as FrequencyType)}
-                        className='w-full p-2 border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-gray-600 dark:text-white'
-                      >
-                        <option value="immediate">Imediat</option>
-                        <option value="daily">Zilnic</option>
-                        <option value="weekly">Săptămânal</option>
-                      </select>
-                    </div>
+                    {/* Frequency and Max Alerts - Mobile optimized grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Frequency Selection */}
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                          Frecvența alertelor
+                        </label>
+                        <select
+                          value={frequency}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) => setFrequency(e.target.value as FrequencyType)}
+                          className='w-full p-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
+                        >
+                          <option value="immediate">Imediat</option>
+                          <option value="daily">Zilnic</option>
+                          <option value="weekly">Săptămânal</option>
+                        </select>
+                      </div>
 
-                    {/* Max Alerts Per Day */}
-                    <div>
-                      <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block'>
-                        Numărul maxim de alerte pe zi
-                      </label>
-                      <input
-                        type='number'
-                        value={maxAlertsPerDay}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => setMaxAlertsPerDay(Number(e.target.value))}
-                        min="1"
-                        max="50"
-                        className='w-full p-2 border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-gray-600 dark:text-white'
-                      />
-                      {errors.maxAlertsPerDay && (
-                        <p className='text-red-500 text-xs mt-1'>{errors.maxAlertsPerDay}</p>
-                      )}
+                      {/* Max Alerts Per Day */}
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+                          Alerte pe zi (max)
+                        </label>
+                        <input
+                          type='number'
+                          value={maxAlertsPerDay}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => setMaxAlertsPerDay(Number(e.target.value))}
+                          min="1"
+                          max="50"
+                          className='w-full p-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors touch-manipulation'
+                        />
+                        {errors.maxAlertsPerDay && (
+                          <p className='text-red-500 text-xs mt-1'>{errors.maxAlertsPerDay}</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Preview */}
-                    <div className='bg-blue-50 dark:bg-slate-700 p-3 rounded-lg'>
+                    <div className='bg-blue-50 dark:bg-slate-700 p-3 sm:p-4 rounded-lg'>
                       <p className='text-sm text-blue-700 dark:text-blue-300'>
                         <strong>Previzualizare:</strong> {getAlertTypeDescription()}
                       </p>
@@ -354,7 +367,7 @@ const PriceAlertModal = ({
                     <button 
                       type="submit" 
                       disabled={isSubmitting}
-                      className='w-full mt-6 py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 font-semibold rounded-lg text-white transition-colors'
+                      className='w-full py-3 sm:py-4 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold rounded-lg text-white text-base sm:text-lg transition-colors touch-manipulation focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                     >
                       {isSubmitting ? 'Se creează alerta...' : 'Creează Alerta'}
                     </button>
