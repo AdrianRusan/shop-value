@@ -102,7 +102,7 @@
       "id": "1.5",
       "title": "Subscription Management System",
       "description": "Implement SaaS subscription management with Stripe",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "dependencies": ["1.2"],
       "details": "Integrate Stripe for payment processing, implement subscription tiers, and add usage tracking",
@@ -111,12 +111,12 @@
         {
           "id": "1.5.1",
           "title": "Integrate Stripe payment processing",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "1.5.2",
           "title": "Implement subscription tiers",
-          "status": "pending"
+          "status": "done"
         }
       ]
     },
