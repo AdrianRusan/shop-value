@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { connectToDB } from '@/lib/mongoose';
 import { redis } from '@/lib/upstash';
 import { cleanupExpiredSessions, cleanupOldLogs } from '@/lib/redis-lua-helpers';
+<<<<<<< HEAD
 import { cleanupExpiredSessions, cleanupOldLogs } from '@/lib/redis-lua-helpers';
+=======
+>>>>>>> f4a5769 (fix issues)
 
 export const maxDuration = 250;
 export const dynamic = 'force-dynamic';
@@ -177,6 +180,7 @@ async function performCleanupTasks() {
     // This replaces any potential collectgarbage() usage with safe batching
     results.oldLogs = await cleanupOldLogs('log:*', 86400, 100);
 
+<<<<<<< HEAD
     // Clean up expired sessions
     try {
       const expiredSessionsResult = await redis.eval(`
@@ -209,6 +213,11 @@ async function performCleanupTasks() {
     } catch (error) {
       console.warn('Failed to clean expired sessions:', error);
     }
+=======
+    // Clean up expired sessions using safe helper
+    // This replaces the unsafe redis.eval call that might have used collectgarbage()
+    results.expiredSessions = await cleanupExpiredSessions('session:*', 86400, 100);
+>>>>>>> f4a5769 (fix issues)
 
     // Mark cache cleanup as successful
     results.cacheCleanup = true;
