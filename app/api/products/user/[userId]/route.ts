@@ -151,7 +151,7 @@ export async function GET(
     // Get total count for pagination
     const totalCount = await UserProductTracking.countDocuments(trackingQuery);
 
-    // Prepare response with analytics
+    // Prepare response with analytics and proper serialization
     const trackedProducts = validTrackings.map(tracking => {
       const product = tracking.productId as any; // Type assertion since populate changes the type
       return {
@@ -177,12 +177,15 @@ export async function GET(
       }
     };
 
+    // Properly serialize the data to avoid Next.js warnings about toJSON methods
+    const serializedResponseData = JSON.parse(JSON.stringify(responseData));
+
     // Cache the response data
-    await userCache.cacheUserProducts(params.userId, responseData, filters);
+    await userCache.cacheUserProducts(params.userId, serializedResponseData, filters);
 
     return NextResponse.json({
       success: true,
-      data: responseData,
+      data: serializedResponseData,
       cached: false,
       timestamp: new Date().toISOString()
     });
@@ -290,9 +293,12 @@ export async function POST(
     // Invalidate user caches since we added a new product
     await cacheInvalidation.invalidateUser(params.userId);
 
+    // Properly serialize the data to avoid Next.js warnings about toJSON methods
+    const serializedTracking = JSON.parse(JSON.stringify(tracking));
+
     return NextResponse.json({
       success: true,
-      data: tracking,
+      data: serializedTracking,
       message: 'Product tracking started successfully',
       timestamp: new Date().toISOString()
     }, { status: 201 });
