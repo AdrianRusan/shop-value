@@ -203,7 +203,7 @@ async function performCleanupTasks() {
         until cursor == "0"
         
         return expired
-      `, 0);
+      `, [], []);
       
       results.expiredSessions = expiredSessionsResult as number;
     } catch (error) {
