@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs'
 import SearchModal from "./SearchModal";
 import ThemeSwitch from "./ThemeSwitch";
 
@@ -35,12 +36,42 @@ const Navbar = () => {
           <SearchModal />
         </div>
 
-        <Link
-          href={'/produse'}
-          className="text-base text-black dark:text-white-200 hover:scale-110 font-bold"
-        >
-          Produse
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href={'/produse'}
+            className="text-base text-black dark:text-white-200 hover:scale-110 font-bold"
+          >
+            Produse
+          </Link>
+
+          {/* Authentication Section */}
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="text-base text-black dark:text-white-200 hover:scale-110 font-bold px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">
+                Conectare
+              </button>
+            </SignInButton>
+          </SignedOut>
+
+          <SignedIn>
+            <Link
+              href="/dashboard"
+              className="text-base text-black dark:text-white-200 hover:scale-110 font-bold"
+            >
+              Dashboard
+            </Link>
+            <UserButton 
+              appearance={{
+                elements: {
+                  avatarBox: "w-8 h-8",
+                  userButtonPopoverCard: "shadow-lg border border-gray-200",
+                  userButtonPopoverActions: "text-gray-700",
+                }
+              }}
+              afterSignOutUrl="/"
+            />
+          </SignedIn>
+        </div>
 
         <div className="flex gap-5 justify-center max-sm:hidden">
           <ThemeSwitch />

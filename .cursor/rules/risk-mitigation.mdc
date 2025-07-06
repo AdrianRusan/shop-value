@@ -1,0 +1,637 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Risk Mitigation Rules for ShopValue
+
+## **SCRAPING RESILIENCE (BUSINESS CRITICAL)**
+
+### **Multi-Strategy Scraping (Single Point of Failure Prevention)**
+```typescript
+// ✅ DO: Implement multiple fallback scraping strategies
+// lib/scraper/resilient-scraper.ts
+import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
+import axios from 'axios';
+
+export interface ScrapingStrategy {
+  name: string;
+  scrape: (url: string) => Promise<ScrapingResult | null>;
+  timeout: number;
+  reliability: number; // 0-1 score
+}
+
+export interface ScrapingResult {
+  price: number;
+  title: string;
+  availability: 'in_stock' | 'out_of_stock' | 'limited';
+  currency: string;
+  confidence: number; // 0-1 score
+  selector: string;
+  scrapedAt: Date;
+}
+
+const strategies: ScrapingStrategy[] = [
+  {
+    name: 'puppeteer',
+    scrape: scrapePuppeteer,
+    timeout: 30000,
+    reliability: 0.85
+  },
+  {
+    name: 'playwright',
+    scrape: scrapePlaywright,
+    timeout: 25000,
+    reliability: 0.90
+  },
+  {
+    name: 'api_proxy',
+    scrape: scrapeWithProxy,
+    timeout: 15000,
+    reliability: 0.70
+  },
+  {
+    name: 'cached_fallback',
+    scrape: getLastKnownPrice,
+    timeout: 1000,
+    reliability: 0.60
+  }
+];
+
+export const scrapeWithFallbacks = async (product: Product): Promise<ScrapingResult | null> => {
+  for (const strategy of strategies) {
+    try {
+      console.log(`Attempting ${strategy.name} for ${product.url}`);
+      
+      const result = await Promise.race([
+        strategy.scrape(product.url),
+        new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), strategy.timeout)
+        )
+      ]);
+      
+      if (result && result.price > 0) {
+        // Track successful strategy
+        await redis.incr(`scraping:success:${strategy.name}`);
+        
+        // Update product selector if different
+        if (result.selector !== product.scraping?.selector) {
+          await Product.findByIdAndUpdate(product._id, {
+            'scraping.selector': result.selector,
+            'scraping.lastSuccessful': new Date(),
+            'scraping.failureCount': 0
+          });
+        }
+        
+        console.log(`✅ ${strategy.name} succeeded for ${product.url}: €${result.price}`);
+        return result;
+      }
+      
+    } catch (error) {
+      console.error(`❌ ${strategy.name} failed for ${product.url}:`, error.message);
+      
+      // Track failed strategy
+      await redis.incr(`scraping:failure:${strategy.name}`);
+      
+      // Continue to next strategy
+      continue;
+    }
+  }
+  
+  // All strategies failed
+  await Product.findByIdAndUpdate(product._id, {
+    'scraping.failureCount': { $inc: 1 },
+    'scraping.lastFailedAt': new Date()
+  });
+  
+  console.error(`🚨 All scraping strategies failed for ${product.url}`);
+  return null;
+};
+
+// ❌ DON'T: Rely on single scraping method
+const scrapePrice = async (url: string) => {
+  return await puppeteer.scrape(url); // Single point of failure
+};
+```
+
+### **Intelligent Retry Logic with Exponential Backoff**
+```typescript
+// ✅ DO: Implement smart retry with backoff and circuit breaker
+export const scrapeWithRetry = async (
+  product: Product, 
+  maxRetries: number = 3
+): Promise<ScrapingResult | null> => {
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await scrapeWithFallbacks(product);
+      
+      if (result) {
+        // Reset failure count on success
+        if (product.scraping?.failureCount > 0) {
+          await Product.findByIdAndUpdate(product._id, {
+            'scraping.failureCount': 0,
+            'scraping.isBlocked': false
+          });
+        }
+        return result;
+      }
+      
+    } catch (error) {
+      const delay = Math.min(1000 * Math.pow(2, attempt), 30000); // Max 30s delay
+      
+      console.log(`Retry ${attempt}/${maxRetries} for ${product.url} in ${delay}ms`);
+      
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  // Mark as potentially blocked after repeated failures
+  const currentFailures = product.scraping?.failureCount || 0;
+  if (currentFailures >= 5) {
+    await Product.findByIdAndUpdate(product._id, {
+      'scraping.isBlocked': true,
+      'scraping.blockedAt': new Date()
+    });
+    
+    // Alert admin
+    await emailQueue.add('admin-alert', {
+      type: 'scraping_blocked',
+      productId: product._id,
+      url: product.url,
+      failureCount: currentFailures + 1
+    }, { priority: 'high' });
+  }
+  
+  return null;
+};
+
+// ❌ DON'T: Fail immediately without retries
+const scrapeProduct = async (url: string) => {
+  const result = await scrapePrice(url);
+  if (!result) throw new Error('Scraping failed'); // No retry
+};
+```
+
+### **Anti-Detection Measures**
+```typescript
+// ✅ DO: Implement anti-detection for sustainable scraping
+const scrapePuppeteer = async (url: string): Promise<ScrapingResult | null> => {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ]
+  });
+  
+  try {
+    const page = await browser.newPage();
+    
+    // Randomize user agent
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    ];
+    await page.setUserAgent(userAgents[Math.floor(Math.random() * userAgents.length)]);
+    
+    // Set viewport to common resolutions
+    const viewports = [
+      { width: 1920, height: 1080 },
+      { width: 1366, height: 768 },
+      { width: 1536, height: 864 }
+    ];
+    const viewport = viewports[Math.floor(Math.random() * viewports.length)];
+    await page.setViewport(viewport);
+    
+    // Block unnecessary resources for speed
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+    
+    // Random delay before navigation
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+    
+    await page.goto(url, { 
+      waitUntil: 'domcontentloaded',
+      timeout: 30000 
+    });
+    
+    // Wait for price element with multiple selectors
+    const priceSelectors = [
+      '.price',
+      '.product-price',
+      '[data-price]',
+      '.current-price',
+      '.final-price'
+    ];
+    
+    let priceElement = null;
+    let usedSelector = '';
+    
+    for (const selector of priceSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 5000 });
+        priceElement = await page.$(selector);
+        if (priceElement) {
+          usedSelector = selector;
+          break;
+        }
+      } catch (error) {
+        continue; // Try next selector
+      }
+    }
+    
+    if (!priceElement) {
+      throw new Error('Price element not found');
+    }
+    
+    const priceText = await page.evaluate(el => el.textContent, priceElement);
+    const price = extractPriceFromText(priceText);
+    
+    if (!price || price <= 0) {
+      throw new Error('Invalid price extracted');
+    }
+    
+    return {
+      price,
+      title: await page.title(),
+      availability: 'in_stock', // Can be enhanced with availability detection
+      currency: 'RON',
+      confidence: 0.9,
+      selector: usedSelector,
+      scrapedAt: new Date()
+    };
+    
+  } finally {
+    await browser.close();
+  }
+};
+
+// ❌ DON'T: Use obvious bot patterns
+const simpleScrape = async (url: string) => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url);
+  const price = await page.$eval('.price', el => el.textContent); // Fixed selector, no anti-detection
+  await browser.close();
+  return price;
+};
+```
+
+---
+
+## **DATA BACKUP & RECOVERY**
+
+### **Automated Data Export (GDPR & Business Continuity)**
+```typescript
+// ✅ DO: Implement automated data export and backup
+// app/api/admin/export/route.ts
+export async function POST(request: Request) {
+  try {
+    const { type, userId } = await request.json();
+    
+    if (type === 'user_data' && userId) {
+      // GDPR data export
+      const userData = await exportUserData(userId);
+      return Response.json({ success: true, data: userData });
+    }
+    
+    if (type === 'full_backup') {
+      // Admin only - full system backup
+      const user = await requireAuth();
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+      
+      const backupData = await createFullBackup();
+      return Response.json({ success: true, backupId: backupData.id });
+    }
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    return Response.json({ error: 'Export failed' }, { status: 500 });
+  }
+}
+
+const exportUserData = async (userId: string) => {
+  const user = await User.findOne({ clerkId: userId }).lean();
+  const trackedProducts = await UserProductTracking.find({ userId }).lean();
+  const productIds = trackedProducts.map(t => t.productId);
+  const products = await Product.find({ _id: { $in: productIds } }).lean();
+  const priceHistory = await PriceHistory.find({ 
+    productId: { $in: productIds } 
+  }).lean();
+  
+  return {
+    exportDate: new Date().toISOString(),
+    user: {
+      ...user,
+      _id: undefined, // Remove internal ID
+      stripeCustomerId: undefined, // Remove sensitive data
+    },
+    trackedProducts,
+    products: products.map(p => ({
+      ...p,
+      _id: undefined,
+      scraping: undefined // Remove internal scraping data
+    })),
+    priceHistory: priceHistory.map(h => ({
+      price: h.price,
+      timestamp: h.timestamp,
+      productUrl: products.find(p => p._id.equals(h.productId))?.url
+    }))
+  };
+};
+
+// ❌ DON'T: Skip data export capabilities
+```
+
+### **Price History Preservation**
+```typescript
+// ✅ DO: Maintain price history even when products are removed
+export const archiveProductData = async (productId: string) => {
+  try {
+    const product = await Product.findById(productId);
+    const priceHistory = await PriceHistory.find({ productId }).lean();
+    
+    if (!product) return;
+    
+    // Create archive record
+    const archive = new ProductArchive({
+      originalId: productId,
+      url: product.url,
+      title: product.title,
+      brand: product.brand,
+      archivedAt: new Date(),
+      finalPrice: product.currentPrice,
+      priceHistory: priceHistory.map(h => ({
+        price: h.price,
+        timestamp: h.timestamp
+      })),
+      reason: 'no_active_trackers'
+    });
+    
+    await archive.save();
+    
+    // Now safe to remove from active collections
+    await Product.findByIdAndDelete(productId);
+    await PriceHistory.deleteMany({ productId });
+    
+    console.log(`Archived product data for ${product.url}`);
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error('Error archiving product data:', error);
+  }
+};
+
+// ❌ DON'T: Delete price history without archiving
+const removeProduct = async (productId: string) => {
+  await Product.findByIdAndDelete(productId);
+  await PriceHistory.deleteMany({ productId }); // Lost forever
+};
+```
+
+---
+
+## **MARKET EXPANSION PREPARATION**
+
+### **Multi-Country Support Foundation**
+```typescript
+// ✅ DO: Build foundation for market expansion
+// lib/market-config.ts
+export interface MarketConfig {
+  countryCode: string;
+  currency: string;
+  supportedRetailers: string[];
+  priceSelectors: Record<string, string[]>;
+  language: string;
+  vatRate: number;
+}
+
+export const MARKET_CONFIGS: Record<string, MarketConfig> = {
+  RO: {
+    countryCode: 'RO',
+    currency: 'RON',
+    supportedRetailers: ['flip.ro', 'emag.ro', 'altex.ro'],
+    priceSelectors: {
+      'flip.ro': ['.price-current', '.price', '[data-price]'],
+      'emag.ro': ['.product-new-price', '.price', '.current-price'],
+      'altex.ro': ['.price-new', '.price', '.final-price']
+    },
+    language: 'ro',
+    vatRate: 0.19
+  },
+  // Future expansion ready
+  BG: {
+    countryCode: 'BG',
+    currency: 'BGN',
+    supportedRetailers: ['emag.bg', 'technomarket.bg'],
+    priceSelectors: {
+      'emag.bg': ['.product-new-price', '.price'],
+      'technomarket.bg': ['.price', '.current-price']
+    },
+    language: 'bg',
+    vatRate: 0.20
+  }
+};
+
+export const getMarketConfig = (url: string): MarketConfig => {
+  // Detect market from URL
+  for (const [countryCode, config] of Object.entries(MARKET_CONFIGS)) {
+    const retailer = config.supportedRetailers.find(r => url.includes(r));
+    if (retailer) {
+      return config;
+    }
+  }
+  
+  // Default to Romania
+  return MARKET_CONFIGS.RO;
+};
+
+// ❌ DON'T: Hardcode single market assumptions
+const scrapePrice = async (url: string) => {
+  const price = await page.$eval('.price', el => el.textContent); // Only works for one retailer
+  return parseFloat(price.replace('lei', '')); // Only works for Romanian currency
+};
+```
+
+### **Competitive Intelligence Foundation**
+```typescript
+// ✅ DO: Track competitive landscape for strategic decisions
+export const trackCompetitorPricing = async (productUrl: string) => {
+  try {
+    // Find competitor URLs for same product
+    const competitorUrls = await findCompetitorUrls(productUrl);
+    
+    const competitorPrices = await Promise.allSettled(
+      competitorUrls.map(async (competitor) => {
+        const result = await scrapeWithFallbacks({ 
+          url: competitor.url,
+          _id: 'temp' 
+        } as Product);
+        
+        return {
+          retailer: competitor.retailer,
+          price: result?.price,
+          url: competitor.url,
+          scrapedAt: new Date()
+        };
+      })
+    );
+    
+    // Store competitive intelligence
+    await CompetitorPrice.create({
+      productUrl,
+      competitors: competitorPrices
+        .filter(p => p.status === 'fulfilled')
+        .map(p => p.value),
+      updatedAt: new Date()
+    });
+    
+  } catch (error) {
+    console.error('Competitive tracking failed:', error);
+    // Non-critical, don't break main flow
+  }
+};
+
+// ❌ DON'T: Ignore competitive landscape
+```
+
+---
+
+## **LEGAL & COMPLIANCE AUTOMATION**
+
+### **Automated GDPR Compliance**
+```typescript
+// ✅ DO: Automate GDPR compliance workflows
+export const handleGDPRRequest = async (type: 'export' | 'delete', userId: string) => {
+  const request = new GDPRRequest({
+    userId,
+    type,
+    status: 'pending',
+    requestedAt: new Date(),
+    ip: request.headers.get('x-forwarded-for'),
+    userAgent: request.headers.get('user-agent')
+  });
+  
+  await request.save();
+  
+  try {
+    if (type === 'export') {
+      const userData = await exportUserData(userId);
+      
+      // Send via secure email
+      await emailQueue.add('gdpr-export', {
+        userId,
+        data: userData,
+        requestId: request._id
+      }, { 
+        priority: 'high',
+        delay: 0 
+      });
+      
+      await GDPRRequest.findByIdAndUpdate(request._id, {
+        status: 'completed',
+        completedAt: new Date()
+      });
+      
+    } else if (type === 'delete') {
+      // 30-day deletion delay for business continuity
+      await emailQueue.add('gdpr-deletion', {
+        userId,
+        requestId: request._id
+      }, { 
+        delay: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+      
+      await GDPRRequest.findByIdAndUpdate(request._id, {
+        status: 'scheduled',
+        scheduledFor: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+    }
+    
+  } catch (error) {
+    await GDPRRequest.findByIdAndUpdate(request._id, {
+      status: 'failed',
+      error: error.message
+    });
+    throw error;
+  }
+};
+
+// ❌ DON'T: Handle GDPR requests manually
+```
+
+---
+
+## **MONITORING & ALERTING**
+
+### **Business-Critical Alerts**
+```typescript
+// ✅ DO: Set up comprehensive business monitoring
+export const monitorBusinessHealth = async () => {
+  const metrics = {
+    scrapingSuccessRate: await calculateScrapingSuccessRate(),
+    activeSubscriptions: await User.countDocuments({ 
+      subscriptionStatus: 'active',
+      subscriptionTier: { $ne: 'free' }
+    }),
+    dailyRevenue: await calculateDailyRevenue(),
+    errorRate: await getErrorRate(),
+    emailDeliveryRate: await getEmailDeliveryRate()
+  };
+  
+  // Alert if scraping success rate drops below 90%
+  if (metrics.scrapingSuccessRate < 0.90) {
+    await emailQueue.add('admin-alert', {
+      type: 'low_scraping_success',
+      rate: metrics.scrapingSuccessRate,
+      severity: 'high'
+    }, { priority: 'high' });
+  }
+  
+  // Alert if no revenue in 24 hours
+  if (metrics.dailyRevenue === 0) {
+    await emailQueue.add('admin-alert', {
+      type: 'no_revenue_24h',
+      severity: 'critical'
+    }, { priority: 'high' });
+  }
+  
+  // Alert if error rate exceeds 5%
+  if (metrics.errorRate > 0.05) {
+    await emailQueue.add('admin-alert', {
+      type: 'high_error_rate',
+      rate: metrics.errorRate,
+      severity: 'medium'
+    }, { priority: 'normal' });
+  }
+  
+  // Store metrics for trending
+  await redis.set(`metrics:health:${Date.now()}`, JSON.stringify(metrics), 'EX', 86400);
+};
+
+// ❌ DON'T: Wait for user complaints to discover issues
+```
+
+---
+
+**REMEMBER:** This is a solo developer business. Every risk that materializes could kill the entire operation. Automate monitoring, prepare for failures, and always have fallbacks ready.
+

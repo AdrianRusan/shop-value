@@ -9,6 +9,15 @@ const Notification = {
 
 const THRESHOLD_PERCENTAGE = 10;
 
+export function formatPrice(price: number, currency: string): string {
+  return new Intl.NumberFormat('ro-RO', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
+}
+
 export function extractPricesFlip($: any) {
   let originalPrice = $('.previous-price.position-relative')
     .text()

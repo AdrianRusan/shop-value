@@ -1,0 +1,595 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Stripe Payment Rules for ShopValue Revenue
+
+## **STRIPE INTEGRATION REQUIREMENTS**
+
+### **Subscription Configuration (Revenue Critical)**
+```typescript
+// ✅ DO: Define exact subscription tiers as per PRD
+// lib/stripe.ts
+export const SUBSCRIPTION_PLANS = {
+  free: {
+    name: 'Free',
+    priceId: null,
+    amount: 0,
+    maxProducts: 5,
+    checkFrequency: 24, // hours
+    features: ['Basic price tracking', 'Daily notifications']
+  },
+  pro: {
+    name: 'Pro',
+    priceIdMonthly: 'price_pro_monthly_eur', // Replace with actual Stripe price ID
+    priceIdYearly: 'price_pro_yearly_eur',   // Replace with actual Stripe price ID
+    amountMonthly: 1999, // €19.99 in cents
+    amountYearly: 19990, // €199.90 in cents (2 months free)
+    maxProducts: 50,
+    checkFrequency: 6, // hours (4x daily)
+    features: ['50 products', 'Real-time alerts', 'Price history', '4x daily checks']
+  },
+  enterprise: {
+    name: 'Enterprise',
+    priceIdMonthly: 'price_enterprise_monthly_eur',
+    priceIdYearly: 'price_enterprise_yearly_eur',
+    amountMonthly: 4999, // €49.99 in cents
+    amountYearly: 49990, // €499.90 in cents
+    maxProducts: Infinity,
+    checkFrequency: 1, // hours (hourly checks)
+    features: ['Unlimited products', 'API access', 'Priority support', 'Hourly checks']
+  }
+};
+
+// ❌ DON'T: Hardcode prices or create inconsistent tiers
+const plans = {
+  basic: { price: 10 }, // Inconsistent with PRD
+  premium: { price: 50 } // Wrong tier names
+};
+```
+
+### **Checkout Session Creation**
+```typescript
+// ✅ DO: Create secure checkout with proper success handling
+// app/api/checkout/route.ts
+import { stripe } from '@/lib/stripe';
+import { requireAuth } from '@/lib/auth';
+import { User } from '@/lib/models/user.model';
+
+export async function POST(request: Request) {
+  try {
+    const user = await requireAuth();
+    const { planId, billing } = await request.json();
+    
+    if (!['pro', 'enterprise'].includes(planId)) {
+      return Response.json({ error: 'Invalid plan' }, { status: 400 });
+    }
+    
+    if (!['monthly', 'yearly'].includes(billing)) {
+      return Response.json({ error: 'Invalid billing cycle' }, { status: 400 });
+    }
+    
+    const plan = SUBSCRIPTION_PLANS[planId];
+    const priceId = billing === 'monthly' ? plan.priceIdMonthly : plan.priceIdYearly;
+    
+    // Create or retrieve Stripe customer
+    let stripeCustomerId = user.stripeCustomerId;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        metadata: {
+          clerkId: user.clerkId,
+          userId: user._id.toString()
+        }
+      });
+      
+      stripeCustomerId = customer.id;
+      await User.findOneAndUpdate(
+        { clerkId: user.clerkId },
+        { stripeCustomerId }
+      );
+    }
+    
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+      metadata: {
+        userId: user.clerkId,
+        planId,
+        billing
+      },
+      subscription_data: {
+        metadata: {
+          userId: user.clerkId,
+          planId,
+          billing
+        }
+      },
+      customer_update: {
+        address: 'auto',
+        name: 'auto'
+      },
+      tax_id_collection: {
+        enabled: true // Important for EU VAT compliance
+      },
+      automatic_tax: {
+        enabled: true
+      }
+    });
+    
+    return Response.json({ url: session.url });
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error('Checkout session creation failed:', error);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// ❌ DON'T: Skip customer creation or metadata
+const session = await stripe.checkout.sessions.create({
+  line_items: [{ price: 'price_id', quantity: 1 }],
+  mode: 'subscription',
+  success_url: 'https://example.com/success',
+  cancel_url: 'https://example.com/cancel'
+}); // Missing customer, metadata, tax handling
+```
+
+### **Webhook Handler (Revenue Critical)**
+```typescript
+// ✅ DO: Handle all subscription lifecycle events
+// app/api/webhooks/stripe/route.ts
+import { stripe } from '@/lib/stripe';
+import { User } from '@/lib/models/user.model';
+import { trackBusinessEvent } from '@/lib/analytics';
+
+export async function POST(request: Request) {
+  const body = await request.text();
+  const signature = request.headers.get('stripe-signature');
+  
+  if (!signature) {
+    return Response.json({ error: 'No signature' }, { status: 400 });
+  }
+  
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (error) {
+    console.error('Webhook signature verification failed:', error);
+    return Response.json({ error: 'Invalid signature' }, { status: 400 });
+  }
+  
+  switch (event.type) {
+    case 'customer.subscription.created':
+      await handleSubscriptionCreated(event.data.object);
+      break;
+    case 'customer.subscription.updated':
+      await handleSubscriptionUpdated(event.data.object);
+      break;
+    case 'customer.subscription.deleted':
+      await handleSubscriptionDeleted(event.data.object);
+      break;
+    case 'invoice.payment_succeeded':
+      await handlePaymentSucceeded(event.data.object);
+      break;
+    case 'invoice.payment_failed':
+      await handlePaymentFailed(event.data.object);
+      break;
+    case 'customer.subscription.trial_will_end':
+      await handleTrialWillEnd(event.data.object);
+      break;
+    case 'checkout.session.completed':
+      await handleCheckoutCompleted(event.data.object);
+      break;
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+  
+  return Response.json({ received: true });
+}
+
+// ❌ DON'T: Skip webhook signature verification or missing events
+export async function POST(request: Request) {
+  const event = await request.json(); // No signature verification
+  // Handle events without security
+}
+```
+
+### **Subscription Created Handler**
+```typescript
+// ✅ DO: Complete subscription activation with tracking
+const handleSubscriptionCreated = async (subscription: any) => {
+  try {
+    const userId = subscription.metadata.userId;
+    const planId = subscription.metadata.planId;
+    const billing = subscription.metadata.billing;
+    
+    if (!userId || !planId) {
+      throw new Error('Missing metadata in subscription');
+    }
+    
+    // Update user subscription
+    await User.findOneAndUpdate(
+      { clerkId: userId },
+      {
+        subscriptionTier: planId,
+        subscriptionStatus: subscription.status,
+        stripeSubscriptionId: subscription.id,
+        stripeCustomerId: subscription.customer,
+        subscriptionStartDate: new Date(subscription.created * 1000),
+        subscriptionCurrentPeriodStart: new Date(subscription.current_period_start * 1000),
+        subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        billingCycle: billing,
+        updatedAt: new Date()
+      }
+    );
+    
+    // Track business event
+    await trackBusinessEvent('subscription_started', userId, {
+      plan: planId,
+      billing_cycle: billing,
+      amount: subscription.items.data[0].price.unit_amount,
+      currency: subscription.items.data[0].price.currency,
+      trial_used: subscription.trial_end ? true : false,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Trigger subscription confirmation email
+    await emailQueue.add('subscription-confirmation', {
+      userId,
+      planId,
+      billing,
+      amount: subscription.items.data[0].price.unit_amount,
+      nextBillingDate: new Date(subscription.current_period_end * 1000)
+    });
+    
+    // Update MRR metrics
+    const monthlyAmount = billing === 'yearly' 
+      ? subscription.items.data[0].price.unit_amount / 12 
+      : subscription.items.data[0].price.unit_amount;
+    
+    await redis.incrby('metrics:mrr:current', monthlyAmount);
+    
+    console.log(`Subscription created for user ${userId}: ${planId}`);
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error('Error handling subscription creation:', error);
+  }
+};
+
+// ❌ DON'T: Update subscription without proper tracking
+const handleSubscriptionCreated = async (subscription: any) => {
+  await User.findOneAndUpdate(
+    { stripeCustomerId: subscription.customer },
+    { subscriptionTier: 'pro' } // Missing validation and tracking
+  );
+};
+```
+
+### **Payment Failed Handler (Retention Critical)**
+```typescript
+// ✅ DO: Handle payment failures with customer communication
+const handlePaymentFailed = async (invoice: any) => {
+  try {
+    const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+    const customer = await stripe.customers.retrieve(subscription.customer);
+    const userId = subscription.metadata.userId;
+    
+    if (!userId) {
+      console.error('No userId in subscription metadata');
+      return;
+    }
+    
+    // Update user status
+    await User.findOneAndUpdate(
+      { clerkId: userId },
+      {
+        subscriptionStatus: 'past_due',
+        paymentIssue: {
+          hasIssue: true,
+          lastFailedAt: new Date(),
+          attemptCount: (await User.findOne({ clerkId: userId }))?.paymentIssue?.attemptCount + 1 || 1
+        }
+      }
+    );
+    
+    // Track business event
+    await trackBusinessEvent('payment_failed', userId, {
+      subscription_id: subscription.id,
+      amount: invoice.amount_due,
+      attempt_count: invoice.attempt_count,
+      next_payment_attempt: invoice.next_payment_attempt 
+        ? new Date(invoice.next_payment_attempt * 1000) 
+        : null,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Send payment failure notification
+    await emailQueue.add('payment-failed', {
+      userId,
+      email: customer.email,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      retryDate: invoice.next_payment_attempt 
+        ? new Date(invoice.next_payment_attempt * 1000) 
+        : null,
+      updatePaymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/billing`
+    }, {
+      priority: 'high' // High priority for retention
+    });
+    
+    console.log(`Payment failed for user ${userId}, attempt ${invoice.attempt_count}`);
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error('Error handling payment failure:', error);
+  }
+};
+
+// ❌ DON'T: Ignore payment failures or skip customer communication
+```
+
+### **Subscription Cancelled Handler**
+```typescript
+// ✅ DO: Handle cancellation with retention attempt
+const handleSubscriptionDeleted = async (subscription: any) => {
+  try {
+    const userId = subscription.metadata.userId;
+    
+    if (!userId) {
+      console.error('No userId in subscription metadata');
+      return;
+    }
+    
+    const user = await User.findOneAndUpdate(
+      { clerkId: userId },
+      {
+        subscriptionTier: 'free',
+        subscriptionStatus: 'canceled',
+        subscriptionEndDate: new Date(),
+        canceledAt: new Date()
+      },
+      { new: true }
+    );
+    
+    // Track churn event
+    await trackBusinessEvent('subscription_canceled', userId, {
+      plan: user.subscriptionTier,
+      billing_cycle: user.billingCycle,
+      time_to_churn: Date.now() - user.subscriptionStartDate?.getTime(),
+      reason: subscription.cancellation_details?.reason || 'unknown',
+      timestamp: new Date().toISOString()
+    });
+    
+    // Update MRR metrics
+    const plan = SUBSCRIPTION_PLANS[user.subscriptionTier];
+    const monthlyAmount = user.billingCycle === 'yearly' 
+      ? plan?.amountYearly / 12 
+      : plan?.amountMonthly;
+    
+    if (monthlyAmount) {
+      await redis.decrby('metrics:mrr:current', monthlyAmount);
+      await redis.incr('metrics:churn:monthly');
+    }
+    
+    // Send cancellation confirmation and win-back email
+    await emailQueue.add('subscription-canceled', {
+      userId,
+      email: user.email,
+      feedback_url: `${process.env.NEXT_PUBLIC_APP_URL}/feedback?reason=cancellation`,
+      winback_offer: {
+        discount: 20, // 20% off for 3 months
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      }
+    });
+    
+    console.log(`Subscription canceled for user ${userId}`);
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error('Error handling subscription cancellation:', error);
+  }
+};
+
+// ❌ DON'T: Let users cancel without retention efforts
+```
+
+### **Customer Portal Integration**
+```typescript
+// ✅ DO: Provide self-service billing management
+// app/api/customer-portal/route.ts
+export async function POST(request: Request) {
+  try {
+    const user = await requireAuth();
+    
+    if (!user.stripeCustomerId) {
+      return Response.json({ error: 'No Stripe customer found' }, { status: 400 });
+    }
+    
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      configuration: {
+        business_profile: {
+          headline: 'ShopValue - Manage your subscription',
+        },
+        features: {
+          payment_method_update: { enabled: true },
+          invoice_history: { enabled: true },
+          customer_update: {
+            enabled: true,
+            allowed_updates: ['address', 'email', 'tax_id']
+          },
+          subscription_cancel: {
+            enabled: true,
+            mode: 'at_period_end',
+            cancellation_reason: {
+              enabled: true,
+              options: [
+                'too_expensive',
+                'missing_features', 
+                'switched_service',
+                'customer_service',
+                'low_quality',
+                'unused',
+                'other'
+              ]
+            }
+          },
+          subscription_update: {
+            enabled: true,
+            default_allowed_updates: ['price', 'quantity'],
+            proration_behavior: 'create_prorations'
+          }
+        }
+      }
+    });
+    
+    return Response.json({ url: portalSession.url });
+    
+  } catch (error) {
+    Sentry.captureException(error);
+    console.error('Customer portal creation failed:', error);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// ❌ DON'T: Force users to contact support for billing changes
+```
+
+---
+
+## **SUBSCRIPTION MANAGEMENT**
+
+### **Usage Limit Enforcement**
+```typescript
+// ✅ DO: Enforce subscription limits consistently
+export const checkSubscriptionLimits = async (userId: string, action: 'add_product' | 'api_call') => {
+  const user = await User.findOne({ clerkId: userId });
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  const plan = SUBSCRIPTION_PLANS[user.subscriptionTier];
+  
+  if (action === 'add_product') {
+    const currentCount = await UserProductTracking.countDocuments({ 
+      userId, 
+      isActive: true 
+    });
+    
+    if (currentCount >= plan.maxProducts) {
+      throw new Error(`Product limit reached. Upgrade to add more products. Current: ${currentCount}/${plan.maxProducts}`);
+    }
+  }
+  
+  // Check trial expiration for free users
+  if (user.subscriptionTier === 'free' && user.trialEndDate && new Date() > user.trialEndDate) {
+    throw new Error('Free trial expired. Please upgrade to continue.');
+  }
+  
+  return true;
+};
+
+// ❌ DON'T: Allow unlimited usage without checks
+const addProduct = async (userId: string, productUrl: string) => {
+  // Add without checking limits
+  await UserProductTracking.create({ userId, productUrl });
+};
+```
+
+### **Revenue Analytics Integration**
+```typescript
+// ✅ DO: Track all revenue metrics
+export const updateMRRMetrics = async (event: string, subscription: any) => {
+  const planId = subscription.metadata.planId;
+  const billing = subscription.metadata.billing;
+  const plan = SUBSCRIPTION_PLANS[planId];
+  
+  if (!plan) return;
+  
+  const monthlyAmount = billing === 'yearly' 
+    ? (billing === 'yearly' ? plan.amountYearly / 12 : plan.amountMonthly)
+    : plan.amountMonthly;
+  
+  switch (event) {
+    case 'subscription_started':
+      await redis.incrby('metrics:mrr:current', monthlyAmount);
+      await redis.incr(`metrics:new_subscribers:${planId}`);
+      break;
+    case 'subscription_canceled':
+      await redis.decrby('metrics:mrr:current', monthlyAmount);
+      await redis.incr(`metrics:churn:${planId}`);
+      break;
+    case 'subscription_upgraded':
+      // Handle upgrade from old plan to new plan
+      const oldMonthlyAmount = subscription.metadata.oldMonthlyAmount;
+      await redis.decrby('metrics:mrr:current', oldMonthlyAmount);
+      await redis.incrby('metrics:mrr:current', monthlyAmount);
+      await redis.incr('metrics:upgrades');
+      break;
+  }
+  
+  // Update daily metrics
+  const today = new Date().toISOString().split('T')[0];
+  await redis.incrby(`metrics:mrr:daily:${today}`, 
+    event === 'subscription_canceled' ? -monthlyAmount : monthlyAmount
+  );
+};
+
+// ❌ DON'T: Skip revenue tracking - you need this data for business decisions
+```
+
+---
+
+## **PRICING STRATEGY ENFORCEMENT**
+
+### **Dynamic Pricing Support**
+```typescript
+// ✅ DO: Support A/B testing for pricing
+export const getPricingForUser = async (userId: string) => {
+  const user = await User.findOne({ clerkId: userId });
+  
+  // Default pricing
+  let pricing = SUBSCRIPTION_PLANS;
+  
+  // A/B test pricing (example: 10% discount test)
+  if (user?.metadata?.pricingTest === 'discount_10') {
+    pricing = {
+      ...SUBSCRIPTION_PLANS,
+      pro: {
+        ...SUBSCRIPTION_PLANS.pro,
+        amountMonthly: Math.round(SUBSCRIPTION_PLANS.pro.amountMonthly * 0.9),
+        amountYearly: Math.round(SUBSCRIPTION_PLANS.pro.amountYearly * 0.9)
+      }
+    };
+  }
+  
+  return pricing;
+};
+
+// ❌ DON'T: Hardcode pricing without flexibility for optimization
+```
+
+---
+
+**REMEMBER:** Payment integration is your revenue engine. Every failed payment is lost revenue, every successful upgrade is growth. Monitor, optimize, and automate relentlessly.
+

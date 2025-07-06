@@ -38,3 +38,27 @@ next-env.d.ts
 
 playwright-report
 test-results
+
+# Logs
+logs
+*.log
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cursor MCP configuration (contains API keys)
+.cursor/mcp.json
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/ 

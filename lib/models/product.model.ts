@@ -345,8 +345,8 @@ const productSchema = new mongoose.Schema<IProduct>({
   
   // Soft delete
   deletedAt: {
-    type: Date,
-    index: true
+    type: Date
+    // Index removed to avoid duplicate with compound indexes
   }
 }, {
   timestamps: true,
@@ -355,10 +355,10 @@ const productSchema = new mongoose.Schema<IProduct>({
   toObject: { virtuals: true }
 });
 
-// Compound indexes for optimized queries
+// Compound indexes for optimized queries - optimized to avoid duplicates
 productSchema.index({ brand: 1, category: 1 });
 productSchema.index({ currentPrice: 1, brand: 1 });
-productSchema.index({ tenantId: 1, isActive: 1 });
+productSchema.index({ tenantId: 1, isActive: 1, deletedAt: 1 }); // Added deletedAt
 productSchema.index({ tenantId: 1, trackingStatus: 1 });
 productSchema.index({ source: 1, lastScrapedAt: 1 });
 productSchema.index({ category: 1, currentPrice: 1 });
@@ -366,6 +366,7 @@ productSchema.index({ brand: 1, productModel: 1, isActive: 1 });
 productSchema.index({ 'analytics.popularityScore': -1, isActive: 1 });
 productSchema.index({ nextScrapeAt: 1, trackingStatus: 1 });
 productSchema.index({ createdAt: 1, tenantId: 1 });
+productSchema.index({ deletedAt: 1, isActive: 1 }); // For soft delete queries
 
 // Text search index
 productSchema.index({

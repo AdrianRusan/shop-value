@@ -1,0 +1,701 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# ShopValue SaaS Project Development Rules
+
+## **PROJECT CONTEXT & GOALS**
+
+**Mission:** Build a fully automated, revenue-generating price tracking SaaS for Romanian market targeting €2-5K MRR in 6 months with <2 hours/week maintenance.
+
+**Revenue Model:**
+- Free: 5 products, daily checks
+- Pro: €19.99/month, 50 products, 4x daily checks, price history
+- Enterprise: €49.99/month, unlimited products, API access, hourly checks
+
+**Key Success Metrics:**
+- 1,000+ users by month 6
+- 15% trial-to-paid conversion rate
+- 5% monthly churn rate
+- >95% email delivery rate
+- <200ms API response time
+- >95% scraping success rate
+
+---
+
+## **MANDATORY TECH STACK (NO SUBSTITUTIONS)**
+
+### **Frontend & Framework**
+- **Next.js 14 (App Router)** - ONLY App Router, no Pages Router
+- **TypeScript** - Strict mode enabled, no `any` types
+- **Tailwind CSS** - Utility-first styling, no CSS modules or styled-components
+- **Shadcn/ui** - Component library, no other UI libraries
+
+### **Authentication**
+- **Clerk** - ONLY Clerk for authentication, no custom auth
+- Must implement all webhooks: user.created, user.updated, user.deleted, session.created
+- Use middleware.ts for route protection
+
+### **Payments**
+- **Stripe** - ONLY Stripe for payments, no other processors
+- Must implement all webhooks: subscription lifecycle, payment events
+- Use Stripe Customer Portal for subscription management
+- Must support both monthly and annual billing
+
+### **Database**
+- **MongoDB Atlas** - ONLY MongoDB, no PostgreSQL or other databases
+- Use Mongoose for ODM
+- Must implement all specified indexes from PRD
+- TTL indexes for automatic data cleanup
+
+### **Caching**
+- **Upstash Redis** - ONLY Upstash, no other Redis services
+- Implement caching for all API endpoints
+- Cache invalidation on data updates
+
+### **Email**
+- **Resend** - ONLY Resend for emails, no SendGrid or others
+- Use React Email for templates
+- Implement email queue with Bull/BullMQ
+
+### **Monitoring**
+- **Sentry** - Error tracking and performance monitoring
+- **Amplitude** - User analytics and event tracking
+- **Vercel Analytics** - Web vitals and performance
+
+### **Hosting**
+- **Vercel** - ONLY Vercel for deployment, no AWS/GCP/Azure
+- Configure all cron jobs in vercel.json
+- Use Edge functions where appropriate
+
+---
+
+## **CODE QUALITY REQUIREMENTS**
+
+### **TypeScript Standards**
+```typescript
+// ✅ DO: Strict typing with interfaces
+interface User {
+  clerkId: string;
+  email: string;
+  subscriptionTier: 'free' | 'pro' | 'enterprise';
+  subscriptionStatus: 'active' | 'canceled' | 'past_due' | 'trialing';
+}
+
+// ❌ DON'T: Any types or loose typing
+const user: any = {};
+const userData = {}; // No implicit any
+```
+
+### **Error Handling Standards**
+```typescript
+// ✅ DO: Comprehensive error handling with Sentry
+try {
+  const result = await riskyOperation();
+  return { success: true, data: result };
+} catch (error) {
+  Sentry.captureException(error);
+  console.error('Operation failed:', error);
+  return { success: false, error: 'Operation failed' };
+}
+
+// ❌ DON'T: Silent failures or bare try/catch
+try {
+  await riskyOperation();
+} catch (error) {
+  // Silent failure
+}
+```
+
+### **Database Schema Enforcement**
+```typescript
+// ✅ DO: Use exact schemas from PRD
+const ProductSchema = new mongoose.Schema({
+  url: { type: String, required: true, unique: true, index: true },
+  title: { type: String, required: true, index: true },
+  brand: { type: String, required: true, index: true },
+  category: { type: String, required: true, index: true },
+  currentPrice: { type: Number, required: true, index: true },
+  // ... exact schema from PRD
+});
+
+// ❌ DON'T: Modify schemas without updating PRD
+const ProductSchema = new mongoose.Schema({
+  name: String, // Wrong field name
+  cost: Number, // Wrong field name
+});
+```
+
+---
+
+## **API DEVELOPMENT RULES**
+
+### **API Route Structure**
+```typescript
+// ✅ DO: Consistent API response format
+export async function GET(request: Request) {
+  try {
+    const data = await fetchData();
+    return Response.json({ 
+      success: true, 
+      data,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return Response.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+
+// ❌ DON'T: Inconsistent response formats
+export async function GET(request: Request) {
+  const data = await fetchData();
+  return Response.json(data); // No error handling
+}
+```
+
+### **Input Validation**
+```typescript
+// ✅ DO: Use Zod for all input validation
+import { z } from 'zod';
+
+const ProductAddSchema = z.object({
+  url: z.string().url(),
+  priceThreshold: z.number().positive().optional(),
+});
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const validation = ProductAddSchema.safeParse(body);
+  
+  if (!validation.success) {
+    return Response.json({ 
+      success: false, 
+      error: validation.error.errors 
+    }, { status: 400 });
+  }
+  // Process validated data
+}
+
+// ❌ DON'T: Skip input validation
+export async function POST(request: Request) {
+  const body = await request.json();
+  // Direct use without validation
+}
+```
+
+### **Caching Implementation**
+```typescript
+// ✅ DO: Implement caching for all GET endpoints
+import { redis } from '@/lib/upstash';
+
+export async function GET(request: Request) {
+  const cacheKey = `products:${searchTerm}`;
+  
+  // Try cache first
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return Response.json({ 
+      success: true, 
+      data: cached, 
+      cached: true 
+    });
+  }
+  
+  // Fetch and cache
+  const data = await fetchProducts(searchTerm);
+  await redis.setex(cacheKey, 3600, data);
+  
+  return Response.json({ success: true, data, cached: false });
+}
+
+// ❌ DON'T: Skip caching for expensive operations
+export async function GET(request: Request) {
+  const data = await expensiveDbQuery(); // No caching
+  return Response.json(data);
+}
+```
+
+---
+
+## **AUTOMATION REQUIREMENTS**
+
+### **Webhook Implementation**
+```typescript
+// ✅ DO: Implement all required webhooks with error handling
+export async function POST(request: Request) {
+  const signature = request.headers.get('stripe-signature');
+  const body = await request.text();
+  
+  try {
+    const event = stripe.webhooks.constructEvent(
+      body, 
+      signature!, 
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+    
+    switch (event.type) {
+      case 'customer.subscription.created':
+        await handleSubscriptionCreated(event.data.object);
+        break;
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object);
+        break;
+      // Handle all webhook types from PRD
+    }
+    
+    return Response.json({ received: true });
+  } catch (error) {
+    Sentry.captureException(error);
+    return Response.json({ error: 'Webhook failed' }, { status: 400 });
+  }
+}
+
+// ❌ DON'T: Skip webhook signature verification
+export async function POST(request: Request) {
+  const event = await request.json(); // No verification
+  // Process event
+}
+```
+
+### **Email Queue Implementation**
+```typescript
+// ✅ DO: Use proper email queue with retry logic
+import { Queue } from 'bullmq';
+import { redis } from '@/lib/upstash';
+
+const emailQueue = new Queue('email-processing', {
+  connection: redis,
+  defaultJobOptions: {
+    removeOnComplete: 100,
+    removeOnFail: 50,
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+  },
+});
+
+// ❌ DON'T: Send emails directly without queue
+await resend.emails.send({
+  to: user.email,
+  subject: 'Price Alert',
+  react: PriceAlertEmail({ product })
+}); // No retry logic
+```
+
+---
+
+## **TESTING REQUIREMENTS**
+
+### **Unit Testing Standards**
+```typescript
+// ✅ DO: Test all utility functions and components
+import { render, screen } from '@testing-library/react';
+import { ProductCard } from '@/components/ProductCard';
+
+describe('ProductCard', () => {
+  it('should display product information correctly', () => {
+    const product = {
+      title: 'Test Product',
+      currentPrice: 99.99,
+      originalPrice: 129.99,
+      // ... complete product object
+    };
+    
+    render(<ProductCard product={product} />);
+    
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+    expect(screen.getByText('€99.99')).toBeInTheDocument();
+  });
+  
+  it('should handle price alert configuration', async () => {
+    // Test price alert functionality
+  });
+});
+
+// ❌ DON'T: Skip testing critical components
+// No tests for payment flows, user authentication, etc.
+```
+
+### **E2E Testing for Critical Flows**
+```typescript
+// ✅ DO: Test complete user journeys
+import { test, expect } from '@playwright/test';
+
+test('user registration to first product tracking', async ({ page }) => {
+  await page.goto('/');
+  
+  // Test registration
+  await page.click('[data-testid=register-button]');
+  await page.fill('[data-testid=email-input]', 'test@example.com');
+  await page.fill('[data-testid=password-input]', 'securePassword123');
+  await page.click('[data-testid=submit-button]');
+  
+  // Test product addition
+  await page.fill('[data-testid=product-url-input]', 'https://flip.ro/...');
+  await page.click('[data-testid=add-product-button]');
+  
+  // Verify product was added
+  await expect(page.locator('[data-testid=tracked-products]')).toContainText('Product Name');
+});
+
+// ❌ DON'T: Skip E2E tests for payment flows
+```
+
+---
+
+## **PERFORMANCE REQUIREMENTS**
+
+### **Database Query Optimization**
+```typescript
+// ✅ DO: Use proper indexing and aggregation
+const products = await Product.find({
+  brand: brandName,
+  category: categoryName,
+  currentPrice: { $lte: maxPrice }
+}).sort({ popularity: -1 }).limit(20).lean(); // Use lean() for read-only
+
+// Use aggregation for complex queries
+const userStats = await UserProductTracking.aggregate([
+  { $match: { userId: clerkUserId } },
+  { $group: { 
+    _id: null, 
+    totalProducts: { $sum: 1 },
+    alertsEnabled: { $sum: { $cond: ['$priceAlert.enabled', 1, 0] }}
+  }}
+]);
+
+// ❌ DON'T: Use inefficient queries
+const allProducts = await Product.find({}); // No filtering
+const userProducts = allProducts.filter(p => p.userId === userId); // Client-side filtering
+```
+
+### **Component Performance**
+```typescript
+// ✅ DO: Use proper React optimization
+import { memo, useMemo, useCallback } from 'react';
+
+const ProductCard = memo(({ product, onAlertUpdate }) => {
+  const priceChangePercentage = useMemo(() => {
+    return ((product.currentPrice - product.originalPrice) / product.originalPrice) * 100;
+  }, [product.currentPrice, product.originalPrice]);
+  
+  const handleAlertUpdate = useCallback((threshold: number) => {
+    onAlertUpdate(product.id, threshold);
+  }, [product.id, onAlertUpdate]);
+  
+  return (
+    // Component JSX
+  );
+});
+
+// ❌ DON'T: Create unnecessary re-renders
+const ProductCard = ({ product, onAlertUpdate }) => {
+  const priceChangePercentage = ((product.currentPrice - product.originalPrice) / product.originalPrice) * 100; // Calculated on every render
+  
+  return (
+    <div onClick={() => onAlertUpdate(product.id, Math.random())}> // New function on every render
+      {/* Component JSX */}
+    </div>
+  );
+};
+```
+
+---
+
+## **SECURITY REQUIREMENTS**
+
+### **Input Sanitization**
+```typescript
+// ✅ DO: Sanitize all user inputs
+import DOMPurify from 'isomorphic-dompurify';
+import { z } from 'zod';
+
+const sanitizeHtml = (html: string) => DOMPurify.sanitize(html);
+
+const UserInputSchema = z.object({
+  productName: z.string().max(100).regex(/^[a-zA-Z0-9\s\-_]+$/),
+  priceThreshold: z.number().positive().max(1000000),
+});
+
+// ❌ DON'T: Trust user input
+const updateProduct = async (productName: string) => {
+  // Direct database query with user input
+  await Product.updateOne({ name: productName }, { /* update */ });
+};
+```
+
+### **Rate Limiting**
+```typescript
+// ✅ DO: Implement rate limiting on all API endpoints
+import { Ratelimit } from '@upstash/ratelimit';
+import { redis } from '@/lib/upstash';
+
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '1 m'), // 10 requests per minute
+});
+
+export async function POST(request: Request) {
+  const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
+  const { success } = await ratelimit.limit(ip);
+  
+  if (!success) {
+    return Response.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  }
+  
+  // Process request
+}
+
+// ❌ DON'T: Skip rate limiting on API endpoints
+```
+
+---
+
+## **DEPLOYMENT & ENVIRONMENT RULES**
+
+### **Environment Variable Management**
+```typescript
+// ✅ DO: Validate all environment variables at startup
+import { z } from 'zod';
+
+const envSchema = z.object({
+  CLERK_SECRET_KEY: z.string().startsWith('sk_'),
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
+  MONGODB_URI: z.string().startsWith('mongodb'),
+  RESEND_API_KEY: z.string().startsWith('re_'),
+  UPSTASH_REDIS_REST_URL: z.string().url(),
+  UPSTASH_REDIS_REST_TOKEN: z.string(),
+});
+
+const env = envSchema.parse(process.env);
+
+// ❌ DON'T: Use environment variables without validation
+const apiKey = process.env.SOME_API_KEY; // Could be undefined
+```
+
+### **Vercel Configuration**
+```json
+// ✅ DO: Proper vercel.json configuration
+{
+  "functions": {
+    "app/api/cron/route.ts": { "maxDuration": 300 },
+    "app/api/webhooks/*/route.ts": { "maxDuration": 60 },
+    "app/api/scraping/route.ts": { "maxDuration": 180 }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/scrape-products",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/process-alerts", 
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
+
+// ❌ DON'T: Missing timeout configurations for long-running functions
+```
+
+---
+
+## **BUSINESS LOGIC REQUIREMENTS**
+
+### **Subscription Tier Enforcement**
+```typescript
+// ✅ DO: Enforce subscription limits consistently
+const checkSubscriptionLimits = async (userId: string, action: 'add_product' | 'set_alert') => {
+  const user = await User.findOne({ clerkId: userId });
+  const usage = await UserProductTracking.countDocuments({ userId, isActive: true });
+  
+  const limits = {
+    free: { maxProducts: 5, features: ['basic_alerts'] },
+    pro: { maxProducts: 50, features: ['advanced_alerts', 'price_history'] },
+    enterprise: { maxProducts: Infinity, features: ['api_access', 'priority_support'] }
+  };
+  
+  const userLimits = limits[user.subscriptionTier];
+  
+  if (action === 'add_product' && usage >= userLimits.maxProducts) {
+    throw new Error('Subscription limit reached. Please upgrade.');
+  }
+  
+  return true;
+};
+
+// ❌ DON'T: Skip subscription limit checks
+const addProduct = async (userId: string, productUrl: string) => {
+  // Add product without checking limits
+  await UserProductTracking.create({ userId, productUrl });
+};
+```
+
+### **Price Alert Logic**
+```typescript
+// ✅ DO: Implement smart price alert logic
+const processPriceAlert = async (product: Product, newPrice: number) => {
+  const priceChange = ((newPrice - product.currentPrice) / product.currentPrice) * 100;
+  
+  if (priceChange <= -5) { // 5% or more price drop
+    const trackers = await UserProductTracking.find({
+      productId: product._id,
+      isActive: true,
+      'priceAlert.enabled': true,
+      $or: [
+        { 'priceAlert.thresholdType': 'percentage', 'priceAlert.threshold': { $gte: Math.abs(priceChange) } },
+        { 'priceAlert.thresholdType': 'fixed', 'priceAlert.threshold': { $gte: newPrice } }
+      ]
+    });
+    
+    for (const tracker of trackers) {
+      await emailQueue.add('price-alert', {
+        userId: tracker.userId,
+        productId: product._id,
+        oldPrice: product.currentPrice,
+        newPrice,
+        priceChange
+      });
+    }
+  }
+};
+
+// ❌ DON'T: Send alerts without proper threshold checking
+```
+
+---
+
+## **CRITICAL SUCCESS FACTORS**
+
+### **Must Implement for Revenue Generation**
+1. **Perfect Stripe Integration:** All webhooks, customer portal, failed payment handling
+2. **Reliable Email Delivery:** Queue system, template optimization, deliverability monitoring
+3. **Robust Scraping:** Error handling, proxy rotation, graceful degradation
+4. **User Onboarding:** Conversion-optimized flow with analytics tracking
+5. **Admin Dashboard:** Real-time metrics for business monitoring
+
+### **Must Monitor for Business Health**
+```typescript
+// ✅ DO: Track all critical business metrics
+const trackBusinessEvent = async (event: string, userId: string, properties: Record<string, any>) => {
+  // Amplitude tracking
+  amplitude.track(event, { userId, ...properties });
+  
+  // Custom business metrics
+  if (event === 'subscription_started') {
+    await redis.incr('metrics:mrr:daily');
+    await redis.incr(`metrics:conversions:${properties.plan}`);
+  }
+  
+  if (event === 'subscription_canceled') {
+    await redis.incr('metrics:churn:daily');
+  }
+};
+
+// ❌ DON'T: Skip business metrics tracking
+```
+
+### **Performance Targets (Non-Negotiable)**
+- API Response Time: <200ms average
+- Page Load Time: <2 seconds
+- Email Delivery Rate: >95%
+- Scraping Success Rate: >95%
+- Uptime: >99.9%
+
+---
+
+## **RISK MITIGATION REQUIREMENTS**
+
+### **Scraping Resilience**
+```typescript
+// ✅ DO: Implement multiple fallback strategies
+const scrapePriceWithFallbacks = async (product: Product): Promise<number | null> => {
+  const strategies = [
+    () => scrapeWithPuppeteer(product.url),
+    () => scrapeWithPlaywright(product.url),
+    () => scrapeWithAPI(product.url),
+    () => getLastKnownPrice(product._id)
+  ];
+  
+  for (const strategy of strategies) {
+    try {
+      const price = await strategy();
+      if (price && price > 0) {
+        return price;
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+      continue; // Try next strategy
+    }
+  }
+  
+  return null; // All strategies failed
+};
+
+// ❌ DON'T: Rely on single scraping method
+const scrapePrice = async (url: string) => {
+  return await puppeteer.scrape(url); // Single point of failure
+};
+```
+
+### **Data Backup & Recovery**
+```typescript
+// ✅ DO: Implement data export for GDPR compliance
+export async function GET(request: Request) {
+  const { userId } = auth();
+  
+  const userData = {
+    profile: await User.findOne({ clerkId: userId }),
+    trackedProducts: await UserProductTracking.find({ userId }),
+    priceHistory: await PriceHistory.find({ 
+      productId: { $in: trackedProducts.map(t => t.productId) }
+    })
+  };
+  
+  return Response.json({
+    success: true,
+    data: userData,
+    exportDate: new Date().toISOString()
+  });
+}
+
+// ❌ DON'T: Skip GDPR compliance features
+```
+
+---
+
+## **DEVELOPMENT WORKFLOW ENFORCEMENT**
+
+### **Git Commit Standards**
+```bash
+# ✅ DO: Use conventional commits
+feat(auth): implement Clerk webhook handling for user lifecycle
+fix(scraping): add retry logic for failed price checks
+chore(deps): update dependencies for security patches
+
+# ❌ DON'T: Vague commit messages
+fixed bug
+updated stuff
+working on payments
+```
+
+### **Code Review Requirements**
+Before merging any code, ensure:
+- [ ] All tests pass (>80% coverage)
+- [ ] TypeScript compiles without errors
+- [ ] Performance budget met (<2s page load)
+- [ ] Security scan passes (no high/critical vulnerabilities)
+- [ ] Follows all patterns in this rule file
+- [ ] Business metrics tracking implemented
+- [ ] Error handling with Sentry integration
+- [ ] Proper caching implementation
+
+---
+
+**REMEMBER:** This is a revenue-generating SaaS for a solo developer. Every decision should optimize for automation, reliability, and minimal maintenance while maximizing user conversion and retention.
+

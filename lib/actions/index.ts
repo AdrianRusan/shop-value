@@ -5,7 +5,7 @@ import ProductModel from '../models/product.model';
 import { connectToDB } from '../mongoose';
 import { scrapeFlipProduct } from '../scraper';
 import { getAveragePrice, getHighestPrice, getLowestPrice } from '../utils';
-import { generateEmailBody, sendEmail } from '../nodemailer';
+import { emailService } from '../resend';
 import { User, Product } from '@/types';
 import { Types } from 'mongoose';
 
@@ -68,11 +68,11 @@ export async function getProductById(productId: string): Promise<Product | null>
 
     if (!product) return null;
 
-    // Convert to proper Product type
-    return {
+    // Properly serialize the data to avoid Next.js warnings about toJSON methods
+    return JSON.parse(JSON.stringify({
       ...product,
       _id: product._id?.toString(), // Convert ObjectId to string
-    } as Product;
+    })) as Product;
   } catch (error) {
     console.log(error);
     return null;
@@ -191,11 +191,11 @@ export async function getAllProducts(): Promise<Product[]> {
 
     const products = await ProductModel.find().lean();
 
-    // Convert to proper Product type
-    return products.map(product => ({
+    // Properly serialize the data to avoid Next.js warnings about toJSON methods
+    return JSON.parse(JSON.stringify(products.map(product => ({
       ...product,
       _id: product._id?.toString(), // Convert ObjectId to string
-    })) as Product[];
+    })))) as Product[];
   } catch (error) {
     console.log(error);
     return [];
@@ -215,11 +215,11 @@ export async function getSimilarProducts(productId: string): Promise<Product[]> 
       brand: currentProduct.brand,
     }).limit(4).lean();
 
-    // Convert to proper Product type
-    return similarProducts.map(product => ({
+    // Properly serialize the data to avoid Next.js warnings about toJSON methods
+    return JSON.parse(JSON.stringify(similarProducts.map(product => ({
       ...product,
       _id: product._id?.toString(), // Convert ObjectId to string
-    })) as Product[];
+    })))) as Product[];
   } catch (error) {
     console.log(error);
     return [];
@@ -231,32 +231,51 @@ export async function addUserEmailToProduct(
   userEmail: string
 ) {
   try {
-    const product = await ProductModel.findById(productId);
+    // First check if the product exists and if user already tracks it
+    const product = await ProductModel.findById(productId).lean();
 
     if (!product) return;
 
-    const userExists = product.trackingUsers.some(
+    const userExists = product.trackingUsers?.some(
       (user) => user.email === userEmail
     );
 
     if (!userExists) {
-      product.trackingUsers.push({ 
-        userId: new Types.ObjectId(), // Generate a new ObjectId for userId
-        email: userEmail,
-        addedAt: new Date(),
-        alertSettings: {
-          priceDecrease: true,
-          priceIncrease: false,
-          backInStock: true,
-          threshold: undefined
-        }
-      });
+      // Use findByIdAndUpdate to only update the trackingUsers field
+      // This avoids triggering validation on the entire document
+      await ProductModel.findByIdAndUpdate(
+        productId,
+        {
+          $push: {
+            trackingUsers: {
+              userId: new Types.ObjectId(), // Generate a new ObjectId for userId
+              email: userEmail,
+              addedAt: new Date(),
+              alertSettings: {
+                priceDecrease: true,
+                priceIncrease: false,
+                backInStock: true,
+                threshold: undefined
+              }
+            }
+          }
+        },
+        { new: true }
+      );
 
-      await product.save();
-
-      const emailContent = await generateEmailBody(product, 'WELCOME');
-
-      await sendEmail(emailContent, [userEmail]);
+      // Use new Resend email system
+      try {
+        const firstName = userEmail.split('@')[0]; // Extract name from email
+        await emailService.sendWelcomeEmail({
+          firstName,
+          email: userEmail,
+          dashboardUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard`,
+        });
+        console.log('Welcome email sent successfully to:', userEmail);
+      } catch (emailError) {
+        // Log email error but don't fail the entire operation
+        console.error('Failed to send welcome email:', emailError);
+      }
     }
   } catch (error) {
     console.log(error);

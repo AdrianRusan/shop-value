@@ -8,18 +8,22 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFiles: ['<rootDir>/jest.env.js'],
   testEnvironment: 'jsdom',
+  testEnvironmentOptions: {
+    customExportConditions: [''],
+  },
   moduleNameMapper: {
-    // Handle module aliases (this will be automatically configured for you based on your tsconfig.json paths)
     '^@/(.*)$': '<rootDir>/$1',
   },
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
-    '<rootDir>/tests/e2e/'
+    '<rootDir>/tests/e2e/',
+    '<rootDir>/__tests__/e2e/',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(cheerio.*|parse5.*|htmlparser2.*|dom-serializer.*|domelementtype.*|entities.*)/)'
+    'node_modules/(?!(@clerk/.*|cheerio.*|parse5.*|htmlparser2.*|dom-serializer.*|domelementtype.*|entities.*)/)'
   ],
   collectCoverageFrom: [
     'components/**/*.{js,jsx,ts,tsx}',
@@ -28,6 +32,11 @@ const customJestConfig = {
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
+  testMatch: [
+    '<rootDir>/__tests__/**/*.test.{js,jsx,ts,tsx}',
+  ],
+  // Enable the test environment for Babel
+  testEnvironment: 'jsdom',
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
