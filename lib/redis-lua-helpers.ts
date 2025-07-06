@@ -40,9 +40,14 @@ export const RedisLuaScripts = {
     local max_age = tonumber(ARGV[3]) or 86400
     
     for i=1,math.min(#keys, batch_size) do
-      local ttl = redis.call('ttl', keys[i])
-      if ttl == -1 then
-        redis.call('del', keys[i])
+      local key = keys[i]
+      local ttl = redis.call('ttl', key)
+      
+      -- Delete keys with no expiration (permanent logs) or keys with TTL less than max_age
+      -- TTL -1 means no expiration, TTL -2 means key doesn't exist
+      -- Keys with low TTL are close to expiring and considered old
+      if ttl == -1 or (ttl >= 0 and ttl <= max_age) then
+        redis.call('del', key)
         deleted = deleted + 1
       end
     end
@@ -98,7 +103,8 @@ export async function executeRedisScript(
       }
     }
 
-    return await redis.eval(script, keys.length, ...keys, ...args);
+    const params = [script, keys.length, ...keys, ...args];
+    return await (redis.eval as any).apply(redis, params);
   } catch (error) {
     console.error('Redis Lua script execution failed:', error);
     throw error;
