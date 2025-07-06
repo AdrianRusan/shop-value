@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDB } from '@/lib/mongoose';
 import { redis } from '@/lib/upstash';
+import { cleanupExpiredSessions, cleanupOldLogs } from '@/lib/redis-lua-helpers';
 
 export const maxDuration = 250;
 export const dynamic = 'force-dynamic';
@@ -164,45 +165,13 @@ async function performCleanupTasks() {
   };
 
   try {
-    // Clean up old log entries in Redis
-    const logKeys = await redis.keys('log:*');
-    const oldLogKeys = [];
-    
-    for (const key of logKeys) {
-      try {
-        const ttl = await redis.ttl(key);
-        if (ttl === -1) { // Keys without expiration
-          oldLogKeys.push(key);
-        }
-      } catch (error) {
-        // Skip problematic keys
-      }
-    }
+    // Clean up old log entries in Redis using safe helper
+    // This replaces any potential collectgarbage() usage with safe batching
+    results.oldLogs = await cleanupOldLogs('log:*', 86400, 100);
 
-    if (oldLogKeys.length > 0) {
-      await redis.del(...oldLogKeys.slice(0, 100)); // Limit cleanup batch size
-      results.oldLogs = Math.min(oldLogKeys.length, 100);
-    }
-
-    // Clean up expired sessions
-    try {
-      const expiredSessionsResult = await redis.eval(`
-        local keys = redis.call('keys', 'session:*')
-        local expired = 0
-        for i=1,#keys do
-          local ttl = redis.call('ttl', keys[i])
-          if ttl == -1 or ttl > 86400 then
-            redis.call('del', keys[i])
-            expired = expired + 1
-          end
-        end
-        return expired
-      `, 0);
-      
-      results.expiredSessions = expiredSessionsResult as number;
-    } catch (error) {
-      console.warn('Failed to clean expired sessions:', error);
-    }
+    // Clean up expired sessions using safe helper
+    // This replaces the unsafe redis.eval call that might have used collectgarbage()
+    results.expiredSessions = await cleanupExpiredSessions('session:*', 86400, 100);
 
     // Mark cache cleanup as successful
     results.cacheCleanup = true;
