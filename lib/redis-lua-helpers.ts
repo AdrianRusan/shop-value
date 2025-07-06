@@ -104,16 +104,12 @@ export async function executeRedisScript(
     throw error;
   }
 }
-<<<<<<< HEAD
- */
-=======
 
 /**
  * Safe session cleanup function
  * Replaces any script that might have used collectgarbage()
  */
 export async function cleanupExpiredSessions(
->>>>>>> f4a5769 (fix issues)
   pattern: string = 'session:*',
   maxAge: number = 86400,
   batchSize: number = 100
