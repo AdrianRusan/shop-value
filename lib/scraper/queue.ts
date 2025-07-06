@@ -21,6 +21,7 @@ export interface ScrapingResult {
   price?: number;
   title?: string;
   availability?: string;
+  currency?: string;
   scrapedAt: Date;
   error?: string;
   strategy?: string;

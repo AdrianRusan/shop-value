@@ -77,7 +77,7 @@ export class ScrapingWorker {
         lowestPrice: getLowestPrice(updatedPriceHistory).price,
         highestPrice: getHighestPrice(updatedPriceHistory, product.currentPrice).price,
         averagePrice: getAveragePrice(updatedPriceHistory, product.currentPrice),
-        lastScraped: scrapingResult.scrapedAt,
+        lastScrapedAt: scrapingResult.scrapedAt,
         scraping: {
           ...(product as any).scraping,
           selector: scrapingResult.selector,

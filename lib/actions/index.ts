@@ -26,10 +26,27 @@ export async function scrapeAndScoreProductFlip(
     await connectToDB();
 
     // Check if product already exists
-    const existingProduct = await ProductModel.findOne({ url: productUrl });
+    let existingProduct = await ProductModel.findOne({ url: productUrl });
     
+    // If product doesn't exist, create it first (backward compatibility)
     if (!existingProduct) {
-      throw new Error('Product must be added to database before scraping');
+      console.log(`📦 Product not found, creating new product for: ${productUrl}`);
+      
+      // First scrape to get basic product info for creation
+      const scrapedProduct = await scrapeFlipProduct(productUrl);
+      if (!scrapedProduct) {
+        throw new Error('Failed to scrape initial product data');
+      }
+
+      // Create the product in the database
+      existingProduct = await ProductModel.create({
+        ...scrapedProduct,
+        tenantId: 'default',
+        trackingStatus: 'active',
+        isActive: true,
+      });
+
+      console.log(`✅ New product created with ID: ${existingProduct._id}`);
     }
 
     const productId = existingProduct._id?.toString() || '';
