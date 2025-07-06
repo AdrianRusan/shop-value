@@ -1,7 +1,9 @@
+"use client"
+
 import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 interface Props {
   product: Product;
@@ -35,7 +37,7 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
     : 0;
   
   // Determine image source based on error states
-  const getImageUrl = () => {
+  const getImageUrl = useCallback(() => {
     if (fallbackError) {
       // Both original and fallback failed, use a placeholder
       return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBMMTMwIDEwMEg3MEwxMDAgNzBaTTE0MCA2MEwxNzAgOTBIMTEwTDE0MCA2MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHRleHQgeD0iMTAwIiB5PSIxMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2QjczODAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+Cjwvc3ZnPg==";
@@ -44,13 +46,41 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
       // Original failed, use fallback
       return flipURL;
     }
-    // Use original image
+    // Use original image or fallback if no original image
     return product.image || flipURL;
-  };
+  }, [imageError, fallbackError, product.image, flipURL]);
   
   const imageUrl = getImageUrl();
   const linkUrl = `/produse/${product.brand || 'unknown'}/${product.productModel?.replace(/ /g, '-') || 'unknown'}/${product._id}`;
   const displayTitle = product.title.length > 60 ? `${product.title.substring(0, 60)}...` : product.title;
+
+  // Fixed image error handler that prevents race conditions
+  const handleImageError = useCallback(() => {
+    console.warn('Failed to load product image:', imageUrl);
+    
+    // Use functional state updates to avoid stale closure issues
+    setImageError(prevImageError => {
+      setFallbackError(prevFallbackError => {
+        // If we haven't tried the original image yet and it exists and is different from fallback
+        if (!prevImageError && product.image && product.image !== flipURL) {
+          // Original image failed, switch to fallback
+          return prevFallbackError; // Don't change fallbackError state
+        }
+        // If original failed and we're now on fallback, or if no original image exists
+        else if (prevImageError && !prevFallbackError) {
+          // Fallback image failed, switch to placeholder
+          return true; // Set fallbackError to true
+        }
+        return prevFallbackError; // No change needed
+      });
+      
+      // Set imageError to true if we haven't already
+      if (!prevImageError && product.image && product.image !== flipURL) {
+        return true;
+      }
+      return prevImageError;
+    });
+  }, [imageUrl, product.image, flipURL]);
 
   return (
     <div className="mx-0">
@@ -75,16 +105,7 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
               objectFit: 'contain',
               objectPosition: 'center',
             }}
-            onError={(e) => {
-              console.warn('Failed to load product image:', imageUrl);
-              if (!imageError && product.image && product.image !== flipURL) {
-                // Original image failed, switch to fallback
-                setImageError(true);
-              } else if (imageError && !fallbackError) {
-                // Fallback image failed, switch to placeholder
-                setFallbackError(true);
-              }
-            }}
+            onError={handleImageError}
           />
           
           {/* Discount badge */}

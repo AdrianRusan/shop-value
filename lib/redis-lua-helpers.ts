@@ -85,7 +85,7 @@ export const RedisLuaScripts = {
 export async function executeRedisScript(
   script: string,
   keys: string[] = [],
-  args: string[] = []
+  args: (string | number)[] = []
 ): Promise<any> {
   try {
     // Validate script doesn't contain unsupported functions
@@ -98,7 +98,11 @@ export async function executeRedisScript(
       }
     }
 
-    return await redis.eval(script, keys.length, ...keys, ...args);
+    // Convert args to strings and create the final arguments array
+    const stringArgs = args.map(arg => String(arg));
+    const allArgs = keys.concat(stringArgs);
+    
+    return await (redis.eval as any).apply(redis, [script, keys.length, ...allArgs]);
   } catch (error) {
     console.error('Redis Lua script execution failed:', error);
     throw error;
@@ -193,12 +197,12 @@ export function validateRedisLuaScript(script: string): { isValid: boolean; erro
     'collectgarbage',
     'loadfile',
     'dofile',
-    'io.',
-    'os.',
-    'debug.',
-    'package.',
-    'require',
-    'module',
+    'io.*',
+    'os.*',
+    'debug.*',
+    'package.*',
+    'require()',
+    'module()',
   ];
   
   for (const func of unsupportedFunctions) {
