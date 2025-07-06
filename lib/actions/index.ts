@@ -4,45 +4,104 @@ import { revalidatePath } from 'next/cache';
 import ProductModel from '../models/product.model';
 import { connectToDB } from '../mongoose';
 import { scrapeFlipProduct } from '../scraper';
+import { queueProductScraping } from '../scraper/queue-service';
 import { getAveragePrice, getHighestPrice, getLowestPrice } from '../utils';
 import { emailService } from '../resend';
 import { User, Product } from '@/types';
 import { Types } from 'mongoose';
 
-export async function scrapeAndScoreProductFlip(productUrl: string) {
+// Enhanced function that uses queue-based scraping by default
+export async function scrapeAndScoreProductFlip(
+  productUrl: string,
+  options?: {
+    userId?: string;
+    userTier?: 'free' | 'pro' | 'enterprise';
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    immediate?: boolean; // For backward compatibility - forces direct scraping
+  }
+) {
   if (!productUrl) return;
 
   try {
     await connectToDB();
 
+    // Check if product already exists
+    let existingProduct = await ProductModel.findOne({ url: productUrl });
+    
+    // If product doesn't exist, create it first (backward compatibility)
+    if (!existingProduct) {
+      console.log(`📦 Product not found, creating new product for: ${productUrl}`);
+      
+      // First scrape to get basic product info for creation
+      const scrapedProduct = await scrapeFlipProduct(productUrl);
+      if (!scrapedProduct) {
+        throw new Error('Failed to scrape initial product data');
+      }
+
+      // Create the product in the database
+      existingProduct = await ProductModel.create({
+        ...scrapedProduct,
+        tenantId: 'default',
+        trackingStatus: 'active',
+        isActive: true,
+      });
+
+      console.log(`✅ New product created with ID: ${existingProduct._id}`);
+    }
+
+    const productId = existingProduct._id?.toString() || '';
+
+    // Use queue-based scraping by default unless immediate is requested
+    if (!options?.immediate) {
+      const queueResult = await queueProductScraping(productId, productUrl, {
+        userId: options?.userId || 'anonymous',
+        userTier: options?.userTier || 'free',
+        priority: options?.priority || 'medium',
+        tenantId: existingProduct.tenantId || 'default',
+      });
+
+      if (queueResult.success) {
+        console.log(`✅ Product ${productId} queued for scraping with job ID: ${queueResult.jobId}`);
+        return {
+          success: true,
+          message: 'Product queued for scraping',
+          jobId: queueResult.jobId,
+          productId,
+        };
+      } else {
+        console.warn(`⚠️ Failed to queue product ${productId}, falling back to direct scraping:`, queueResult.error);
+        // Fall through to direct scraping
+      }
+    }
+
+    // Direct scraping (fallback or when immediate is requested)
+    console.log(`🔄 Performing direct scraping for product ${productId}`);
     const scrapedProduct = await scrapeFlipProduct(productUrl);
 
-    if (!scrapedProduct) return;
+    if (!scrapedProduct) {
+      throw new Error('Failed to scrape product data');
+    }
 
     let product = scrapedProduct;
 
-    const existingProduct = await ProductModel.findOne({ url: scrapedProduct.url });
+    const updatedPriceHistory: any = [
+      ...existingProduct.priceHistory,
+      { price: scrapedProduct.currentPrice },
+    ];
 
-    if (existingProduct) {
-      const updatedPriceHistory: any = [
-        ...existingProduct.priceHistory,
-        { price: scrapedProduct.currentPrice },
-      ];
-
-      product = {
-        ...scrapedProduct,
-        priceHistory: updatedPriceHistory,
-        lowestPrice: getLowestPrice(updatedPriceHistory).price,
-        highestPrice: getHighestPrice(
-          updatedPriceHistory,
-          existingProduct.currentPrice
-        ).price,
-        averagePrice: getAveragePrice(
-          updatedPriceHistory,
-          existingProduct.currentPrice
-        ),
-      };
-    }
+    product = {
+      ...scrapedProduct,
+      priceHistory: updatedPriceHistory,
+      lowestPrice: getLowestPrice(updatedPriceHistory).price,
+      highestPrice: getHighestPrice(
+        updatedPriceHistory,
+        existingProduct.currentPrice
+      ).price,
+      averagePrice: getAveragePrice(
+        updatedPriceHistory,
+        existingProduct.currentPrice
+      ),
+    };
 
     const newProduct = await ProductModel.findOneAndUpdate(
       { url: scrapedProduct.url },
@@ -55,8 +114,78 @@ export async function scrapeAndScoreProductFlip(productUrl: string) {
         newProduct._id
       }`
     );
+
+    return {
+      success: true,
+      message: 'Product scraped and updated directly',
+      productId: newProduct._id?.toString() || '',
+      immediate: true,
+    };
+
   } catch (error: any) {
+    console.error('Error in scrapeAndScoreProductFlip:', error);
     throw new Error(`Failed to create/update product: ${error.message}`);
+  }
+}
+
+// Queue-based product creation and scraping
+export async function createAndQueueProduct(
+  productUrl: string,
+  options: {
+    userId: string;
+    userTier?: 'free' | 'pro' | 'enterprise';
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    tenantId?: string;
+  }
+) {
+  if (!productUrl) {
+    throw new Error('Product URL is required');
+  }
+
+  try {
+    await connectToDB();
+
+    // First scrape to get basic product info for creation
+    const scrapedProduct = await scrapeFlipProduct(productUrl);
+    if (!scrapedProduct) {
+      throw new Error('Failed to scrape initial product data');
+    }
+
+    // Create product in database
+    const newProduct = await ProductModel.create({
+      ...scrapedProduct,
+      tenantId: options.tenantId || 'default',
+      trackingStatus: 'active',
+      isActive: true,
+    });
+
+    // Queue for regular scraping updates
+    const queueResult = await queueProductScraping(
+      newProduct._id?.toString() || '',
+      productUrl,
+      {
+        userId: options.userId,
+        userTier: options.userTier || 'free',
+        priority: options.priority || 'medium',
+        tenantId: options.tenantId || 'default',
+      }
+    );
+
+    revalidatePath(
+      `/produse/${newProduct.brand}/${newProduct.productModel?.replace(/ /g, '-') || 'unknown'}/${
+        newProduct._id
+      }`
+    );
+
+    return {
+      success: true,
+      product: newProduct,
+      queueResult,
+    };
+
+  } catch (error: any) {
+    console.error('Error in createAndQueueProduct:', error);
+    throw new Error(`Failed to create and queue product: ${error.message}`);
   }
 }
 
