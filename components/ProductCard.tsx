@@ -1,7 +1,6 @@
 import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
-import { memo, useMemo } from "react";
 
 interface Props {
   product: Product;
@@ -9,28 +8,8 @@ interface Props {
   loading?: 'eager' | 'lazy';
 }
 
-const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props) => {
+const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => {
   const flipURL = `/assets/images/flip.jpg`;
-
-  // Memoize calculated values to prevent unnecessary recalculations
-  const productData = useMemo(() => {
-    const hasDiscount = product.originalPrice > 0 && product.originalPrice > product.currentPrice;
-    const discountPercentage = hasDiscount 
-      ? Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)
-      : 0;
-    
-    const imageUrl = product.image || flipURL;
-    const linkUrl = `/produse/${product.brand}/${product.productModel?.replace(/ /g, '-') || 'unknown'}/${product._id}`;
-    const displayTitle = product.title.length > 60 ? `${product.title.substring(0, 60)}...` : product.title;
-
-    return {
-      hasDiscount,
-      discountPercentage,
-      imageUrl,
-      linkUrl,
-      displayTitle
-    };
-  }, [product.originalPrice, product.currentPrice, product.image, product.brand, product.productModel, product._id, product.title]);
 
   // Error handling for missing required product data
   if (!product || !product._id || !product.title) {
@@ -46,17 +25,27 @@ const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props
     );
   }
 
+  // Calculate values with safe defaults
+  const hasDiscount = product.originalPrice > 0 && product.originalPrice > product.currentPrice;
+  const discountPercentage = hasDiscount 
+    ? Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)
+    : 0;
+  
+  const imageUrl = product.image || flipURL;
+  const linkUrl = `/produse/${product.brand || 'unknown'}/${product.productModel?.replace(/ /g, '-') || 'unknown'}/${product._id}`;
+  const displayTitle = product.title.length > 60 ? `${product.title.substring(0, 60)}...` : product.title;
+
   return (
     <div className="mx-0">
       <Link 
-        href={productData.linkUrl} 
+        href={linkUrl} 
         className="product-card min-h-[490px] block hover:shadow-lg transition-shadow duration-200"
         aria-label={`View details for ${product.title}`}
       >
         <div className="product-card_img-container border border-slate-200 dark:bg-white relative">
           {/* Optimized image loading with proper dimensions and loading strategy */}
           <Image
-            src={productData.imageUrl}
+            src={imageUrl}
             alt={product.title}
             width={200}
             height={200}
@@ -70,15 +59,18 @@ const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props
               objectPosition: 'center',
             }}
             onError={(e) => {
-              console.warn('Failed to load product image:', productData.imageUrl);
-              (e.target as HTMLImageElement).src = flipURL;
+              console.warn('Failed to load product image:', imageUrl);
+              const target = e.target as HTMLImageElement;
+              if (target) {
+                target.src = flipURL;
+              }
             }}
           />
           
           {/* Discount badge */}
-          {productData.hasDiscount && (
+          {hasDiscount && (
             <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-              -{productData.discountPercentage}%
+              -{discountPercentage}%
             </div>
           )}
           
@@ -93,7 +85,10 @@ const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props
                 className="rounded-md shadow-sm"
                 onError={(e) => {
                   console.warn('Failed to load source badge image');
-                  (e.target as HTMLImageElement).style.display = 'none';
+                  const target = e.target as HTMLImageElement;
+                  if (target) {
+                    target.style.display = 'none';
+                  }
                 }}
               />
             </div>
@@ -102,7 +97,7 @@ const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props
 
         <div className="flex flex-col gap-2 p-3">
           <h3 className="product-title" title={product.title}>
-            {productData.displayTitle}
+            {displayTitle}
           </h3>
           
           <div className="flex justify-between items-center">
@@ -116,7 +111,7 @@ const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props
               </div>
             ) : (
               <div className="flex flex-col whitespace-nowrap text-right">
-                {productData.hasDiscount && (
+                {hasDiscount && (
                   <p className="text-sm text-black opacity-75 dark:text-white-200 line-through">
                     <span>{product.originalPrice} </span>
                     <span>{product?.currency || 'RON'}</span>
@@ -140,9 +135,6 @@ const ProductCard = memo(({ product, priority = false, loading = 'lazy' }: Props
       </Link>
     </div>
   )
-});
-
-// Add display name for debugging
-ProductCard.displayName = 'ProductCard';
+};
 
 export default ProductCard
