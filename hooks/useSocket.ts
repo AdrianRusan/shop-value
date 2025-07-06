@@ -113,17 +113,21 @@ export function useSocket(options: UseSocketOptions = {}) {
 
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
+      
+      // Calculate the new reconnect attempts value to avoid stale closure
+      const newReconnectAttempts = socketState.reconnectAttempts + 1;
+      
       setSocketState(prev => ({
         ...prev,
         connected: false,
         connecting: false,
         error: error.message,
-        reconnectAttempts: prev.reconnectAttempts + 1,
+        reconnectAttempts: newReconnectAttempts,
       }));
 
-      // Implement exponential backoff for reconnection
-      if (reconnection && socketState.reconnectAttempts < reconnectionAttempts) {
-        const delay = reconnectionDelay * Math.pow(2, socketState.reconnectAttempts);
+      // Implement exponential backoff for reconnection using the correct value
+      if (reconnection && newReconnectAttempts < reconnectionAttempts) {
+        const delay = reconnectionDelay * Math.pow(2, newReconnectAttempts);
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
         }, delay);
