@@ -35,6 +35,8 @@ const getRedis = (): Redis => {
         rpush: async () => 1,
         lpop: async () => null,
         rpop: async () => null,
+        eval: async () => 0,
+        ttl: async () => -1,
       } as any;
     }
 
@@ -54,6 +56,24 @@ const getRedis = (): Redis => {
         hmset: async () => 'OK',
         lpush: async () => 1,
         ltrim: async () => 'OK',
+        del: async () => 1,
+        exists: async () => 0,
+        keys: async () => [],
+        flushall: async () => 'OK',
+        ping: async () => 'PONG',
+        hget: async () => null,
+        hset: async () => 1,
+        hdel: async () => 1,
+        hgetall: async () => ({}),
+        zadd: async () => 1,
+        zrange: async () => [],
+        zrem: async () => 1,
+        lrange: async () => [],
+        rpush: async () => 1,
+        lpop: async () => null,
+        rpop: async () => null,
+        eval: async () => 0,
+        ttl: async () => -1,
       } as any;
     }
     
