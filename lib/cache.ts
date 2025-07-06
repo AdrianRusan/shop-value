@@ -89,12 +89,12 @@ class CacheManager implements CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const value = await redis.get(key);
-      if (value === null) return null;
+      if (value === null || value === undefined) return null;
       
       // Track cache hits for analytics
       await this.trackCacheMetric(key, 'hit');
       
-      return typeof value === 'string' ? JSON.parse(value) : value;
+      return typeof value === 'string' ? JSON.parse(value) : null;
     } catch (error) {
       Sentry.captureException(error);
       console.error(`Cache get error for key ${key}:`, error);
