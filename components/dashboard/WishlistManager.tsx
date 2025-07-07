@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 // TODO: Fix react-beautiful-dnd module resolution issue
 // import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { QuickActionsPanel } from './QuickActionsPanel';
 import FormatPrices from '@/components/FormatPrices';
 
 // Helper function to parse structured user notes with backward compatibility
@@ -130,6 +131,15 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Combined filter state for QuickActionsPanel
+  const [combinedFilters, setCombinedFilters] = useState({
+    category: selectedCategory,
+    status: 'all',
+    sortBy: sortBy,
+    sortOrder: sortOrder,
+    search: searchTerm
+  });
+
   // Fetch wishlist data
   const fetchWishlist = useCallback(async () => {
     if (!user?.id) return;
@@ -169,6 +179,17 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
     fetchWishlist();
   }, [fetchWishlist]);
 
+  // Sync filter states with combinedFilters
+  useEffect(() => {
+    setCombinedFilters({
+      category: selectedCategory,
+      status: 'all',
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      search: searchTerm
+    });
+  }, [selectedCategory, sortBy, sortOrder, searchTerm]);
+
   // Filter and search items
   const filteredItems = useMemo(() => {
     if (!wishlistData) return [];
@@ -197,6 +218,97 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
 
     return items;
   }, [wishlistData, selectedCategory, searchTerm]);
+
+  // Handle bulk actions for wishlist (functions defined inline to avoid dependency issues)
+  const handleBulkAction = useCallback(async (action: string, itemIds: string[]) => {
+    if (!user?.id || itemIds.length === 0) return;
+
+    try {
+      switch (action) {
+        case 'delete':
+          if (!confirm(`Sigur vrei să elimini ${itemIds.length} produse din wishlist?`)) return;
+          const deleteResponse = await fetch(`/api/products/user/${user.id}/wishlist?trackingIds=${itemIds.join(',')}&softDelete=true`, {
+            method: 'DELETE'
+          });
+          if (!deleteResponse.ok) throw new Error('Failed to remove items');
+          await fetchWishlist();
+          onItemRemoved?.();
+          break;
+          
+        case 'startTracking':
+          for (const itemId of itemIds) {
+            const item = wishlistData?.items.find(i => i._id === itemId);
+            if (item) {
+              const response = await fetch(`/api/products/user/${user.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  productId: item.productId._id,
+                  trackingReason: 'purchase_intent',
+                  userNotes: item.userNotes,
+                  personalRating: item.personalRating,
+                  alertSettings: {
+                    priceDecrease: true,
+                    priceIncrease: false,
+                    backInStock: true,
+                    frequency: 'immediate'
+                  }
+                })
+              });
+              if (response.ok) {
+                // Remove from wishlist after successful tracking
+                await fetch(`/api/products/user/${user.id}/wishlist?trackingIds=${itemId}&softDelete=true`, {
+                  method: 'DELETE'
+                });
+              }
+            }
+          }
+          await fetchWishlist();
+          break;
+          
+        case 'addToWishlist':
+          // Already in wishlist, no action needed
+          break;
+          
+        default:
+          console.warn('Unknown bulk action for wishlist:', action);
+      }
+      setSelectedItems(new Set());
+    } catch (error) {
+      console.error('Wishlist bulk action failed:', error);
+      alert('Eroare la executarea acțiunii în masă. Te rog încearcă din nou.');
+    }
+  }, [user?.id, wishlistData?.items, fetchWishlist, onItemRemoved]);
+
+  // Handle filter changes from QuickActionsPanel
+  const handleFilterChange = useCallback((newFilters: any) => {
+    setCombinedFilters(newFilters);
+    if (newFilters.search !== searchTerm) {
+      setSearchTerm(newFilters.search);
+    }
+    if (newFilters.sortBy !== sortBy) {
+      setSortBy(newFilters.sortBy);
+    }
+    if (newFilters.sortOrder !== sortOrder) {
+      setSortOrder(newFilters.sortOrder);
+    }
+    if (newFilters.category !== selectedCategory) {
+      setSelectedCategory(newFilters.category);
+    }
+  }, [searchTerm, sortBy, sortOrder, selectedCategory]);
+
+  // Handle item selection
+  const handleItemSelect = useCallback((itemId: string, selected: boolean) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(itemId);
+      } else {
+        newSet.delete(itemId);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Add item to wishlist
   const handleAddToWishlist = async (productId: string, category?: string, notes?: string, rating?: number) => {
@@ -416,6 +528,18 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
 
   return (
     <div className="space-y-6">
+      {/* Quick Actions Panel */}
+      {!compact && (
+        <QuickActionsPanel
+          selectedProducts={selectedItems}
+          onBulkAction={handleBulkAction}
+          onFilterChange={handleFilterChange}
+          onRefresh={fetchWishlist}
+          activeTab="wishlist"
+          filters={combinedFilters}
+        />
+      )}
+
       {/* Header and Controls */}
       {!compact && (
         <>
