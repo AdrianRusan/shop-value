@@ -2,7 +2,6 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserByClerkId } from '@/lib/clerk-sync';
 import { DashboardLayoutCustomizer } from '@/components/dashboard/DashboardLayoutCustomizer';
-import { DashboardLayoutCustomizer } from '@/components/dashboard/DashboardLayoutCustomizer';
 
 export default async function DashboardPage() {
   // Check authentication
