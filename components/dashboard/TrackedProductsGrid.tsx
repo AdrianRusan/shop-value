@@ -10,6 +10,28 @@ import { ProductFilters } from './ProductFilters';
 import { Pagination } from './Pagination';
 import FormatPrices from '@/components/FormatPrices';
 
+// Utility function to format relative time
+function getRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const then = new Date(date);
+  const diffInMs = now.getTime() - then.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInMinutes < 1) return 'Acum';
+  if (diffInMinutes < 60) return `Acum ${diffInMinutes} min`;
+  if (diffInHours < 24) return `Acum ${diffInHours}h`;
+  if (diffInDays < 7) return `Acum ${diffInDays} zi${diffInDays > 1 ? 'le' : ''}`;
+  
+  return then.toLocaleDateString('ro-RO', { 
+    day: 'numeric', 
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 interface TrackedProduct {
   _id: string;
   userId: string;
@@ -28,8 +50,11 @@ interface TrackedProduct {
       price: number;
       date: Date;
     }>;
+    lastScrapedAt: Date;
+    updatedAt: Date;
   };
   addedAt: Date;
+  updatedAt: Date;
   isActive: boolean;
   alertSettings: {
     priceDecrease: boolean;
@@ -363,6 +388,23 @@ export function TrackedProductsGrid() {
 
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                     {item.productId.brand} • {item.productId.category}
+                  </div>
+
+                  {/* Last Updated Timestamp */}
+                  <div className="flex items-center text-xs text-gray-400 dark:text-gray-500 mb-1">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Actualizat: {getRelativeTime(item.productId.lastScrapedAt || item.productId.updatedAt)}
+                  </div>
+                  
+                  {/* Tracking Started Timestamp */}
+                  <div className="flex items-center text-xs text-gray-400 dark:text-gray-500 mb-2">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Urmărit din: {getRelativeTime(item.addedAt)}
                   </div>
 
                   {/* Price Information */}

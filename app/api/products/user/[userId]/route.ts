@@ -138,7 +138,7 @@ export async function GET(
       .populate({
         path: 'productId',
         match: category ? { category: new RegExp(category, 'i') } : {},
-        select: 'title brand category currentPrice originalPrice currency image isOutOfStock url priceHistory'
+        select: 'title brand category currentPrice originalPrice currency image isOutOfStock url priceHistory lastScrapedAt updatedAt'
       })
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
