@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
@@ -23,10 +23,11 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
   const { items, isLoading, removeItem, clearAll } = useRecentlyViewed({ maxItems });
   const [showScrollLeft, setShowScrollLeft] = useState(false);
   const [showScrollRight, setShowScrollRight] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check scroll indicators
-    const container = document.getElementById('recently-viewed-container');
+    const container = containerRef.current;
     if (container) {
       const updateScrollIndicators = () => {
         setShowScrollLeft(container.scrollLeft > 0);
@@ -55,14 +56,14 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
   };
 
   const scrollLeft = () => {
-    const container = document.getElementById('recently-viewed-container');
+    const container = containerRef.current;
     if (container) {
       container.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
-    const container = document.getElementById('recently-viewed-container');
+    const container = containerRef.current;
     if (container) {
       container.scrollBy({ left: 200, behavior: 'smooth' });
     }
@@ -88,7 +89,20 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
 
   const getProductUrl = (item: any) => {
     const product = item.product as Partial<Product>;
-    return `/produse/${product.brand || 'unknown'}/${product.productModel?.replace(/ /g, '-') || 'unknown'}/${product._id}`;
+    
+    // Ensure we have a valid product ID
+    if (!product._id) {
+      return '/produse'; // Fallback to products listing page
+    }
+    
+    // Safely handle productModel - ensure it's a string before calling replace
+    const productModel = typeof product.productModel === 'string' 
+      ? product.productModel.replace(/ /g, '-') 
+      : 'unknown';
+    
+    const brand = product.brand || 'unknown';
+    
+    return `/produse/${brand}/${productModel}/${product._id}`;
   };
 
   const getDiscountPercentage = (original: number, current: number) => {
@@ -169,7 +183,7 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
 
         {/* Products container */}
         <div
-          id="recently-viewed-container"
+          ref={containerRef}
           className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >

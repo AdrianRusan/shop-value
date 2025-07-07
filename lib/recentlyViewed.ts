@@ -79,7 +79,7 @@ export function addToRecentlyViewed(product: Product): void {
     const now = Date.now();
     
     // Check if product already exists
-    const existingIndex = items.findIndex(item => item.id === product._id);
+    const existingIndex = items.findIndex(item => item.id === (product._id || ''));
     
     if (existingIndex !== -1) {
       // Update existing item - move to top and increment view count
@@ -188,7 +188,21 @@ function saveRecentlyViewed(items: RecentlyViewedItem[]): void {
  */
 function notifyListeners(items: RecentlyViewedItem[]): void {
   // Note: Storage event only fires for other tabs, so we manually notify for same-tab updates
-  // This would be handled differently if we were using a state management solution
+  // Create RecentlyViewedData object to match the expected listener signature
+  const data: RecentlyViewedData = {
+    version: STORAGE_VERSION,
+    items,
+    lastUpdated: Date.now()
+  };
+  
+  // Notify all registered listeners
+  storageEventListeners.forEach(listener => {
+    try {
+      listener(data);
+    } catch (error) {
+      console.warn('Failed to notify recently viewed listener:', error);
+    }
+  });
 }
 
 /**

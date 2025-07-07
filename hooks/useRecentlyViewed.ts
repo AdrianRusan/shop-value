@@ -78,7 +78,7 @@ export function useRecentlyViewed(options: UseRecentlyViewedOptions = {}): UseRe
       
       // Update local state immediately for better UX
       setItems(prevItems => {
-        const existingIndex = prevItems.findIndex(item => item.id === product._id);
+        const existingIndex = prevItems.findIndex(item => item.id === (product._id || ''));
         const now = Date.now();
         
         if (existingIndex !== -1) {
