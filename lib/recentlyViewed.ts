@@ -37,6 +37,29 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Clean up invalid items from the recently viewed list
+ */
+function cleanupInvalidItems(items: RecentlyViewedItem[]): RecentlyViewedItem[] {
+  const validItems = items.filter(item => {
+    // Check if item has valid ID
+    if (!item.id || typeof item.id !== 'string' || item.id.trim().length === 0) {
+      console.warn('Removing invalid recently viewed item: missing or invalid ID', { item });
+      return false;
+    }
+    
+    // Check if item has valid product data
+    if (!item.product || typeof item.product !== 'object') {
+      console.warn('Removing invalid recently viewed item: missing product data', { item });
+      return false;
+    }
+    
+    return true;
+  });
+  
+  return validItems;
+}
+
+/**
  * Get recently viewed products from local storage
  */
 export function getRecentlyViewed(): RecentlyViewedItem[] {
@@ -55,9 +78,16 @@ export function getRecentlyViewed(): RecentlyViewedItem[] {
     
     // Clean up old items (older than 30 days)
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    const validItems = data.items.filter(item => item.viewedAt > thirtyDaysAgo);
+    let validItems = data.items.filter(item => item.viewedAt > thirtyDaysAgo);
     
-    if (validItems.length !== data.items.length) {
+    // Clean up invalid items (items with missing/invalid IDs)
+    const beforeCleanup = validItems.length;
+    validItems = cleanupInvalidItems(validItems);
+    const afterCleanup = validItems.length;
+    
+    // Save back to storage if items were removed
+    if (validItems.length !== data.items.length || beforeCleanup !== afterCleanup) {
+      console.info(`Cleaned up recently viewed items: ${data.items.length - validItems.length} items removed`);
       saveRecentlyViewed(validItems);
     }
     
@@ -69,17 +99,57 @@ export function getRecentlyViewed(): RecentlyViewedItem[] {
 }
 
 /**
+ * Validate if a product has a valid ID for recently viewed tracking
+ */
+function hasValidProductId(product: Product): boolean {
+  return Boolean(product._id && typeof product._id === 'string' && product._id.trim().length > 0);
+}
+
+/**
+ * Generate a fallback ID for products without valid IDs (as last resort)
+ */
+function generateFallbackId(product: Product): string {
+  // Use a combination of available product data to create a unique identifier
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substr(2, 9);
+  const productInfo = [
+    product.title?.slice(0, 10),
+    product.brand,
+    product.productModel?.slice(0, 10),
+    product.currentPrice?.toString()
+  ].filter(Boolean).join('-') || 'unknown';
+  
+  return `fallback-${productInfo}-${timestamp}-${random}`;
+}
+
+/**
  * Add a product to recently viewed list
  */
 export function addToRecentlyViewed(product: Product): void {
   if (typeof window === 'undefined') return;
   
+  // Validate product has required data
+  if (!product || typeof product !== 'object') {
+    console.warn('Cannot add invalid product to recently viewed');
+    return;
+  }
+
+  // Skip products without valid IDs - they're likely incomplete/corrupted data
+  if (!hasValidProductId(product)) {
+    console.warn('Cannot add product to recently viewed: missing or invalid ID', {
+      productId: product._id,
+      productTitle: product.title
+    });
+    return;
+  }
+  
   try {
     const items = getRecentlyViewed();
     const now = Date.now();
+    const productId = product._id!; // We know it's valid from the check above
     
     // Check if product already exists
-    const existingIndex = items.findIndex(item => item.id === (product._id || ''));
+    const existingIndex = items.findIndex(item => item.id === productId);
     
     if (existingIndex !== -1) {
       // Update existing item - move to top and increment view count
@@ -94,7 +164,7 @@ export function addToRecentlyViewed(product: Product): void {
     } else {
       // Add new item to the beginning
       items.unshift({
-        id: product._id || '',
+        id: productId,
         product: sanitizeProductForStorage(product),
         viewedAt: now,
         viewCount: 1
@@ -115,6 +185,12 @@ export function addToRecentlyViewed(product: Product): void {
  */
 export function removeFromRecentlyViewed(productId: string): void {
   if (typeof window === 'undefined') return;
+  
+  // Validate productId
+  if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
+    console.warn('Cannot remove product from recently viewed: invalid product ID', { productId });
+    return;
+  }
   
   try {
     const items = getRecentlyViewed();
@@ -268,4 +344,20 @@ export function getStorageStats(): { itemCount: number; estimatedSize: number; m
     estimatedSize,
     maxItems: MAX_ITEMS
   };
+}
+
+/**
+ * Export validation function for testing purposes
+ * @internal - for testing only
+ */
+export function _testValidateProductId(product: Product): boolean {
+  return hasValidProductId(product);
+}
+
+/**
+ * Export cleanup function for testing purposes  
+ * @internal - for testing only
+ */
+export function _testCleanupInvalidItems(items: RecentlyViewedItem[]): RecentlyViewedItem[] {
+  return cleanupInvalidItems(items);
 }

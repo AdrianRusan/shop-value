@@ -27,6 +27,13 @@ interface UseRecentlyViewedReturn {
   isStorageAvailable: boolean;
 }
 
+/**
+ * Validate if a product has a valid ID for recently viewed tracking
+ */
+function hasValidProductId(product: Product): boolean {
+  return Boolean(product._id && typeof product._id === 'string' && product._id.trim().length > 0);
+}
+
 export function useRecentlyViewed(options: UseRecentlyViewedOptions = {}): UseRecentlyViewedReturn {
   const { maxItems = 20, autoSync = true } = options;
   
@@ -73,12 +80,28 @@ export function useRecentlyViewed(options: UseRecentlyViewedOptions = {}): UseRe
       return;
     }
 
+    // Validate product has required data
+    if (!product || typeof product !== 'object') {
+      console.warn('Cannot add invalid product to recently viewed');
+      return;
+    }
+
+    // Skip products without valid IDs - they're likely incomplete/corrupted data
+    if (!hasValidProductId(product)) {
+      console.warn('Cannot add product to recently viewed: missing or invalid ID', {
+        productId: product._id,
+        productTitle: product.title
+      });
+      return;
+    }
+
     try {
       addToRecentlyViewed(product);
       
       // Update local state immediately for better UX
       setItems(prevItems => {
-        const existingIndex = prevItems.findIndex(item => item.id === (product._id || ''));
+        const productId = product._id!; // We know it's valid from the check above
+        const existingIndex = prevItems.findIndex(item => item.id === productId);
         const now = Date.now();
         
         if (existingIndex !== -1) {
@@ -109,7 +132,7 @@ export function useRecentlyViewed(options: UseRecentlyViewedOptions = {}): UseRe
         } else {
           // Add new item
           const newItem: RecentlyViewedItem = {
-            id: product._id || '',
+            id: productId,
             product: {
               _id: product._id,
               title: product.title,
@@ -139,6 +162,12 @@ export function useRecentlyViewed(options: UseRecentlyViewedOptions = {}): UseRe
   const removeItem = useCallback((productId: string) => {
     if (!isLocalStorageAvailable()) {
       console.warn('Local storage not available, cannot remove from recently viewed');
+      return;
+    }
+
+    // Validate productId
+    if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
+      console.warn('Cannot remove product from recently viewed: invalid product ID', { productId });
       return;
     }
 

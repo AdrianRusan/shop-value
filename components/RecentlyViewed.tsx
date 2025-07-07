@@ -91,7 +91,8 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
     const product = item.product as Partial<Product>;
     
     // Ensure we have a valid product ID
-    if (!product._id) {
+    if (!product._id || typeof product._id !== 'string' || product._id.trim().length === 0) {
+      console.warn('Product missing valid ID for URL generation', { product });
       return '/produse'; // Fallback to products listing page
     }
     
@@ -187,7 +188,15 @@ const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
           className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {items.map((item) => {
+          {items.filter(item => {
+            // Filter out items with invalid IDs to prevent rendering issues
+            const product = item.product as Partial<Product>;
+            if (!product._id || typeof product._id !== 'string' || product._id.trim().length === 0) {
+              console.warn('Filtering out recently viewed item with invalid ID', { item });
+              return false;
+            }
+            return true;
+          }).map((item) => {
             const product = item.product as Partial<Product>;
             const hasDiscount = product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice;
             const discountPercentage = hasDiscount ? getDiscountPercentage(product.originalPrice!, product.currentPrice!) : 0;
