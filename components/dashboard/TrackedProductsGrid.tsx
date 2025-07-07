@@ -8,6 +8,7 @@ import { PriceHistoryChart } from './PriceHistoryChart';
 import { AlertConfigModal } from './AlertConfigModal';
 import { ProductFilters } from './ProductFilters';
 import { Pagination } from './Pagination';
+import { ExportModal } from './ExportModal';
 import FormatPrices from '@/components/FormatPrices';
 
 // Utility function to format relative time
@@ -122,6 +123,7 @@ export function TrackedProductsGrid() {
   const [selectedProduct, setSelectedProduct] = useState<TrackedProduct | null>(null);
   const [showPriceChart, setShowPriceChart] = useState<string | null>(null);
   const [showAlertConfig, setShowAlertConfig] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // View mode state (matching user preferences)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -308,12 +310,30 @@ export function TrackedProductsGrid() {
       </div>
 
       {/* Filters and Controls */}
-      <ProductFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <ProductFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+        
+        {/* Export Button */}
+        {filteredProducts.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+              title="Exportă datele în format CSV sau PDF"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Exportă
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Products Grid/List */}
       {filteredProducts.length === 0 ? (
@@ -493,6 +513,14 @@ export function TrackedProductsGrid() {
           onSave={handleUpdateAlerts}
         />
       )}
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        products={filteredProducts}
+        title="Exportă Produse Urmărite"
+      />
     </div>
   );
 }
