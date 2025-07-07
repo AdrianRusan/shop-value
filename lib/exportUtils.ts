@@ -256,37 +256,41 @@ export async function exportToPDF(
     
     document.body.appendChild(container);
     
-    // Convert to canvas and then to PDF
-    const canvas = await html2canvas(container, {
-      scale: 1,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff'
-    });
-    
-    document.body.removeChild(container);
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    
-    const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-    const imgWidth = canvasWidth * ratio;
-    const imgHeight = canvasHeight * ratio;
-    
-    // Center the image
-    const x = (pdfWidth - imgWidth) / 2;
-    const y = 10;
-    
-    // Add image to PDF
-    pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
-    
-    // Save the PDF
-    pdf.save(`${filename}-${new Date().toISOString().split('T')[0]}.pdf`);
+    try {
+      // Convert to canvas and then to PDF
+      const canvas = await html2canvas(container, {
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
+      const imgWidth = canvasWidth * ratio;
+      const imgHeight = canvasHeight * ratio;
+      
+      // Center the image
+      const x = (pdfWidth - imgWidth) / 2;
+      const y = 10;
+      
+      // Add image to PDF
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+      
+      // Save the PDF
+      pdf.save(`${filename}-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } finally {
+      // Always remove the container from DOM to prevent memory leaks
+      document.body.removeChild(container);
+    }
     
   } catch (error) {
     console.error('Error generating PDF:', error);
