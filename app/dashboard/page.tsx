@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { getOrCreateUserByClerkId } from '@/lib/clerk-sync';
 import { TrackedProductsGrid } from '@/components/dashboard/TrackedProductsGrid';
+import { SavingsCalculator } from '@/components/dashboard/SavingsCalculator';
 
 export default async function DashboardPage() {
   // Check authentication
@@ -115,6 +116,11 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Savings Calculator Section */}
+        <div className="mb-8">
+          <SavingsCalculator />
         </div>
 
         {/* Main Dashboard Content - Tracked Products */}
