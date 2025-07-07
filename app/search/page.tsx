@@ -178,6 +178,25 @@ const SearchResultsPageContent = () => {
       return discount >= filters.discount[0] && discount <= filters.discount[1];
     });
 
+    // Apply date range filter
+    if (filters.dateRange.start || filters.dateRange.end) {
+      products = products.filter(product => {
+        // Use the most recent date from priceHistory as the product's date
+        const mostRecentDate = product.priceHistory.reduce((latest, entry) => 
+          new Date(entry.date) > new Date(latest.date) ? entry : latest
+        ).date;
+        
+        const productDate = new Date(mostRecentDate);
+        const startDate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
+        const endDate = filters.dateRange.end ? new Date(filters.dateRange.end) : null;
+        
+        if (startDate && productDate < startDate) return false;
+        if (endDate && productDate > endDate) return false;
+        
+        return true;
+      });
+    }
+
     // Apply sorting
     switch (filters.sortBy) {
       case 'price_asc':
@@ -197,8 +216,17 @@ const SearchResultsPageContent = () => {
         products.sort((a, b) => b.users.length - a.users.length);
         break;
       case 'newest':
-        // Sort by newest (mock data doesn't have creation date, so we'll use ID)
-        products.sort((a, b) => parseInt(b._id) - parseInt(a._id));
+        // Sort by newest using the most recent date from priceHistory
+        products.sort((a, b) => {
+          const mostRecentDateA = a.priceHistory.reduce((latest, entry) => 
+            new Date(entry.date) > new Date(latest.date) ? entry : latest
+          ).date;
+          const mostRecentDateB = b.priceHistory.reduce((latest, entry) => 
+            new Date(entry.date) > new Date(latest.date) ? entry : latest
+          ).date;
+          
+          return new Date(mostRecentDateB).getTime() - new Date(mostRecentDateA).getTime();
+        });
         break;
       default:
         // relevance - keep original order for demo
