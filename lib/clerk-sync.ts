@@ -58,6 +58,7 @@ export async function syncClerkUserToMongoDB(clerkUser: ClerkUserData): Promise<
         avatar: clerkUser.image_url,
         role: 'user',
         status: 'active',
+        tenantId: 'default',
         subscription: {
           plan: 'free',
           status: 'active',

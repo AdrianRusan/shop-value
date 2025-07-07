@@ -36,6 +36,7 @@ const getRedis = (): Redis => {
         lpop: async () => null,
         rpop: async () => null,
         eval: async () => 0,
+        evalsha: async () => 0,
         ttl: async () => -1,
       } as any;
     }
@@ -73,6 +74,7 @@ const getRedis = (): Redis => {
         lpop: async () => null,
         rpop: async () => null,
         eval: async () => 0,
+        evalsha: async () => 0,
         ttl: async () => -1,
       } as any;
     }

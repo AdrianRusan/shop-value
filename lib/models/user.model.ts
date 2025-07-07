@@ -312,8 +312,9 @@ const userSchema = new mongoose.Schema({
   tenantId: {
     type: String,
     required: true,
-    index: true
-    // Will be set in pre-save middleware
+    index: true,
+    default: 'default'
+    // Will be set in pre-save middleware or use default
   },
   
   // Account status
@@ -427,9 +428,9 @@ userSchema.virtual('isOnTrial').get(function(this: IUser) {
 
 // Pre-save middleware
 userSchema.pre('save', async function(this: IUser, next: mongoose.CallbackWithoutResultAndOptionalError) {
-  // Set tenantId if not set (single-tenant by default)
+  // Set tenantId if not set (use default for single-tenant setup)
   if (!this.tenantId && this.isNew) {
-    this.tenantId = this._id?.toString() || new mongoose.Types.ObjectId().toString();
+    this.tenantId = 'default';
   }
   
   // Generate referral code if not exists
