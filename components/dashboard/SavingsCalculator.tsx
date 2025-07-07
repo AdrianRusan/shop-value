@@ -155,10 +155,28 @@ export function SavingsCalculator() {
         }))
         .sort((a, b) => b.savings - a.savings);
 
+      // Convert month strings back to dates for proper chronological sorting
       const monthlyTrend = Object.entries(monthlyData)
-        .map(([month, savings]) => ({ month, savings }))
-        .slice(-6) // Last 6 months
-        .sort((a, b) => a.month.localeCompare(b.month));
+        .map(([month, savings]) => {
+          // Parse the Romanian month string back to a date for sorting
+          // month format is like "ian. 2024", "feb. 2024", etc.
+          const [monthName, year] = month.split(' ');
+          const monthMap: { [key: string]: number } = {
+            'ian.': 0, 'feb.': 1, 'mar.': 2, 'apr.': 3, 'mai': 4, 'iun.': 5,
+            'iul.': 6, 'aug.': 7, 'sep.': 8, 'oct.': 9, 'nov.': 10, 'dec.': 11
+          };
+          const monthIndex = monthMap[monthName] ?? 0;
+          const dateForSorting = new Date(parseInt(year), monthIndex, 1);
+          
+          return { 
+            month, 
+            savings, 
+            dateForSorting 
+          };
+        })
+        .sort((a, b) => a.dateForSorting.getTime() - b.dateForSorting.getTime()) // Sort chronologically
+        .slice(-6) // Take the last 6 months chronologically
+        .map(({ month, savings }) => ({ month, savings })); // Remove the helper date
 
       const averageDiscountPercentage = totalOriginalValue > 0 
         ? (totalSavings / totalOriginalValue) * 100 
