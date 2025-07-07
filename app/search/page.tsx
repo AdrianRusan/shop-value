@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import FilterPanel, { FilterState } from '@/components/FilterPanel';
 import ProductCard from '@/components/ProductCard';
+import RecentlyViewed from '@/components/RecentlyViewed';
 import { FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 
@@ -342,6 +343,13 @@ const SearchResultsPageContent = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
+            {/* Recently Viewed Section */}
+            <RecentlyViewed 
+              className="mb-8" 
+              maxItems={8}
+              itemWidth="w-44"
+            />
+
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <MagnifyingGlassIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />

@@ -4,6 +4,7 @@ import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useCallback } from "react";
+import { addToRecentlyViewed } from "@/lib/recentlyViewed";
 
 interface Props {
   product: Product;
@@ -36,6 +37,15 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
     ? Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)
     : 0;
   
+  // Handle product click - add to recently viewed
+  const handleProductClick = useCallback(() => {
+    try {
+      addToRecentlyViewed(product);
+    } catch (error) {
+      console.warn('Failed to add product to recently viewed:', error);
+    }
+  }, [product]);
+
   // Determine image source based on error states
   const getImageUrl = useCallback(() => {
     if (fallbackError) {
@@ -88,6 +98,7 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
         href={linkUrl} 
         className="product-card min-h-[490px] block hover:shadow-lg transition-shadow duration-200"
         aria-label={`View details for ${product.title}`}
+        onClick={handleProductClick}
       >
         <div className="product-card_img-container border border-slate-200 dark:bg-white relative">
           {/* Optimized image loading with proper dimensions and loading strategy */}
