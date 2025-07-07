@@ -1,0 +1,182 @@
+{
+  "name": "Shop Value - Smart Shopping Assistant",
+  "short_name": "Shop Value",
+  "description": "AI-powered shopping assistant that helps you find the best deals, track prices, and save money on your purchases.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["shopping", "productivity", "finance"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Dashboard view on desktop"
+    },
+    {
+      "src": "/screenshots/mobile-products.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Product search on mobile"
+    },
+    {
+      "src": "/screenshots/mobile-alerts.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Price alerts on mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Products",
+      "short_name": "Search",
+      "description": "Search for products and compare prices",
+      "url": "/products",
+      "icons": [
+        {
+          "src": "/icons/shortcut-search.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Price Alerts",
+      "short_name": "Alerts",
+      "description": "View and manage your price alerts",
+      "url": "/dashboard/alerts",
+      "icons": [
+        {
+          "src": "/icons/shortcut-alerts.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard and analytics",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/shortcut-dashboard.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Trending Deals",
+      "short_name": "Deals",
+      "description": "Browse trending deals and discounts",
+      "url": "/deals",
+      "icons": [
+        {
+          "src": "/icons/shortcut-deals.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*", "text/plain"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+shopvalue",
+      "url": "/handle-protocol?url=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/handle-file",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/json": [".json"]
+      }
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "capture_links": "existing-client-navigate"
+} 

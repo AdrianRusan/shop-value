@@ -311,10 +311,9 @@ const userSchema = new mongoose.Schema({
   // Multi-tenancy support
   tenantId: {
     type: String,
-    required: true,
+    required: false, // Not required, but will be set by pre-save middleware
     index: true,
     default: 'default'
-    // Will be set in pre-save middleware or use default
   },
   
   // Account status
@@ -428,8 +427,8 @@ userSchema.virtual('isOnTrial').get(function(this: IUser) {
 
 // Pre-save middleware
 userSchema.pre('save', async function(this: IUser, next: mongoose.CallbackWithoutResultAndOptionalError) {
-  // Set tenantId if not set (use default for single-tenant setup)
-  if (!this.tenantId && this.isNew) {
+  // Ensure tenantId is always set (for both new and existing documents)
+  if (!this.tenantId) {
     this.tenantId = 'default';
   }
   

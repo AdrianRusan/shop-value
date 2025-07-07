@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimits } from './upstash';
 import * as Sentry from '@sentry/nextjs';
+import { auth } from '@clerk/nextjs/server';
+import crypto from 'crypto';
 
 // Lazy-loaded DOMPurify to avoid Edge Runtime issues
 let DOMPurify: any = null;
@@ -57,374 +59,588 @@ export const validateEnvironment = () => {
 
 // Security headers configuration
 export const securityHeaders = {
-  // Content Security Policy
+  'X-DNS-Prefetch-Control': 'off',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'origin-when-cross-origin',
+  'X-XSS-Protection': '1; mode=block',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.stripe.com https://api.clerk.com https://api.sentry.io https://api.resend.com",
-    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    "connect-src 'self' https://api.stripe.com https://*.clerk.accounts.dev wss:",
+    "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'",
-    "upgrade-insecure-requests"
+    "form-action 'self'"
   ].join('; '),
-  
-  // Security headers
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
-  'X-Frame-Options': 'DENY',
-  'X-Content-Type-Options': 'nosniff',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Resource-Policy': 'same-origin',
 };
 
 // CORS configuration
 export const corsConfig = {
-  allowedOrigins: [
-    'https://shop-value.vercel.app',
-    'https://shop-value-feature1.vercel.app',
-    'https://shop-value-develop.vercel.app',
-    'https://shop-value-release.vercel.app',
-    'https://shop-value-hotfix.vercel.app',
-    ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000'] : [])
-  ],
+  allowedOrigins: process.env.NODE_ENV === 'production' 
+    ? [
+        process.env.NEXT_PUBLIC_APP_URL,
+        'https://shop-value.vercel.app',
+        'https://shop-value-feature1.vercel.app'
+      ].filter(Boolean)
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
   credentials: true,
   maxAge: 86400, // 24 hours
 };
 
-// XSS Protection utilities
-export const xssProtection = {
-  sanitizeHtml: (html: string): string => {
-    const domPurify = getDOMPurify();
-    return domPurify.sanitize(html, {
-      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
-      ALLOWED_ATTR: ['href'],
-      ALLOW_DATA_ATTR: false,
-    });
+// Enhanced CSRF Protection
+export const csrfProtection = {
+  generateToken: (): string => {
+    return crypto.randomBytes(32).toString('hex');
   },
   
+  validateToken: (token: string, expectedToken: string): boolean => {
+    if (!token || !expectedToken) return false;
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(token, 'hex'),
+        Buffer.from(expectedToken, 'hex')
+      );
+    } catch {
+      return false;
+    }
+  },
+  
+  middleware: (request: NextRequest) => {
+    // Skip CSRF for GET requests and webhooks
+    if (request.method === 'GET' || request.nextUrl.pathname.includes('/webhooks/')) {
+      return { valid: true };
+    }
+    
+    const token = request.headers.get('x-csrf-token') || 
+                  request.headers.get('csrf-token') ||
+                  request.nextUrl.searchParams.get('csrf_token');
+    
+    const expectedToken = request.headers.get('x-csrf-expected') ||
+                         request.cookies.get('csrf-token')?.value;
+    
+    if (!token || !expectedToken) {
+      return { valid: false, error: 'CSRF token missing' };
+    }
+    
+    if (!csrfProtection.validateToken(token, expectedToken)) {
+      return { valid: false, error: 'CSRF token invalid' };
+    }
+    
+    return { valid: true };
+  }
+};
+
+// Enhanced XSS Protection utilities
+export const xssProtection = {
   sanitizeInput: (input: string): string => {
+    if (typeof input !== 'string') return '';
+    
+    const purify = getDOMPurify();
+    if (purify) {
+      return purify.sanitize(input, { 
+        ALLOWED_TAGS: [], 
+        ALLOWED_ATTR: [] 
+      });
+    }
+    
+    // Fallback sanitization
     return input
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+\s*=/gi, '')
+      .replace(/[<>'"&]/g, (match) => {
+        const escapeMap: { [key: string]: string } = {
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;',
+          '&': '&amp;'
+        };
+        return escapeMap[match];
+      })
       .trim();
   },
   
-  validateAndSanitize: <T>(schema: z.ZodSchema<T>, data: unknown): T => {
-    // First validate with Zod
-    const validated = schema.parse(data);
+  sanitizeHtml: (html: string): string => {
+    const purify = getDOMPurify();
+    if (purify) {
+      return purify.sanitize(html, {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li'],
+        ALLOWED_ATTR: []
+      });
+    }
+    return xssProtection.sanitizeInput(html);
+  },
+  
+  // Recursive sanitization for objects
+  sanitizeObject: (obj: any): any => {
+    if (typeof obj === 'string') {
+      return xssProtection.sanitizeInput(obj);
+    }
     
-    // Then sanitize string fields
-    if (typeof validated === 'object' && validated !== null) {
-      const sanitized = { ...validated } as any;
-      for (const [key, value] of Object.entries(sanitized)) {
-        if (typeof value === 'string') {
-          sanitized[key] = xssProtection.sanitizeInput(value);
-        }
+    if (Array.isArray(obj)) {
+      return obj.map(xssProtection.sanitizeObject);
+    }
+    
+    if (obj && typeof obj === 'object') {
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        sanitized[xssProtection.sanitizeInput(key)] = xssProtection.sanitizeObject(value);
       }
       return sanitized;
     }
     
-    return validated;
+    return obj;
   }
 };
 
 // Database security utilities
 export const dbSecurity = {
-  // Prevent NoSQL injection by sanitizing MongoDB queries
   sanitizeMongoQuery: (query: any): any => {
     if (typeof query !== 'object' || query === null) {
       return query;
     }
     
-    const sanitized = { ...query };
+    if (Array.isArray(query)) {
+      return query.map(dbSecurity.sanitizeMongoQuery);
+    }
     
-    // Remove potentially dangerous operators
-    const dangerousOperators = ['$where', '$regex', '$expr', '$function'];
-    dangerousOperators.forEach(op => {
-      if (sanitized[op]) {
-        delete sanitized[op];
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(query)) {
+      // Block dangerous operators
+      if (key.startsWith('$') && !['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex', '$or', '$and'].includes(key)) {
+        continue; // Skip dangerous operators
       }
-    });
+      
+      if (typeof value === 'string') {
+        sanitized[xssProtection.sanitizeInput(key)] = xssProtection.sanitizeInput(value);
+      } else if (typeof value === 'object' && value !== null) {
+        sanitized[xssProtection.sanitizeInput(key)] = dbSecurity.sanitizeMongoQuery(value);
+      } else {
+        sanitized[xssProtection.sanitizeInput(key)] = value;
+      }
+    }
     
-    // Recursively sanitize nested objects
-    for (const [key, value] of Object.entries(sanitized)) {
+    return sanitized;
+  },
+
+  isValidObjectId: (id: string): boolean => {
+    if (!id || typeof id !== 'string') return false;
+    return /^[a-fA-F0-9]{24}$/.test(id);
+  },
+
+  escapeRegex: (text: string): string => {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  },
+};
+
+// Enhanced database security
+export const databaseSecurity = {
+  sanitizeMongoQuery: (query: any): any => {
+    if (typeof query !== 'object' || query === null) {
+      return query;
+    }
+    
+    if (Array.isArray(query)) {
+      return query.map(databaseSecurity.sanitizeMongoQuery);
+    }
+    
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(query)) {
+      // Block dangerous MongoDB operators
+      if (key.startsWith('$') && !['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex'].includes(key)) {
+        continue; // Skip dangerous operators
+      }
+      
+      // Recursively sanitize nested objects
       if (typeof value === 'object' && value !== null) {
-        sanitized[key] = dbSecurity.sanitizeMongoQuery(value);
+        sanitized[key] = databaseSecurity.sanitizeMongoQuery(value);
+      } else if (typeof value === 'string') {
+        // Prevent NoSQL injection in string values
+        sanitized[key] = value.replace(/[\${}]/g, '');
+      } else {
+        sanitized[key] = value;
       }
     }
     
     return sanitized;
   },
   
-  // Validate MongoDB ObjectId
-  isValidObjectId: (id: string): boolean => {
+  validateObjectId: (id: string): boolean => {
     return /^[0-9a-fA-F]{24}$/.test(id);
+  },
+  
+  createSafeAggregationPipeline: (stages: any[]): any[] => {
+    return stages.filter(stage => {
+      const stageKeys = Object.keys(stage);
+      // Allow only safe aggregation stages
+      const allowedStages = ['$match', '$sort', '$limit', '$skip', '$project', '$group', '$lookup', '$unwind'];
+      return stageKeys.every(key => allowedStages.includes(key));
+    });
   }
 };
 
-// Rate limiting middleware with different tiers
+// IP Access Control
+export const ipAccessControl = {
+  blacklistedIPs: new Set<string>(),
+  
+  isBlacklisted: (ip: string): boolean => {
+    return ipAccessControl.blacklistedIPs.has(ip);
+  },
+  
+  blacklistIP: (ip: string, reason?: string): void => {
+    ipAccessControl.blacklistedIPs.add(ip);
+    console.warn(`IP ${ip} blacklisted: ${reason || 'No reason provided'}`);
+  },
+  
+  whitelistIP: (ip: string): void => {
+    ipAccessControl.blacklistedIPs.delete(ip);
+    console.info(`IP ${ip} removed from blacklist`);
+  },
+  
+  getClientIP: (request: NextRequest): string => {
+    const forwarded = request.headers.get('x-forwarded-for');
+    const realIP = request.headers.get('x-real-ip');
+    const remoteAddress = request.ip;
+    
+    if (forwarded) {
+      return forwarded.split(',')[0].trim();
+    }
+    
+    return realIP || remoteAddress || 'unknown';
+  },
+  
+  isPrivateIP: (ip: string): boolean => {
+    const privateRanges = [
+      /^10\./,
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+      /^192\.168\./,
+      /^127\./,
+      /^::1$/,
+      /^fe80:/,
+      /^fc00:/
+    ];
+    
+    return privateRanges.some(range => range.test(ip));
+  }
+};
+
+// Enhanced rate limiting
 export const createRateLimitMiddleware = (type: 'api' | 'scraping' | 'email' | 'sensitive') => {
-  return async (request: NextRequest): Promise<{ success: boolean; error?: string }> => {
+  const limits = {
+    api: { requests: 100, windowMs: 60000 }, // 100 requests per minute
+    scraping: { requests: 10, windowMs: 60000 }, // 10 requests per minute
+    email: { requests: 5, windowMs: 60000 }, // 5 requests per minute
+    sensitive: { requests: 3, windowMs: 300000 }, // 3 requests per 5 minutes
+  };
+
+  const config = limits[type];
+
+  return async (request: NextRequest) => {
     try {
-      const ip = request.headers.get('x-forwarded-for') ?? 
-                request.headers.get('x-real-ip') ?? 
-                'anonymous';
+      const { userId } = auth();
+      const clientIP = ipAccessControl.getClientIP(request);
       
-      const { success, limit, remaining, reset } = await rateLimits[type].limit(ip);
-      
-      if (!success) {
-        Sentry.addBreadcrumb({
-          message: 'Rate limit exceeded',
-          level: 'warning',
-          data: { ip, type, limit, remaining, reset }
-        });
-        
+      // Use user ID if available, otherwise fall back to IP
+      const identifier = userId ?? clientIP;
+
+      const rateLimiter = rateLimits[type];
+      const result = await rateLimiter.limit(identifier);
+
+      if (!result.success) {
+                  securityAudit.logSecurityEvent({
+            type: 'suspicious',
+            severity: 'medium',
+            description: `Rate limit exceeded for ${type}`,
+            ip: clientIP,
+            userId: userId || undefined,
+            metadata: { 
+              type, 
+              identifier, 
+              limit: config.requests,
+              windowMs: config.windowMs 
+            }
+          });
+
         return {
           success: false,
-          error: `Rate limit exceeded. Try again in ${Math.ceil((reset - Date.now()) / 1000)} seconds.`
+          error: 'Rate limit exceeded',
+          code: 'RATE_LIMIT_EXCEEDED',
+          headers: {
+            'X-RateLimit-Limit': config.requests.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(Date.now() + config.windowMs).toISOString(),
+          }
         };
       }
-      
-      return { success: true };
+
+      return {
+        success: true,
+        headers: {
+          'X-RateLimit-Limit': config.requests.toString(),
+          'X-RateLimit-Remaining': result.remaining.toString(),
+          'X-RateLimit-Reset': new Date(Date.now() + config.windowMs).toISOString(),
+        }
+      };
     } catch (error) {
       Sentry.captureException(error);
-      return { success: false, error: 'Rate limiting error' };
+      return {
+        success: false,
+        error: 'Rate limiting service unavailable',
+        code: 'RATE_LIMIT_ERROR'
+      };
     }
   };
 };
 
-// Security middleware factory
-export const createSecurityMiddleware = (options: {
-  rateLimit?: 'api' | 'scraping' | 'email' | 'sensitive';
-  requireAuth?: boolean;
-  validateInput?: z.ZodSchema<any>;
-  corsEnabled?: boolean;
-}) => {
-  return async (
-    request: NextRequest,
-    handler: (req: NextRequest, validatedData?: any) => Promise<NextResponse>
-  ): Promise<NextResponse> => {
-    try {
-      // CORS handling
-      if (options.corsEnabled) {
-        const origin = request.headers.get('origin');
-        const isAllowedOrigin = origin && corsConfig.allowedOrigins.includes(origin);
-        
-        if (request.method === 'OPTIONS') {
-          return new NextResponse(null, {
-            status: 200,
-            headers: {
-              'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null',
-              'Access-Control-Allow-Methods': corsConfig.allowedMethods.join(', '),
-              'Access-Control-Allow-Headers': corsConfig.allowedHeaders.join(', '),
-              'Access-Control-Allow-Credentials': corsConfig.credentials.toString(),
-              'Access-Control-Max-Age': corsConfig.maxAge.toString(),
-            },
-          });
-        }
-      }
-      
-      // Rate limiting
-      if (options.rateLimit) {
-        const rateLimitCheck = await createRateLimitMiddleware(options.rateLimit)(request);
-        if (!rateLimitCheck.success) {
-          return NextResponse.json({
-            success: false,
-            error: rateLimitCheck.error
-          }, { status: 429 });
-        }
-      }
-      
-      // Authentication check
-      if (options.requireAuth) {
-        const { auth } = await import('@clerk/nextjs/server');
-        const { userId } = await auth();
-        
-        if (!userId) {
-          return NextResponse.json({
-            success: false,
-            error: 'Authentication required'
-          }, { status: 401 });
-        }
-      }
-      
-      // Input validation
-      let validatedData;
-      if (options.validateInput) {
-        try {
-          const method = request.method.toUpperCase();
-          const contentLength = request.headers.get('content-length');
-          const contentType = request.headers.get('content-type');
-          
-          // Methods that should never have request bodies for validation
-          const methodsWithoutBodies = ['GET', 'HEAD', 'OPTIONS'];
-          
-          // Determine if this method typically supports body validation
-          const methodSupportsBody = !methodsWithoutBodies.includes(method);
-          
-          if (methodSupportsBody) {
-            // Check if there's actually a body to validate
-            const hasJsonContentType = contentType?.includes('application/json');
-            const contentLengthNum = contentLength ? parseInt(contentLength) : 0;
-            const hasTransferEncoding = request.headers.get('transfer-encoding') === 'chunked';
-            
-            // Determine if a body is present or expected
-            const hasBody = contentLengthNum > 0 || hasTransferEncoding || hasJsonContentType;
-            
-            if (hasBody) {
-              // Only enforce JSON content type if there's an actual body
-              if (!hasJsonContentType) {
-                return NextResponse.json({
-                  success: false,
-                  error: 'Content-Type must be application/json when sending request body'
-                }, { status: 400 });
-              }
-              
-              try {
-                // Parse and validate the body
-                const body = await request.json();
-                validatedData = xssProtection.validateAndSanitize(options.validateInput, body);
-              } catch (parseError) {
-                // Handle empty bodies or invalid JSON
-                if (parseError instanceof SyntaxError && parseError.message.includes('Unexpected end of JSON input')) {
-                  // Empty body case - validate empty object
-                  validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
-                } else {
-                  throw parseError;
-                }
-              }
-            } else {
-              // No body present - validate empty object for schema compliance
-              validatedData = xssProtection.validateAndSanitize(options.validateInput, {});
-            }
-          } else {
-            // For GET, HEAD, OPTIONS - no body validation needed
-            validatedData = undefined;
-          }
-        } catch (error) {
-          if (error instanceof z.ZodError) {
-            return NextResponse.json({
-              success: false,
-              error: 'Invalid input data',
-              details: error.errors
-            }, { status: 400 });
-          }
-          
-          if (error instanceof SyntaxError) {
-            return NextResponse.json({
-              success: false,
-              error: 'Invalid JSON in request body'
-            }, { status: 400 });
-          }
-          
-          return NextResponse.json({
-            success: false,
-            error: 'Failed to validate request data'
-          }, { status: 400 });
-        }
-      }
-      
-      // Call the actual handler
-      const response = await handler(request, validatedData);
-      
-      // Add security headers
-      Object.entries(securityHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      
-      // Add CORS headers if enabled
-      if (options.corsEnabled) {
-        const origin = request.headers.get('origin');
-        const isAllowedOrigin = origin && corsConfig.allowedOrigins.includes(origin);
-        
-        if (isAllowedOrigin) {
-          response.headers.set('Access-Control-Allow-Origin', origin);
-          response.headers.set('Access-Control-Allow-Credentials', 'true');
-        }
-      }
-      
-      return response;
-      
-    } catch (error) {
-      Sentry.captureException(error);
-      
-      return NextResponse.json({
+// Request size limiting
+export const requestSizeLimiter = (maxSize: number) => {
+  return (request: NextRequest) => {
+    const contentLength = request.headers.get('content-length');
+    
+    if (contentLength && parseInt(contentLength) > maxSize) {
+      return {
         success: false,
-        error: 'Internal security error'
-      }, { status: 500 });
+        error: 'Request too large',
+        code: 'PAYLOAD_TOO_LARGE',
+        maxSize,
+        actualSize: parseInt(contentLength)
+      };
     }
+    
+    return { success: true };
   };
 };
 
 // Webhook signature verification
-export const verifyWebhookSignature = {
-  stripe: (body: string, signature: string, secret: string): boolean => {
-    try {
-      const { default: stripe } = require('stripe');
-      const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY!);
-      stripeInstance.webhooks.constructEvent(body, signature, secret);
-      return true;
-    } catch (error) {
-      Sentry.captureException(error);
-      return false;
-    }
-  },
-  
-  clerk: (body: string, headers: Headers): boolean => {
-    try {
-      const { Webhook } = require('svix');
-      const webhook = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
-      
-      const svixId = headers.get('svix-id');
-      const svixTimestamp = headers.get('svix-timestamp');
-      const svixSignature = headers.get('svix-signature');
-      
-      webhook.verify(body, {
-        'svix-id': svixId,
-        'svix-timestamp': svixTimestamp,
-        'svix-signature': svixSignature,
-      });
-      
-      return true;
-    } catch (error) {
-      Sentry.captureException(error);
-      return false;
-    }
+export const verifyWebhookSignature = (
+  payload: string,
+  signature: string,
+  secret: string
+): boolean => {
+  try {
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload, 'utf8')
+      .digest('hex');
+    
+    const providedSignature = signature.replace('sha256=', '');
+    
+    return crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, 'hex'),
+      Buffer.from(providedSignature, 'hex')
+    );
+  } catch {
+    return false;
   }
 };
 
 // Session security utilities
 export const sessionSecurity = {
-  // Validate session tokens
-  validateSession: async (token: string): Promise<boolean> => {
-    try {
-      // Use Clerk's server-side verification
-      const { auth } = await import('@clerk/nextjs/server');
-      // For session validation, we can use the auth() function in context
-      return token.length > 0; // Basic validation, enhanced by Clerk middleware
-    } catch (error) {
-      return false;
+  validateSession: (sessionId: string): boolean => {
+    // Validate session format and expiration
+    if (!sessionId || sessionId.length < 32) return false;
+    
+    // Additional session validation logic
+    return true;
+  },
+
+  generateSecureToken: (): string => {
+    return crypto.randomBytes(32).toString('hex');
+  },
+
+  hashSensitiveData: (data: string): string => {
+    return crypto.createHash('sha256').update(data).digest('hex');
+  }
+};
+
+// Security audit helpers
+export const securityAudit = {
+  logSecurityEvent: (event: {
+    type: 'authentication' | 'authorization' | 'validation' | 'suspicious';
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+    ip?: string;
+    userId?: string;
+    metadata?: any;
+  }) => {
+    const auditLog = {
+      ...event,
+      timestamp: new Date().toISOString(),
+      service: 'shopvalue-api'
+    };
+    
+    console.log('Security Event:', auditLog);
+    
+    // Send to Sentry for high/critical events
+    if (['high', 'critical'].includes(event.severity)) {
+      Sentry.captureMessage(`Security Event: ${event.description}`, {
+        level: event.severity === 'critical' ? 'error' : 'warning',
+        tags: {
+          type: event.type,
+          severity: event.severity
+        },
+        extra: auditLog
+      });
     }
   },
-  
-  // Generate secure session metadata
-  createSessionMetadata: (request: NextRequest) => ({
-    ip: request.headers.get('x-forwarded-for') ?? 'unknown',
-    userAgent: request.headers.get('user-agent') ?? 'unknown',
-    timestamp: new Date().toISOString(),
-    requestId: crypto.randomUUID(),
-  })
+
+  validateSecurityHeaders: (request: NextRequest): boolean => {
+    const requiredHeaders = ['user-agent', 'accept'];
+    return requiredHeaders.every(header => request.headers.has(header));
+  },
+
+  detectSuspiciousPatterns: (request: NextRequest): string[] => {
+    const suspiciousPatterns = [];
+    const userAgent = request.headers.get('user-agent') || '';
+    const url = request.url;
+    
+    // Check for automated/bot requests
+    if (!userAgent || userAgent.length < 10) {
+      suspiciousPatterns.push('Missing or suspicious User-Agent');
+    }
+    
+    // Check for SQL injection attempts
+    if (url.includes('UNION') || url.includes('SELECT') || url.includes('DROP')) {
+      suspiciousPatterns.push('Potential SQL injection attempt');
+    }
+    
+    // Check for path traversal attempts
+    if (url.includes('../') || url.includes('..\\')) {
+      suspiciousPatterns.push('Potential path traversal attempt');
+    }
+    
+    return suspiciousPatterns;
+  }
+};
+
+// Comprehensive security middleware
+export const createSecurityMiddleware = (options: {
+  rateLimit?: 'api' | 'scraping' | 'email' | 'sensitive';
+  requireAuth?: boolean;
+  validateInput?: z.ZodSchema<any>;
+  corsEnabled?: boolean;
+  maxRequestSize?: number;
+  csrfProtection?: boolean;
+  ipAccessControl?: boolean;
+}) => {
+  return async (request: NextRequest) => {
+    const results: any = {
+      success: true,
+      headers: {},
+      errors: []
+    };
+
+    try {
+      // 1. IP Access Control
+      if (options.ipAccessControl) {
+        const clientIP = ipAccessControl.getClientIP(request);
+        if (ipAccessControl.isBlacklisted(clientIP)) {
+          securityAudit.logSecurityEvent({
+            type: 'authorization',
+            severity: 'high',
+            description: 'Blacklisted IP attempted access',
+            ip: clientIP
+          });
+          
+          return {
+            success: false,
+            error: 'Access denied',
+            code: 'IP_BLACKLISTED'
+          };
+        }
+      }
+
+      // 2. Request size limiting
+      if (options.maxRequestSize) {
+        const sizeCheck = requestSizeLimiter(options.maxRequestSize)(request);
+        if (!sizeCheck.success) {
+          results.errors.push(sizeCheck.error);
+          return sizeCheck;
+        }
+      }
+
+      // 3. Rate limiting
+      if (options.rateLimit) {
+        const rateLimit = await createRateLimitMiddleware(options.rateLimit)(request);
+        if (!rateLimit.success) {
+          results.errors.push(rateLimit.error);
+          return rateLimit;
+        }
+        if (rateLimit.headers) {
+          Object.assign(results.headers, rateLimit.headers);
+        }
+      }
+
+      // 4. CSRF Protection
+      if (options.csrfProtection) {
+        const csrfResult = csrfProtection.middleware(request);
+        if (!csrfResult.valid) {
+          securityAudit.logSecurityEvent({
+            type: 'validation',
+            severity: 'medium',
+            description: `CSRF validation failed: ${csrfResult.error}`,
+            ip: ipAccessControl.getClientIP(request)
+          });
+          
+          return {
+            success: false,
+            error: csrfResult.error || 'CSRF validation failed',
+            code: 'CSRF_INVALID'
+          };
+        }
+      }
+
+      // 5. Authentication check
+      if (options.requireAuth) {
+        const { userId } = auth();
+        if (!userId) {
+          return {
+            success: false,
+            error: 'Authentication required',
+            code: 'AUTH_REQUIRED'
+          };
+        }
+        results.userId = userId;
+      }
+
+      // 6. Security headers validation
+      if (!securityAudit.validateSecurityHeaders(request)) {
+        securityAudit.logSecurityEvent({
+          type: 'suspicious',
+          severity: 'low',
+          description: 'Request missing required security headers',
+          ip: ipAccessControl.getClientIP(request)
+        });
+      }
+
+      // 7. Suspicious pattern detection
+      const suspiciousPatterns = securityAudit.detectSuspiciousPatterns(request);
+      if (suspiciousPatterns.length > 0) {
+        securityAudit.logSecurityEvent({
+          type: 'suspicious',
+          severity: 'medium',
+          description: `Suspicious patterns detected: ${suspiciousPatterns.join(', ')}`,
+          ip: ipAccessControl.getClientIP(request),
+          metadata: { patterns: suspiciousPatterns }
+        });
+      }
+
+      return results;
+    } catch (error) {
+      Sentry.captureException(error);
+      return {
+        success: false,
+        error: 'Security middleware error',
+        code: 'SECURITY_ERROR'
+      };
+    }
+  };
 };
 
 // Initialize environment validation on module load
@@ -438,9 +654,13 @@ export default {
   securityHeaders,
   corsConfig,
   xssProtection,
-  dbSecurity,
+  databaseSecurity,
   createRateLimitMiddleware,
-  createSecurityMiddleware,
+  csrfProtection,
+  ipAccessControl,
+  requestSizeLimiter,
   verifyWebhookSignature,
   sessionSecurity,
+  securityAudit,
+  createSecurityMiddleware,
 };

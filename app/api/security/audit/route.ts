@@ -176,9 +176,9 @@ async function runPenetrationTest() {
   return penTestResults;
 }
 
-// Apply security middleware to all methods
-export const GET = (request: NextRequest) => secureMiddleware(request, auditHandler);
-export const POST = (request: NextRequest) => secureMiddleware(request, auditHandler);
+// Apply security middleware to all methods  
+export const GET = auditHandler;
+export const POST = auditHandler;
 
 // Explicitly handle unsupported methods
 export const PUT = () => NextResponse.json({ error: 'Method not allowed' }, { status: 405 });

@@ -91,7 +91,7 @@ const secureHandler = async (request: NextRequest, validatedData?: z.infer<typeo
 };
 
 // Apply security middleware to all methods
-export const GET = (request: NextRequest) => secureMiddleware(request, async () => {
+export const GET = async (request: NextRequest) => {
   return NextResponse.json({
     success: true,
     message: 'Secure GET endpoint working',
@@ -103,13 +103,13 @@ export const GET = (request: NextRequest) => secureMiddleware(request, async () 
     },
     timestamp: new Date().toISOString(),
   });
-});
+};
 
-export const POST = (request: NextRequest) => secureMiddleware(request, secureHandler);
+export const POST = secureHandler;
 
-export const PUT = (request: NextRequest) => secureMiddleware(request, secureHandler);
+export const PUT = secureHandler;
 
-export const DELETE = (request: NextRequest) => secureMiddleware(request, async () => {
+export const DELETE = async (request: NextRequest) => {
   // Example delete with additional security checks
   const searchParams = request.nextUrl.searchParams;
   const id = searchParams.get('id');
@@ -128,7 +128,7 @@ export const DELETE = (request: NextRequest) => secureMiddleware(request, async 
     deletedId: id,
     timestamp: new Date().toISOString(),
   });
-});
+};
 
 // Note: Webhook signature verification is available in lib/security.ts
 // For webhook endpoints, create a separate route like app/api/webhooks/stripe/route.ts

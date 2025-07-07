@@ -20,6 +20,15 @@ const nextConfig = {
     } : false,
   },
 
+  // Ensure consistent React builds
+  transpilePackages: [
+    '@react-email/components',
+    '@react-email/render'
+  ],
+
+  // Remove standalone output to prevent dev server conflicts
+  // output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+
   // Enhanced image optimization
   images: {
     remotePatterns: [

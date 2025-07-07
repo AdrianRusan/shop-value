@@ -5,83 +5,69 @@ import { Ratelimit } from '@upstash/ratelimit';
 let _redis: Redis | null = null;
 
 const getRedis = (): Redis => {
-  if (!_redis) {
-    // Check for mock/development mode
-    if (process.env.UPSTASH_REDIS_REST_URL === 'mock' || process.env.NODE_ENV === 'development') {
-      // Return a mock Redis client for development
-      console.log('Using mock Redis client for development');
-      return {
-        get: async () => null,
-        set: async () => 'OK',
-        setex: async () => 'OK',
-        incr: async () => 1,
-        expire: async () => 1,
-        hmset: async () => 'OK',
-        lpush: async () => 1,
-        ltrim: async () => 'OK',
-        del: async () => 1,
-        exists: async () => 0,
-        keys: async () => [],
-        flushall: async () => 'OK',
-        ping: async () => 'PONG',
-        hget: async () => null,
-        hset: async () => 1,
-        hdel: async () => 1,
-        hgetall: async () => ({}),
-        zadd: async () => 1,
-        zrange: async () => [],
-        zrem: async () => 1,
-        lrange: async () => [],
-        rpush: async () => 1,
-        lpop: async () => null,
-        rpop: async () => null,
-        eval: async () => 0,
-        evalsha: async () => 0,
-        ttl: async () => -1,
-      } as any;
-    }
+  // During build time or when building for static export, use mock
+  if (process.env.BUILDING === 'true' || process.env.NODE_ENV === 'development' && !process.env.UPSTASH_REDIS_REST_URL) {
+    console.log('Using mock Redis client for build/development');
+    return {
+      get: async () => null,
+      set: async () => 'OK',
+      setex: async () => 'OK',
+      incr: async () => 1,
+      expire: async () => 1,
+      hmset: async () => 'OK',
+      lpush: async () => 1,
+      ltrim: async () => 'OK',
+      del: async () => 1,
+      exists: async () => 0,
+      keys: async () => [],
+      flushall: async () => 'OK',
+      ping: async () => 'PONG',
+      hget: async () => null,
+      hset: async () => 1,
+      hdel: async () => 1,
+      hgetall: async () => ({}),
+      zadd: async () => 1,
+      zrange: async () => [],
+      zrem: async () => 1,
+      lrange: async () => [],
+      rpush: async () => 1,
+      lpop: async () => null,
+      rpop: async () => null,
+      eval: async () => 0,
+      evalsha: async () => [1, []], // Proper evalsha implementation for rate limiting
+      script: {
+        load: async () => 'sha1hash',
+        exists: async () => [1],
+        flush: async () => 'OK'
+      },
+      ttl: async () => -1,
+      multi: () => ({
+        exec: async () => [],
+        set: () => ({}),
+        incr: () => ({}),
+        expire: () => ({}),
+        del: () => ({})
+      }),
+      pipeline: () => ({
+        exec: async () => [],
+        set: () => ({}),
+        incr: () => ({}),
+        expire: () => ({}),
+        del: () => ({})
+      })
+    } as any;
+  }
 
+  if (!_redis) {
     if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-      // During build time, we don't have these variables, so we'll create a mock
-      if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
-        // Only throw in production runtime (not build time)
-        throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in environment variables');
-      }
-      // Return a mock Redis client for build time
-      return {
-        get: async () => null,
-        set: async () => 'OK',
-        setex: async () => 'OK',
-        incr: async () => 1,
-        expire: async () => 1,
-        hmset: async () => 'OK',
-        lpush: async () => 1,
-        ltrim: async () => 'OK',
-        del: async () => 1,
-        exists: async () => 0,
-        keys: async () => [],
-        flushall: async () => 'OK',
-        ping: async () => 'PONG',
-        hget: async () => null,
-        hset: async () => 1,
-        hdel: async () => 1,
-        hgetall: async () => ({}),
-        zadd: async () => 1,
-        zrange: async () => [],
-        zrem: async () => 1,
-        lrange: async () => [],
-        rpush: async () => 1,
-        lpop: async () => null,
-        rpop: async () => null,
-        eval: async () => 0,
-        evalsha: async () => 0,
-        ttl: async () => -1,
-      } as any;
+      throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in environment variables');
     }
     
     _redis = new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      // Prevent automatic retries during build
+      retry: process.env.BUILDING === 'true' ? { retries: 0 } : undefined,
     });
   }
   

@@ -89,9 +89,11 @@ export default clerkMiddleware((auth, request) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    // Skip Next.js internals and specific static files, but be more explicit
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot|otf|mp4|mp3|wav|flac|aac|ogg|mov|avi|wmv|flv|webm)$).*)',
+    // Explicitly include all app directories that might use auth()
+    '/(api|dashboard|admin|profile|settings|billing|sign-in|sign-up|pricing|produse|search|developers)(.*)',
+    // Include root paths that might need auth
+    '/',
   ],
 };

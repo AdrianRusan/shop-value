@@ -2,6 +2,9 @@ import ProductCard from '@/components/ProductCard';
 import { getAllProducts } from '@/lib/actions';
 import { Product } from '@/types';
 
+// Force this page to be dynamic to avoid build-time database calls
+export const dynamic = 'force-dynamic';
+
 const ProductsPage = async () => {
 
   const allProducts = await getAllProducts();

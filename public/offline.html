@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Shop Value</title>
+    <link rel="icon" href="/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            padding: 20px;
+        }
+
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .offline-icon svg {
+            width: 60px;
+            height: 60px;
+            fill: white;
+        }
+
+        .offline-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .offline-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .features-list {
+            text-align: left;
+            margin: 30px 0;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .features-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-icon svg {
+            width: 12px;
+            height: 12px;
+            fill: white;
+        }
+
+        .feature-text {
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 25px;
+            padding: 12px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #f39c12;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .connection-restored {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .connection-restored .status-dot {
+            background: #28a745;
+            animation: none;
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 30px 20px;
+            }
+
+            .offline-title {
+                font-size: 2rem;
+            }
+
+            .offline-icon {
+                width: 100px;
+                height: 100px;
+            }
+
+            .offline-icon svg {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>
+            </svg>
+        </div>
+
+        <h1 class="offline-title">You're Offline</h1>
+        <p class="offline-subtitle">
+            No internet connection detected. Don't worry - Shop Value still works in many ways!
+        </p>
+
+        <div class="features-list">
+            <h3>What you can still do:</h3>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
+                <span class="feature-text">Browse previously viewed products</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
+                <span class="feature-text">View your saved price alerts</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
+                <span class="feature-text">Access your dashboard analytics</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                </div>
+                <span class="feature-text">Create alerts (synced when online)</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="checkConnection()">
+                Try Again
+            </button>
+            <a href="/" class="btn btn-secondary">
+                Go to Homepage
+            </a>
+        </div>
+
+        <div id="connectionStatus" class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Checking connection...</span>
+        </div>
+    </div>
+
+    <script>
+        let connectionCheckInterval;
+        let isOnline = false;
+
+        function updateConnectionStatus(online) {
+            const statusDiv = document.getElementById('connectionStatus');
+            const statusText = statusDiv.querySelector('span');
+            
+            if (online) {
+                statusDiv.className = 'status-indicator connection-restored';
+                statusText.textContent = 'Connection restored! Redirecting...';
+                
+                // Wait a moment then redirect
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                statusDiv.className = 'status-indicator';
+                statusText.textContent = 'Still offline - will retry automatically';
+            }
+        }
+
+        function checkConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const statusText = statusDiv.querySelector('span');
+            
+            statusText.textContent = 'Checking connection...';
+            
+            // Try to fetch a small resource to test connectivity
+            fetch('/', { 
+                method: 'HEAD',
+                cache: 'no-cache',
+                timeout: 5000
+            })
+            .then(response => {
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false);
+                }
+            })
+            .catch(() => {
+                updateConnectionStatus(false);
+            });
+        }
+
+        function startConnectionMonitoring() {
+            // Check connection every 10 seconds
+            connectionCheckInterval = setInterval(checkConnection, 10000);
+            
+            // Also listen for online/offline events
+            window.addEventListener('online', () => {
+                updateConnectionStatus(true);
+            });
+            
+            window.addEventListener('offline', () => {
+                updateConnectionStatus(false);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            startConnectionMonitoring();
+            
+            // Initial connection check
+            setTimeout(checkConnection, 1000);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (connectionCheckInterval) {
+                clearInterval(connectionCheckInterval);
+            }
+        });
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const activeElement = document.activeElement;
+                if (activeElement.classList.contains('btn')) {
+                    activeElement.click();
+                }
+            } else if (e.key === 'r' || e.key === 'R') {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    checkConnection();
+                }
+            }
+        });
+
+        // Add visual feedback for button interactions
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html> 

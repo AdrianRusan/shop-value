@@ -133,35 +133,97 @@ export async function GET(
       trackingQuery.isActive = false;
     }
 
-    // Get tracked products with populated product data
-    const trackings = await UserProductTracking.find(trackingQuery)
-      .populate({
-        path: 'productId',
-        match: category ? { category: new RegExp(category, 'i') } : {},
-        select: 'title brand category currentPrice originalPrice currency image isOutOfStock url priceHistory lastScrapedAt updatedAt'
-      })
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // Get tracked products with populated product data using optimized aggregation
+    const trackingAggregation: any[] = [
+      // Match user's trackings
+      {
+        $match: trackingQuery
+      },
+      // Lookup product details
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product',
+          pipeline: [
+            // Filter products by category if specified
+            ...(category ? [{ $match: { category: new RegExp(category, 'i') } }] : []),
+            // Project only needed fields for performance
+            {
+              $project: {
+                title: 1,
+                brand: 1,
+                category: 1,
+                currentPrice: 1,
+                originalPrice: 1,
+                currency: 1,
+                image: 1,
+                isOutOfStock: 1,
+                url: 1,
+                priceHistory: { $slice: ['$priceHistory', -5] }, // Last 5 price points only
+                lastScrapedAt: 1,
+                updatedAt: 1
+              }
+            }
+          ]
+        }
+      },
+      // Unwind the product array
+      {
+        $unwind: {
+          path: '$product',
+          preserveNullAndEmptyArrays: false // Filter out trackings without valid products
+        }
+      },
+      // Add computed fields
+      {
+        $addFields: {
+          priceChangePercentage: {
+            $cond: {
+              if: {
+                $and: [
+                  { $ne: ['$product.currentPrice', null] },
+                  { $ne: ['$product.originalPrice', null] },
+                  { $gt: ['$product.originalPrice', 0] }
+                ]
+              },
+              then: {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $subtract: ['$product.currentPrice', '$product.originalPrice'] },
+                      '$product.originalPrice'
+                    ]
+                  },
+                  100
+                ]
+              },
+              else: 0
+            }
+          }
+        }
+      },
+      // Sort the results
+      {
+        $sort: { [sortBy]: sortOrder }
+      },
+      // Pagination
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      }
+    ];
 
-    // Filter out trackings where product wasn't found (due to category filter)
-    const validTrackings = trackings.filter(tracking => tracking.productId);
-
-    // Get total count for pagination
-    const totalCount = await UserProductTracking.countDocuments(trackingQuery);
+    // Execute optimized aggregation query
+    const [trackedProducts, totalCount] = await Promise.all([
+      UserProductTracking.aggregate(trackingAggregation),
+      UserProductTracking.countDocuments(trackingQuery)
+    ]);
 
     // Prepare response with analytics and proper serialization
-    const trackedProducts = validTrackings.map(tracking => {
-      const product = tracking.productId as any; // Type assertion since populate changes the type
-      return {
-        ...tracking,
-        product: product,
-        priceChangePercentage: product && product.currentPrice && product.originalPrice ? 
-          ((product.currentPrice - product.originalPrice) / product.originalPrice) * 100 : 0
-      };
-    });
-
     const responseData = {
       products: trackedProducts,
       pagination: {
@@ -172,8 +234,10 @@ export async function GET(
       },
       summary: {
         totalTracked: totalCount,
-        activeTracked: validTrackings.filter((t: any) => t.isActive).length,
-        averagePriceChange: trackedProducts.reduce((acc: number, p: any) => acc + p.priceChangePercentage, 0) / trackedProducts.length || 0
+        activeTracked: trackedProducts.filter((t: any) => t.isActive).length,
+        averagePriceChange: trackedProducts.length > 0 
+          ? trackedProducts.reduce((acc: number, p: any) => acc + (p.priceChangePercentage || 0), 0) / trackedProducts.length 
+          : 0
       }
     };
 

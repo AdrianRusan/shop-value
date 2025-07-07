@@ -47,7 +47,7 @@ Sentry.init({
   },
   
   // Additional server-specific options
-  debug: SENTRY_ENVIRONMENT === 'development',
+  // debug: SENTRY_ENVIRONMENT === 'development', // Removed to prevent debug bundle warnings
   attachStacktrace: true,
   
   // Custom error handling for unhandled rejections

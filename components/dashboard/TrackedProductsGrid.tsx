@@ -182,21 +182,14 @@ export function TrackedProductsGrid() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, filters]); // Removed pagination from dependencies to prevent infinite loop
 
-  // Effect to fetch products when user changes
+  // Effect to fetch products when user or filters change
   useEffect(() => {
     if (user?.id) {
       fetchProducts();
     }
-  }, [user?.id, fetchProducts]);
-
-  // Effect to fetch products when filters or pagination change
-  useEffect(() => {
-    if (user?.id) {
-      fetchProducts();
-    }
-  }, [filters, pagination.page, user?.id]);
+  }, [user?.id, filters, fetchProducts]); // Combined the two useEffects and removed pagination.page dependency
 
   // Filter products locally by search term
   const filteredProducts = useMemo(() => {
@@ -222,7 +215,9 @@ export function TrackedProductsGrid() {
   // Handle page changes
   const handlePageChange = useCallback((page: number) => {
     setPagination(prev => ({ ...prev, page }));
-  }, []);
+    // Trigger fetch with the new page number
+    fetchProducts(undefined, page);
+  }, [fetchProducts]);
 
   // Handle removing product from tracking
   const handleRemoveProduct = useCallback(async (productId: string) => {

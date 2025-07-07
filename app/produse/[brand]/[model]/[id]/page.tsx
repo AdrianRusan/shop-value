@@ -7,10 +7,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import ShareModal from "@/components/ShareModal";
 import { headers } from 'next/headers'
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
 import { Metadata } from "next";
+
+// Force this page to be dynamic to avoid build-time database calls
+export const dynamic = 'force-dynamic';
 
 type Props = {
   params: {
@@ -64,9 +67,9 @@ const formatDate = (date: Date) =>
 
 const ProductDetails = async ({ params }: Props) => {
 
-  const ThemedIcon = dynamic(() => import('../../../../../components/ThemedIcon'))
-  const PriceTableChart = dynamic(() => import('../../../../../components/PriceTableChart'))
-  const SimilarSection = dynamic(() => import('../../../../../components/SimilarSection'))
+  const ThemedIcon = dynamicImport(() => import('../../../../../components/ThemedIcon'))
+  const PriceTableChart = dynamicImport(() => import('../../../../../components/PriceTableChart'))
+  const SimilarSection = dynamicImport(() => import('../../../../../components/SimilarSection'))
 
   const product = await getProductById(params.id);
 
