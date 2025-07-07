@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchProducts } from '@/lib/actions';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 interface SearchSuggestion {
   type: 'brand' | 'product' | 'popular';
   text: string;
