@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import FilterPanel, { FilterState } from '@/components/FilterPanel';
 import ProductCard from '@/components/ProductCard';
 import { FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useSearchAnalytics } from '@/hooks/useSearchAnalytics';
 
 // Mock product data for demonstration
 const mockProducts = [
@@ -109,6 +110,7 @@ const mockProducts = [
 const SearchResultsPageContent = () => {
   const searchParams = useSearchParams();
   const query = searchParams?.get('q') || '';
+  const { trackSearch, trackResultClick, trackConversion, trackPerformance } = useSearchAnalytics();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(query);
@@ -132,6 +134,7 @@ const SearchResultsPageContent = () => {
   }, [filters, searchTerm]);
 
   const applyFilters = () => {
+    const startTime = performance.now();
     let products = [...mockProducts];
 
     // Apply search term filter
@@ -233,7 +236,21 @@ const SearchResultsPageContent = () => {
         break;
     }
 
+    const endTime = performance.now();
+    const responseTime = endTime - startTime;
+
     setFilteredProducts(products);
+
+    // Track search analytics
+    if (searchTerm) {
+      trackSearch(searchTerm, filters, {
+        count: products.length,
+        responseTime: responseTime
+      });
+
+      // Track performance metrics
+      trackPerformance(searchTerm, responseTime, products.length, false);
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -337,8 +354,17 @@ const SearchResultsPageContent = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <div key={product._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                {filteredProducts.map((product, index: number) => (
+                  <div 
+                    key={product._id} 
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => {
+                      // Track product click
+                      if (searchTerm) {
+                        trackResultClick(searchTerm, product._id, index, filters);
+                      }
+                    }}
+                  >
                     <div className="p-4">
                       <div className="aspect-w-16 aspect-h-9 mb-4">
                         <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">

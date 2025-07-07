@@ -46,6 +46,10 @@ export type AnalyticsEvent =
   | 'filter_applied'
   | 'product_shared'
   | 'feedback_submitted'
+  // Search analytics events
+  | 'search_result_clicked'
+  | 'search_conversion'
+  | 'search_performance'
   // Conversion events
   | 'checkout_started'
   | 'checkout_completed'
