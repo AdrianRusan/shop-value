@@ -8,6 +8,7 @@ import { PriceHistoryChart } from './PriceHistoryChart';
 import { AlertConfigModal } from './AlertConfigModal';
 import { ProductFilters } from './ProductFilters';
 import { Pagination } from './Pagination';
+import { QuickActionsPanel } from './QuickActionsPanel';
 import FormatPrices from '@/components/FormatPrices';
 
 // Utility function to format relative time
@@ -125,6 +126,9 @@ export function TrackedProductsGrid() {
 
   // View mode state (matching user preferences)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Selection state for bulk actions
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
   // Fetch tracked products with memoized parameters
   const fetchProducts = useCallback(async () => {
@@ -245,6 +249,115 @@ export function TrackedProductsGrid() {
     }
   }, [user?.id, fetchProducts]);
 
+  // Handle bulk actions
+  const handleBulkAction = useCallback(async (action: string, productIds: string[]) => {
+    if (!user?.id || productIds.length === 0) return;
+
+    try {
+      switch (action) {
+        case 'delete':
+          const deleteResponse = await fetch(`/api/products/user/${user.id}?productIds=${productIds.join(',')}`, {
+            method: 'DELETE'
+          });
+          if (!deleteResponse.ok) throw new Error('Failed to delete products');
+          break;
+
+        case 'priceAlert':
+          const alertResponse = await fetch(`/api/products/user/${user.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              productIds: productIds,
+              updates: {
+                alertSettings: {
+                  priceDecrease: true,
+                  priceIncrease: false,
+                  backInStock: true,
+                  threshold: 10,
+                  frequency: 'immediate'
+                }
+              }
+            })
+          });
+          if (!alertResponse.ok) throw new Error('Failed to setup price alerts');
+          break;
+
+        case 'addToWishlist':
+          for (const productId of productIds) {
+            const wishlistResponse = await fetch(`/api/products/user/${user.id}/wishlist`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId })
+            });
+            if (!wishlistResponse.ok) {
+              console.warn(`Failed to add product ${productId} to wishlist`);
+            }
+          }
+          break;
+
+        default:
+          console.warn('Unknown bulk action:', action);
+      }
+
+      // Clear selection and refresh
+      setSelectedProducts(new Set());
+      await fetchProducts();
+    } catch (error) {
+      console.error('Bulk action failed:', error);
+      alert('Eroare la executarea acțiunii în masă. Te rog încearcă din nou.');
+    }
+  }, [user?.id, fetchProducts]);
+
+  // Handle product selection
+  const handleProductSelect = useCallback((productId: string, selected: boolean) => {
+    setSelectedProducts(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(productId);
+      } else {
+        newSet.delete(productId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Handle select all
+  const handleSelectAll = useCallback(() => {
+    const allProductIds = filteredProducts.map(p => p._id);
+    setSelectedProducts(new Set(allProductIds));
+  }, [filteredProducts]);
+
+  // Handle clear selection
+  const handleClearSelection = useCallback(() => {
+    setSelectedProducts(new Set());
+  }, []);
+
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (event.target instanceof HTMLInputElement || 
+          event.target instanceof HTMLTextAreaElement ||
+          event.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      const hasCtrl = event.ctrlKey || event.metaKey;
+      
+      if (hasCtrl && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        handleSelectAll();
+      }
+      
+      if (event.key === 'Escape') {
+        handleClearSelection();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [handleSelectAll, handleClearSelection]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -273,6 +386,16 @@ export function TrackedProductsGrid() {
 
   return (
     <div className="space-y-6">
+      {/* Quick Actions Panel */}
+      <QuickActionsPanel
+        selectedProducts={selectedProducts}
+        onBulkAction={handleBulkAction}
+        onFilterChange={handleFilterChange}
+        onRefresh={fetchProducts}
+        activeTab="tracked"
+        filters={filters}
+      />
+
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
@@ -338,9 +461,19 @@ export function TrackedProductsGrid() {
             {filteredProducts.map((item) => (
               <div key={item._id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden ${
                 viewMode === 'list' ? 'flex' : ''
-              }`}>
+              } ${selectedProducts.has(item._id) ? 'ring-2 ring-primary' : ''}`}>
                 {/* Product Image */}
                 <div className={`${viewMode === 'list' ? 'w-48 flex-shrink-0' : 'aspect-square'} relative`}>
+                  {/* Selection checkbox */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedProducts.has(item._id)}
+                      onChange={(e) => handleProductSelect(item._id, e.target.checked)}
+                      className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
+                  
                   <Image
                     src={item.productId.image}
                     alt={item.productId.title}
