@@ -308,8 +308,12 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Calculate facets for filtering (run in parallel for performance)
+    // Create a copy of mongoQuery without the text search condition for accurate facets
+    const facetsQuery = { ...mongoQuery };
+    delete facetsQuery.$text; // Remove text search condition for facets
+    
     const facetsPromise = Product.aggregate([
-      { $match: { ...mongoQuery, query: undefined } }, // Remove text search for facets
+      { $match: facetsQuery },
       {
         $facet: {
           categories: [
