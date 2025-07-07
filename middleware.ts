@@ -2,34 +2,19 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { securityHeaders } from "@/lib/security-headers";
 
-// Define route matchers for different types of routes
+// Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/profile(.*)',
   '/settings(.*)',
   '/billing(.*)',
-  '/products(.*)',
-  '/api/user(.*)',
-  '/api/products(.*)',
+  '/admin(.*)',
+  '/api/products/user(.*)',
   '/api/checkout(.*)',
-]);
-
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
-  '/api/health',
-  '/api/cron(.*)',
-  '/produse(.*)',
-  '/pricing',
-  '/about',
-  '/contact',
-  '/privacy',
-  '/terms',
-  '/sitemap.xml',
-  '/robots.txt',
-  '/favicon.ico',
+  '/api/customer-portal(.*)',
+  '/api/alerts(.*)',
+  '/api/gdpr(.*)',
+  '/api/notifications(.*)',
 ]);
 
 // Helper function to apply security headers to any response
@@ -43,18 +28,45 @@ function applySecurityHeaders(response: Response): Response {
 }
 
 export default clerkMiddleware((auth, request) => {
+  const url = request.nextUrl;
+  
+  // Skip middleware for static files and Next.js internals
+  if (
+    url.pathname.startsWith('/_next/') ||
+    url.pathname.startsWith('/api/_next/') ||
+    url.pathname.includes('.') // Skip files with extensions
+  ) {
+    return NextResponse.next();
+  }
+
   let response: Response;
   
-  // Handle protected routes that require authentication
-  if (isProtectedRoute(request) && !auth().userId) {
-    response = auth().redirectToSignIn();
-  }
-  // Handle authenticated users on public auth pages
-  else if (auth().userId && (request.nextUrl.pathname === '/sign-in' || request.nextUrl.pathname === '/sign-up')) {
-    response = Response.redirect(new URL('/dashboard', request.url));
-  }
-  // Handle normal requests
-  else {
+  try {
+    // Handle protected routes that require authentication
+    if (isProtectedRoute(request)) {
+      const authState = auth();
+      if (!authState.userId) {
+        response = authState.redirectToSignIn();
+      } else {
+        response = NextResponse.next();
+      }
+    }
+    // Handle authenticated users trying to access auth pages
+    else if (url.pathname === '/sign-in' || url.pathname === '/sign-up') {
+      const authState = auth();
+      if (authState.userId) {
+        response = Response.redirect(new URL('/dashboard', request.url));
+      } else {
+        response = NextResponse.next();
+      }
+    }
+    // Handle all other routes
+    else {
+      response = NextResponse.next();
+    }
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    // Fallback to allowing the request through
     response = NextResponse.next();
   }
   
@@ -62,7 +74,7 @@ export default clerkMiddleware((auth, request) => {
   response = applySecurityHeaders(response);
   
   // Additional security measures for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/api/')) {
     // Add API-specific security headers
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     

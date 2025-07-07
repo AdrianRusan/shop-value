@@ -66,10 +66,6 @@ export default async function DashboardPage() {
     <DashboardLayoutCustomizer 
       clerkUser={serializedClerkUser} 
       mongoUser={serializedUser}
-      onLayoutChange={(layout) => {
-        // Could be used to save layout to backend if needed
-        console.log('Layout changed:', layout);
-      }}
     />
   );
 }

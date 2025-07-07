@@ -133,20 +133,24 @@ export function TrackedProductsGrid() {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
   // Fetch tracked products with memoized parameters
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (customFilters?: Partial<FilterState>, customPage?: number) => {
     if (!user?.id) return;
 
     setLoading(true);
     setError(null);
 
     try {
+      // Use current state values or custom parameters
+      const currentFilters = customFilters ? { ...filters, ...customFilters } : filters;
+      const currentPage = customPage ?? pagination.page;
+      
       const params = new URLSearchParams({
-        page: pagination.page.toString(),
+        page: currentPage.toString(),
         limit: pagination.limit.toString(),
-        category: filters.category,
-        status: filters.status,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
+        category: currentFilters.category,
+        status: currentFilters.status,
+        sortBy: currentFilters.sortBy,
+        sortOrder: currentFilters.sortOrder
       });
 
       const response = await fetch(`/api/products/user/${user.id}?${params}`);
@@ -162,7 +166,15 @@ export function TrackedProductsGrid() {
       }
 
       setProducts(data.data.products);
-      setPagination(data.data.pagination);
+      // Only update pagination if it's actually different to avoid triggering re-renders
+      setPagination(prev => {
+        if (prev.page !== data.data.pagination.page || 
+            prev.total !== data.data.pagination.total ||
+            prev.pages !== data.data.pagination.pages) {
+          return data.data.pagination;
+        }
+        return prev;
+      });
       setSummary(data.data.summary);
     } catch (error) {
       console.error('Error fetching tracked products:', error);
@@ -170,12 +182,21 @@ export function TrackedProductsGrid() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, pagination.page, pagination.limit, filters]);
+  }, [user?.id]);
 
-  // Effect to fetch products when dependencies change
+  // Effect to fetch products when user changes
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (user?.id) {
+      fetchProducts();
+    }
+  }, [user?.id, fetchProducts]);
+
+  // Effect to fetch products when filters or pagination change
+  useEffect(() => {
+    if (user?.id) {
+      fetchProducts();
+    }
+  }, [filters, pagination.page, user?.id]);
 
   // Filter products locally by search term
   const filteredProducts = useMemo(() => {
@@ -193,7 +214,7 @@ export function TrackedProductsGrid() {
   const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     // Reset to first page when filters change
-    if ('category' in newFilters || 'status' in newFilters) {
+    if ('category' in newFilters || 'status' in newFilters || 'sortBy' in newFilters || 'sortOrder' in newFilters) {
       setPagination(prev => ({ ...prev, page: 1 }));
     }
   }, []);
@@ -217,7 +238,7 @@ export function TrackedProductsGrid() {
       }
 
       // Refresh products list
-      await fetchProducts();
+      fetchProducts();
     } catch (error) {
       console.error('Error removing product:', error);
       alert('Eroare la eliminarea produsului. Te rog încearcă din nou.');
@@ -243,7 +264,7 @@ export function TrackedProductsGrid() {
       }
 
       // Refresh products list
-      await fetchProducts();
+      fetchProducts();
       setShowAlertConfig(null);
     } catch (error) {
       console.error('Error updating alerts:', error);
@@ -303,7 +324,7 @@ export function TrackedProductsGrid() {
 
       // Clear selection and refresh
       setSelectedProducts(new Set());
-      await fetchProducts();
+      fetchProducts();
     } catch (error) {
       console.error('Bulk action failed:', error);
       alert('Eroare la executarea acțiunii în masă. Te rog încearcă din nou.');

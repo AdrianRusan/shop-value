@@ -67,7 +67,6 @@ interface DashboardLayoutCustomizerProps {
     lastLoginAt?: string;
     loginCount?: number;
   } | null;
-  onLayoutChange?: (layout: DashboardLayout) => void;
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
@@ -174,7 +173,7 @@ const LAYOUT_PRESETS: DashboardLayout[] = [
   }
 ];
 
-export function DashboardLayoutCustomizer({ clerkUser, mongoUser, onLayoutChange }: DashboardLayoutCustomizerProps) {
+export function DashboardLayoutCustomizer({ clerkUser, mongoUser }: DashboardLayoutCustomizerProps) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [currentLayout, setCurrentLayout] = useState<DashboardLayout>(LAYOUT_PRESETS[0]);
   const [widgets, setWidgets] = useState<DashboardWidget[]>([...DEFAULT_WIDGETS]);
@@ -195,13 +194,12 @@ export function DashboardLayoutCustomizer({ clerkUser, mongoUser, onLayoutChange
     }
   }, []);
 
-  // Save layout to localStorage and call onChange
+  // Save layout to localStorage
   const saveLayout = useCallback((layout: DashboardLayout) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('dashboard-layout', JSON.stringify(layout));
     }
-    onLayoutChange?.(layout);
-  }, [onLayoutChange]);
+  }, []);
 
   // Handle drag end
   const handleDragEnd = (result: DropResult) => {
