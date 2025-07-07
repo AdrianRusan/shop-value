@@ -1,9 +1,10 @@
 "use client"
 
+import React, { useState, useCallback } from "react";
 import { Product } from "@/types"
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useUser } from '@clerk/nextjs';
 import { addToRecentlyViewed } from "@/lib/recentlyViewed";
 
 interface Props {
@@ -13,9 +14,11 @@ interface Props {
 }
 
 const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => {
+  const { user } = useUser();
   const flipURL = `/assets/images/flip.jpg`;
   const [imageError, setImageError] = useState(false);
   const [fallbackError, setFallbackError] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
   // Error handling for missing required product data
   if (!product || !product._id || !product.title) {
@@ -45,6 +48,54 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
       console.warn('Failed to add product to recently viewed:', error);
     }
   }, [product]);
+
+  // Handle adding to wishlist
+  const handleAddToWishlist = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation when clicking the wishlist button
+    e.stopPropagation();
+    
+    if (!user?.id) {
+      alert('Te rog să te autentifici pentru a adăuga produse în wishlist.');
+      return;
+    }
+
+    if (!product._id) {
+      alert('Eroare: ID-ul produsului nu este disponibil.');
+      return;
+    }
+
+    setIsAddingToWishlist(true);
+
+    try {
+      const response = await fetch(`/api/products/user/${user.id}/wishlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product._id,
+          category: product.category,
+          priority: 'medium'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 409) {
+          alert('Produsul este deja în wishlist!');
+        } else {
+          throw new Error(errorData.error || 'Failed to add to wishlist');
+        }
+        return;
+      }
+
+      // Success notification
+      alert('Produsul a fost adăugat în wishlist cu succes! 🎉');
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      alert('Eroare la adăugarea în wishlist. Te rog încearcă din nou.');
+    } finally {
+      setIsAddingToWishlist(false);
+    }
+  }, [user?.id, product._id, product.category]);
 
   // Determine image source based on error states
   const getImageUrl = useCallback(() => {
@@ -119,6 +170,28 @@ const ProductCard = ({ product, priority = false, loading = 'lazy' }: Props) => 
             onError={handleImageError}
           />
           
+          {/* Wishlist button */}
+          <button
+            onClick={handleAddToWishlist}
+            disabled={isAddingToWishlist || !user}
+            className={`absolute top-2 left-2 p-2 rounded-full transition-all duration-200 ${
+              user 
+                ? 'bg-white/80 hover:bg-white text-gray-600 hover:text-pink-600 shadow-md hover:shadow-lg' 
+                : 'bg-gray-300/80 text-gray-400 cursor-not-allowed'
+            } ${isAddingToWishlist ? 'animate-pulse' : ''}`}
+            title={user ? 'Adaugă în wishlist' : 'Autentifică-te pentru wishlist'}
+          >
+            {isAddingToWishlist ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            )}
+          </button>
+
           {/* Discount badge */}
           {hasDiscount && (
             <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
