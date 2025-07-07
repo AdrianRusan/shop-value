@@ -48,6 +48,77 @@ async function verifyUserAccess(userId: string, clerkUserId: string) {
   }
 }
 
+// Helper function to create structured user notes
+function createStructuredNotes(category?: string, priority: string = 'medium', userNotes?: string) {
+  const structured = {
+    category: category || undefined,
+    priority,
+    notes: userNotes || undefined
+  };
+  
+  // Remove undefined values to keep JSON clean
+  Object.keys(structured).forEach(key => 
+    structured[key as keyof typeof structured] === undefined && delete structured[key as keyof typeof structured]
+  );
+  
+  return JSON.stringify(structured);
+}
+
+// Helper function to parse structured user notes with backward compatibility
+function parseStructuredNotes(userNotes?: string) {
+  if (!userNotes) {
+    return { category: undefined, priority: 'medium', notes: undefined };
+  }
+  
+  try {
+    // Try to parse as JSON first (new format)
+    const parsed = JSON.parse(userNotes);
+    return {
+      category: parsed.category || undefined,
+      priority: parsed.priority || 'medium',
+      notes: parsed.notes || undefined
+    };
+  } catch {
+    // Fallback to old pipe-delimited format for backward compatibility
+    const category = userNotes.includes('category:') 
+      ? userNotes.split('category:')[1].split('|')[0] 
+      : undefined;
+    
+    const priority = userNotes.includes('priority:')
+      ? userNotes.split('priority:')[1].split('|')[0]
+      : 'medium';
+    
+    // Extract notes by removing category and priority metadata
+    let notes = userNotes
+      .replace(/category:[^|]*\|?/g, '')
+      .replace(/priority:[^|]*\|?/g, '')
+      .replace(/^\|+|\|+$/g, '') // Remove leading/trailing pipes
+      .trim();
+    
+    return {
+      category: category || undefined,
+      priority,
+      notes: notes || undefined
+    };
+  }
+}
+
+// Helper function to calculate price change percentage correctly
+function calculatePriceChangePercentage(currentPrice: number, originalPrice: number): number {
+  if (typeof currentPrice !== 'number' || typeof originalPrice !== 'number' || 
+      isNaN(currentPrice) || isNaN(originalPrice)) {
+    return 0;
+  }
+  
+  if (originalPrice === 0) {
+    // If original price is 0, we can't calculate percentage change
+    // Return 100% if current price > 0, otherwise 0%
+    return currentPrice > 0 ? 100 : 0;
+  }
+  
+  return ((currentPrice - originalPrice) / originalPrice) * 100;
+}
+
 // GET /api/products/user/[userId]/wishlist - Get user's wishlist
 export async function GET(
   request: NextRequest,
@@ -113,17 +184,18 @@ export async function GET(
 
     // Group by category for organization
     const itemsByCategory = validWishlistItems.reduce((acc: any, item: any) => {
-      const categoryName = item.userNotes?.includes('category:') 
-        ? item.userNotes.split('category:')[1].split('|')[0] 
-        : 'Uncategorized';
+      const { category } = parseStructuredNotes(item.userNotes);
+      const categoryName = category || 'Uncategorized';
       
       if (!acc[categoryName]) {
         acc[categoryName] = [];
       }
       acc[categoryName].push({
         ...item,
-        priceChangePercentage: item.productId && (item.productId as any).currentPrice && (item.productId as any).originalPrice ? 
-          (((item.productId as any).currentPrice - (item.productId as any).originalPrice) / (item.productId as any).originalPrice) * 100 : 0
+        priceChangePercentage: calculatePriceChangePercentage(
+          item.productId?.currentPrice, 
+          item.productId?.originalPrice
+        )
       });
       return acc;
     }, {});
@@ -131,8 +203,10 @@ export async function GET(
     const responseData = {
       items: validWishlistItems.map((item: any) => ({
         ...item,
-        priceChangePercentage: item.productId && (item.productId as any).currentPrice && (item.productId as any).originalPrice ? 
-          (((item.productId as any).currentPrice - (item.productId as any).originalPrice) / (item.productId as any).originalPrice) * 100 : 0
+        priceChangePercentage: calculatePriceChangePercentage(
+          item.productId?.currentPrice, 
+          item.productId?.originalPrice
+        )
       })),
       itemsByCategory,
       pagination: {
@@ -145,8 +219,10 @@ export async function GET(
         totalItems: totalCount,
         categories: Object.keys(itemsByCategory).length,
         averagePriceChange: validWishlistItems.reduce((acc: number, item: any) => {
-          const priceChange = item.productId && item.productId.currentPrice && item.productId.originalPrice ? 
-            ((item.productId.currentPrice - item.productId.originalPrice) / item.productId.originalPrice) * 100 : 0;
+          const priceChange = calculatePriceChangePercentage(
+            item.productId?.currentPrice, 
+            item.productId?.originalPrice
+          );
           return acc + priceChange;
         }, 0) / validWishlistItems.length || 0
       }
@@ -240,9 +316,7 @@ export async function POST(
     }
 
     // Create wishlist notes with category information
-    const enrichedNotes = category 
-      ? `category:${category}|priority:${priority}${userNotes ? `|${userNotes}` : ''}` 
-      : `priority:${priority}${userNotes ? `|${userNotes}` : ''}`;
+    const enrichedNotes = createStructuredNotes(category, priority, userNotes);
 
     // Create new wishlist item
     const wishlistItem = new UserProductTracking({
@@ -337,11 +411,8 @@ export async function PUT(
           // Update the category in userNotes
           const existingItem = await UserProductTracking.findById(item.trackingId);
           if (existingItem) {
-            const notes = existingItem.userNotes || '';
-            const updatedNotes = notes.includes('category:') 
-              ? notes.replace(/category:[^|]*/, `category:${item.category}`)
-              : `category:${item.category}|${notes}`;
-            updateData.userNotes = updatedNotes;
+            const { priority, notes } = parseStructuredNotes(existingItem.userNotes);
+            updateData.userNotes = createStructuredNotes(item.category, priority, notes);
           }
         }
         
@@ -384,11 +455,8 @@ export async function PUT(
       if (updates.category !== undefined) {
         const existingItem = await UserProductTracking.findById(trackingId);
         if (existingItem) {
-          const notes = existingItem.userNotes || '';
-          const updatedNotes = notes.includes('category:') 
-            ? notes.replace(/category:[^|]*/, `category:${updates.category}`)
-            : `category:${updates.category}|${notes}`;
-          updateData.userNotes = updatedNotes;
+          const { priority, notes } = parseStructuredNotes(existingItem.userNotes);
+          updateData.userNotes = createStructuredNotes(updates.category, priority, notes);
         }
       }
 

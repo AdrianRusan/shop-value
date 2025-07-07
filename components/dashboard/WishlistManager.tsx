@@ -4,8 +4,64 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+// TODO: Fix react-beautiful-dnd module resolution issue
+// import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import FormatPrices from '@/components/FormatPrices';
+
+// Helper function to parse structured user notes with backward compatibility
+function parseStructuredNotes(userNotes?: string) {
+  if (!userNotes) {
+    return { category: undefined, priority: 'medium', notes: undefined };
+  }
+  
+  try {
+    // Try to parse as JSON first (new format)
+    const parsed = JSON.parse(userNotes);
+    return {
+      category: parsed.category || undefined,
+      priority: parsed.priority || 'medium',
+      notes: parsed.notes || undefined
+    };
+  } catch {
+    // Fallback to old pipe-delimited format for backward compatibility
+    const category = userNotes.includes('category:') 
+      ? userNotes.split('category:')[1].split('|')[0] 
+      : undefined;
+    
+    const priority = userNotes.includes('priority:')
+      ? userNotes.split('priority:')[1].split('|')[0]
+      : 'medium';
+    
+    // Extract notes by removing category and priority metadata
+    let notes = userNotes
+      .replace(/category:[^|]*\|?/g, '')
+      .replace(/priority:[^|]*\|?/g, '')
+      .replace(/^\|+|\|+$/g, '') // Remove leading/trailing pipes
+      .trim();
+    
+    return {
+      category: category || undefined,
+      priority,
+      notes: notes || undefined
+    };
+  }
+}
+
+// Helper function to calculate price change percentage correctly
+function calculatePriceChangePercentage(currentPrice: number, originalPrice: number): number {
+  if (typeof currentPrice !== 'number' || typeof originalPrice !== 'number' || 
+      isNaN(currentPrice) || isNaN(originalPrice)) {
+    return 0;
+  }
+  
+  if (originalPrice === 0) {
+    // If original price is 0, we can't calculate percentage change
+    // Return 100% if current price > 0, otherwise 0%
+    return currentPrice > 0 ? 100 : 0;
+  }
+  
+  return ((currentPrice - originalPrice) / originalPrice) * 100;
+}
 
 // Types
 interface WishlistItem {
@@ -122,9 +178,8 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
     // Filter by category
     if (selectedCategory !== 'all') {
       items = items.filter((item: WishlistItem) => {
-        const categoryName = item.userNotes?.includes('category:') 
-          ? item.userNotes.split('category:')[1].split('|')[0] 
-          : 'Uncategorized';
+        const { category } = parseStructuredNotes(item.userNotes);
+        const categoryName = category || 'Uncategorized';
         return categoryName === selectedCategory;
       });
     }
@@ -245,11 +300,13 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
     
     // If moving between categories
     if (sourceCategory !== destinationCategory) {
-      const draggedItem = filteredItems.find((item: WishlistItem) => item._id === result.draggableId);
+      // Fix: Search in full items list instead of filtered items to handle cases when filters are active
+      const draggedItem = wishlistData.items.find((item: WishlistItem) => item._id === result.draggableId);
       if (draggedItem) {
         itemsToUpdate.push({
           trackingId: draggedItem._id,
-          category: destinationCategory === 'Uncategorized' ? '' : destinationCategory,
+          // Fix: Set category to undefined (not empty string) for 'Uncategorized' to match parseStructuredNotes logic
+          category: destinationCategory === 'Uncategorized' ? undefined : destinationCategory,
           order: destination.index
         });
       }
@@ -469,111 +526,83 @@ export function WishlistManager({ onItemAdded, onItemRemoved, compact = false }:
         </>
       )}
 
-      {/* Wishlist Content */}
-      <DragDropContext onDragStart={() => setIsDragging(true)} onDragEnd={handleDragEnd}>
-        {viewMode === 'category' ? (
-          // Category-based view with drag and drop
-          <div className="space-y-6">
-            {Object.entries(wishlistData.itemsByCategory)
-              .filter(([categoryName]) => selectedCategory === 'all' || selectedCategory === categoryName)
-              .map(([categoryName, categoryItems]) => (
-                <div key={categoryName} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {categoryName} ({categoryItems.length})
-                    </h3>
-                  </div>
-                  
-                  <Droppable droppableId={`category-${categoryName}`}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`grid gap-4 p-4 ${
-                          compact ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                        } ${
-                          snapshot.isDraggingOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                        }`}
-                      >
-                        {categoryItems
-                          .filter(item => !searchTerm || 
-                            item.productId.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.productId.brand.toLowerCase().includes(searchTerm.toLowerCase())
-                          )
-                          .map((item, index) => (
-                            <Draggable key={item._id} draggableId={item._id} index={index}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border transition-all ${
-                                    snapshot.isDragging 
-                                      ? 'border-blue-500 shadow-lg transform rotate-2' 
-                                      : 'border-gray-200 dark:border-gray-700 hover:shadow-md'
-                                  } ${
-                                    selectedItems.has(item._id) ? 'ring-2 ring-primary' : ''
-                                  }`}
-                                >
-                                  <WishlistItemCard
-                                    item={item}
-                                    compact={compact}
-                                    selected={selectedItems.has(item._id)}
-                                    onSelect={(selected) => {
-                                      const newSelected = new Set(selectedItems);
-                                      if (selected) {
-                                        newSelected.add(item._id);
-                                      } else {
-                                        newSelected.delete(item._id);
-                                      }
-                                      setSelectedItems(newSelected);
-                                    }}
-                                    onEdit={() => setEditingItem(item)}
-                                    onRemove={() => handleRemoveItems([item._id])}
-                                    onMoveToTracking={() => handleMoveToTracking(item)}
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
+            {/* Wishlist Content */}
+      {/* TODO: Re-enable drag and drop functionality after fixing react-beautiful-dnd */}
+      {viewMode === 'category' ? (
+        // Category-based view (drag and drop temporarily disabled)
+        <div className="space-y-6">
+          {Object.entries(wishlistData.itemsByCategory)
+            .filter(([categoryName]) => selectedCategory === 'all' || selectedCategory === categoryName)
+            .map(([categoryName, categoryItems]) => (
+              <div key={categoryName} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {categoryName} ({categoryItems.length})
+                  </h3>
                 </div>
-              ))}
-          </div>
-        ) : (
-          // Grid or List view
-          <div className={`grid gap-4 ${
-            viewMode === 'grid' 
-              ? (compact ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')
-              : 'grid-cols-1'
-          }`}>
-            {filteredItems.map((item) => (
-              <WishlistItemCard
-                key={item._id}
-                item={item}
-                compact={compact}
-                listView={viewMode === 'list'}
-                selected={selectedItems.has(item._id)}
-                onSelect={(selected) => {
-                  const newSelected = new Set(selectedItems);
-                  if (selected) {
-                    newSelected.add(item._id);
-                  } else {
-                    newSelected.delete(item._id);
-                  }
-                  setSelectedItems(newSelected);
-                }}
-                onEdit={() => setEditingItem(item)}
-                onRemove={() => handleRemoveItems([item._id])}
-                onMoveToTracking={() => handleMoveToTracking(item)}
-              />
+                
+                <div className={`grid gap-4 p-4 ${
+                  compact ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                }`}>
+                  {categoryItems
+                    .filter(item => !searchTerm || 
+                      item.productId.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      item.productId.brand.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((item) => (
+                      <WishlistItemCard
+                        key={item._id}
+                        item={item}
+                        compact={compact}
+                        selected={selectedItems.has(item._id)}
+                        onSelect={(selected) => {
+                          const newSelected = new Set(selectedItems);
+                          if (selected) {
+                            newSelected.add(item._id);
+                          } else {
+                            newSelected.delete(item._id);
+                          }
+                          setSelectedItems(newSelected);
+                        }}
+                        onEdit={() => setEditingItem(item)}
+                        onRemove={() => handleRemoveItems([item._id])}
+                        onMoveToTracking={() => handleMoveToTracking(item)}
+                      />
+                    ))}
+                </div>
+              </div>
             ))}
-          </div>
-        )}
-      </DragDropContext>
+        </div>
+      ) : (
+        // Grid or List view
+        <div className={`grid gap-4 ${
+          viewMode === 'grid' 
+            ? (compact ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')
+            : 'grid-cols-1'
+        }`}>
+          {filteredItems.map((item) => (
+            <WishlistItemCard
+              key={item._id}
+              item={item}
+              compact={compact}
+              listView={viewMode === 'list'}
+              selected={selectedItems.has(item._id)}
+              onSelect={(selected) => {
+                const newSelected = new Set(selectedItems);
+                if (selected) {
+                  newSelected.add(item._id);
+                } else {
+                  newSelected.delete(item._id);
+                }
+                setSelectedItems(newSelected);
+              }}
+              onEdit={() => setEditingItem(item)}
+              onRemove={() => handleRemoveItems([item._id])}
+              onMoveToTracking={() => handleMoveToTracking(item)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingItem && (
@@ -610,14 +639,14 @@ function WishlistItemCard({
   onMoveToTracking 
 }: WishlistItemCardProps) {
   // Extract category and priority from userNotes
-  const category = item.userNotes?.includes('category:') 
-    ? item.userNotes.split('category:')[1].split('|')[0] 
-    : 'Uncategorized';
+  const { category, priority } = parseStructuredNotes(item.userNotes);
   
-  const priority = item.userNotes?.includes('priority:')
-    ? item.userNotes.split('priority:')[1].split('|')[0]
-    : 'medium';
-
+  // Calculate accurate price change percentage
+  const priceChangePercentage = calculatePriceChangePercentage(
+    item.productId.currentPrice, 
+    item.productId.originalPrice
+  );
+  
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'text-red-600 bg-red-100 dark:bg-red-900/20';
@@ -702,7 +731,7 @@ function WishlistItemCard({
         </div>
 
         <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          {item.productId.brand} • {category}
+          {item.productId.brand} • {category || 'Uncategorized'}
         </div>
 
         {/* Rating */}
@@ -734,22 +763,25 @@ function WishlistItemCard({
             )}
           </div>
           <div className={`text-sm font-semibold ${
-            item.priceChangePercentage > 0 
+            priceChangePercentage > 0 
               ? 'text-red-600' 
-              : item.priceChangePercentage < 0 
+              : priceChangePercentage < 0 
                 ? 'text-green-600' 
                 : 'text-gray-500'
           }`}>
-            {item.priceChangePercentage > 0 ? '+' : ''}{item.priceChangePercentage.toFixed(1)}%
+            {priceChangePercentage > 0 ? '+' : ''}{priceChangePercentage.toFixed(1)}%
           </div>
         </div>
 
         {/* User Notes */}
-        {item.userNotes && !item.userNotes.includes('category:') && !item.userNotes.includes('priority:') && (
-          <div className="text-xs text-gray-600 dark:text-gray-400 italic mb-2 line-clamp-2">
-            "{item.userNotes}"
-          </div>
-        )}
+        {(() => {
+          const { notes } = parseStructuredNotes(item.userNotes);
+          return notes && (
+            <div className="text-xs text-gray-600 dark:text-gray-400 italic mb-2 line-clamp-2">
+              "{notes}"
+            </div>
+          );
+        })()}
 
         {/* Action Buttons */}
         <div className="flex space-x-2 text-xs">
@@ -783,14 +815,10 @@ interface EditItemModalProps {
 }
 
 function EditItemModal({ item, onClose, onSave }: EditItemModalProps) {
-  const [category, setCategory] = useState(
-    item.userNotes?.includes('category:') 
-      ? item.userNotes.split('category:')[1].split('|')[0] 
-      : ''
-  );
-  const [notes, setNotes] = useState(
-    item.userNotes?.replace(/category:[^|]*\|?/g, '').replace(/priority:[^|]*\|?/g, '') || ''
-  );
+  const { category: parsedCategory, notes: parsedNotes } = parseStructuredNotes(item.userNotes);
+  
+  const [category, setCategory] = useState(parsedCategory || '');
+  const [notes, setNotes] = useState(parsedNotes || '');
   const [rating, setRating] = useState(item.personalRating || 0);
 
   const handleSave = () => {
