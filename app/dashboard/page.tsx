@@ -192,6 +192,9 @@ export default async function DashboardPage() {
               Setări Alerte
             </a>
           </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+            💡 <strong>Nou:</strong> Poți exporta datele produselor urmărite în format CSV sau PDF direct din secțiunea "Produsele Tale Urmărite".
+          </p>
         </div>
 
         {/* Debug Info (Development Only) */}
