@@ -5,7 +5,6 @@ import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, D
 import { TrackedProductsGrid } from './TrackedProductsGrid';
 import { WishlistManager } from './WishlistManager';
 import { SavingsCalculator } from './SavingsCalculator';
-import { PriceHistoryChart } from './PriceHistoryChart';
 
 export type WidgetType = 
   | 'account-info'
@@ -97,12 +96,20 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 2
   },
   {
+    id: 'price-history',
+    type: 'price-history',
+    title: 'Istoric Prețuri',
+    size: 'large',
+    visible: true,
+    order: 3
+  },
+  {
     id: 'savings-calculator',
     type: 'savings-calculator',
     title: 'Calculator Economii',
     size: 'large',
     visible: true,
-    order: 3
+    order: 4
   },
   {
     id: 'tracked-products',
@@ -110,7 +117,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     title: 'Produse Urmărite',
     size: 'full',
     visible: true,
-    order: 4
+    order: 5
   },
   {
     id: 'wishlist',
@@ -118,7 +125,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     title: 'Wishlist',
     size: 'full',
     visible: true,
-    order: 5
+    order: 6
   },
   {
     id: 'quick-actions',
@@ -126,7 +133,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     title: 'Acțiuni Rapide',
     size: 'large',
     visible: true,
-    order: 6
+    order: 7
   }
 ];
 
@@ -361,6 +368,34 @@ export function DashboardLayoutCustomizer({ clerkUser, mongoUser, onLayoutChange
                   mongoUser?.usage?.maxEmails || 10
                 }
               </p>
+            </div>
+          </div>
+        );
+
+      case 'price-history':
+        return (
+          <div className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Istoric Prețuri
+            </h3>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Vizualizează istoricul prețurilor pentru produsele urmărite
+              </p>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
+                <div className="text-gray-500 dark:text-gray-400">
+                  📈 Grafice interactive disponibile
+                </div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                  Selectează un produs pentru a vedea istoricul complet
+                </div>
+              </div>
+              <a
+                href="/produse"
+                className="block w-full text-center bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors text-sm"
+              >
+                Vezi Produse Urmărite
+              </a>
             </div>
           </div>
         );
