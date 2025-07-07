@@ -501,21 +501,33 @@ export async function POST(request: NextRequest) {
 
     // Add advanced filters
     if (params.filters) {
-      // Keywords filter
+      // Collect all additional conditions to combine with existing query
+      const additionalConditions: any[] = [];
+
+      // Keywords filter - combine with existing conditions using $and
       if (params.filters.keywords && params.filters.keywords.length > 0) {
         const keywordRegex = params.filters.keywords.map(k => new RegExp(k, 'i'));
-        mongoQuery.$or = [
-          { title: { $in: keywordRegex } },
-          { description: { $in: keywordRegex } },
-          { keywords: { $in: params.filters.keywords } }
-        ];
+        const keywordCondition = {
+          $or: [
+            { title: { $in: keywordRegex } },
+            { description: { $in: keywordRegex } },
+            { keywords: { $in: params.filters.keywords } }
+          ]
+        };
+        additionalConditions.push(keywordCondition);
       }
 
-      // Exclude keywords filter
+      // Exclude keywords filter - use $nin for proper exclusion
       if (params.filters.excludeKeywords && params.filters.excludeKeywords.length > 0) {
         const excludeRegex = params.filters.excludeKeywords.map(k => new RegExp(k, 'i'));
-        mongoQuery.title = { $not: { $in: excludeRegex } };
-        mongoQuery.description = { $not: { $in: excludeRegex } };
+        const excludeCondition = {
+          $and: [
+            { title: { $nin: excludeRegex } },
+            { description: { $nin: excludeRegex } },
+            { keywords: { $nin: params.filters.excludeKeywords } }
+          ]
+        };
+        additionalConditions.push(excludeCondition);
       }
 
       // Date range filter
@@ -535,10 +547,31 @@ export async function POST(request: NextRequest) {
       // Price history filters
       if (params.filters.priceHistory) {
         if (params.filters.priceHistory.hasDecreased) {
-          mongoQuery.currentPrice = { $lt: '$originalPrice' };
+          // Combine with existing currentPrice conditions if any
+          const existingPriceCondition = mongoQuery.currentPrice || {};
+          mongoQuery.currentPrice = { ...existingPriceCondition, $lt: '$originalPrice' };
         }
         if (params.filters.priceHistory.hasIncreased) {
-          mongoQuery.currentPrice = { $gt: '$originalPrice' };
+          // Combine with existing currentPrice conditions if any
+          const existingPriceCondition = mongoQuery.currentPrice || {};
+          mongoQuery.currentPrice = { ...existingPriceCondition, $gt: '$originalPrice' };
+        }
+      }
+
+      // Combine all additional conditions with the existing mongoQuery using $and
+      if (additionalConditions.length > 0) {
+        // If mongoQuery already has conditions, wrap everything in $and
+        const existingConditions = Object.keys(mongoQuery).length > 0 ? [mongoQuery] : [];
+        
+        // Create the final combined query
+        if (existingConditions.length > 0 || additionalConditions.length > 1) {
+          const allConditions = [...existingConditions, ...additionalConditions];
+          // Reset mongoQuery and set it to use $and to combine all conditions
+          Object.keys(mongoQuery).forEach(key => delete mongoQuery[key]);
+          mongoQuery.$and = allConditions;
+        } else if (additionalConditions.length === 1) {
+          // If only one additional condition and no existing conditions, use it directly
+          Object.assign(mongoQuery, additionalConditions[0]);
         }
       }
     }
