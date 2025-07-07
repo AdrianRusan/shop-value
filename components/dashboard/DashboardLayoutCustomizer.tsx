@@ -404,24 +404,10 @@ export function DashboardLayoutCustomizer({ clerkUser, mongoUser, onLayoutChange
         return <SavingsCalculator />;
 
       case 'tracked-products':
-        return (
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Produse Urmărite
-            </h3>
-            <TrackedProductsGrid />
-          </div>
-        );
+        return <TrackedProductsGrid />;
 
       case 'wishlist':
-        return (
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Wishlist
-            </h3>
-            <WishlistManager />
-          </div>
-        );
+        return <WishlistManager />;
 
       case 'quick-actions':
         return (
