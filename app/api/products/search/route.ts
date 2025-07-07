@@ -544,17 +544,32 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Price history filters
+      // Price history filters - use $expr for field comparisons
       if (params.filters.priceHistory) {
+        const priceHistoryConditions: any[] = [];
+        
         if (params.filters.priceHistory.hasDecreased) {
-          // Combine with existing currentPrice conditions if any
-          const existingPriceCondition = mongoQuery.currentPrice || {};
-          mongoQuery.currentPrice = { ...existingPriceCondition, $lt: '$originalPrice' };
+          priceHistoryConditions.push({
+            $expr: { $lt: ['$currentPrice', '$originalPrice'] }
+          });
         }
+        
         if (params.filters.priceHistory.hasIncreased) {
-          // Combine with existing currentPrice conditions if any
-          const existingPriceCondition = mongoQuery.currentPrice || {};
-          mongoQuery.currentPrice = { ...existingPriceCondition, $gt: '$originalPrice' };
+          priceHistoryConditions.push({
+            $expr: { $gt: ['$currentPrice', '$originalPrice'] }
+          });
+        }
+        
+        // Add price history conditions to additional conditions
+        if (priceHistoryConditions.length > 0) {
+          if (priceHistoryConditions.length === 1) {
+            additionalConditions.push(priceHistoryConditions[0]);
+          } else {
+            // If both hasDecreased and hasIncreased are true, use $or to allow either condition
+            additionalConditions.push({
+              $or: priceHistoryConditions
+            });
+          }
         }
       }
 
