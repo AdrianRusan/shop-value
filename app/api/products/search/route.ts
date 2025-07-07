@@ -499,7 +499,9 @@ export async function GET(request: NextRequest) {
         responseTime: Date.now(),
         abTestGroup: params.abTestGroup || determineABTestGroup(params.userId),
         relevanceMetrics: {
-          averageScore: enhancedProducts.reduce((sum, p) => sum + p.relevanceScore.totalScore, 0) / enhancedProducts.length,
+          averageScore: enhancedProducts.length > 0 
+            ? enhancedProducts.reduce((sum, p) => sum + p.relevanceScore.totalScore, 0) / enhancedProducts.length 
+            : 0,
           scoreDistribution: enhancedProducts.reduce((acc, p) => {
             const score = Math.floor(p.relevanceScore.totalScore / 25) * 25;
             acc[`${score}-${score + 24}`] = (acc[`${score}-${score + 24}`] || 0) + 1;
@@ -739,12 +741,16 @@ export async function POST(request: NextRequest) {
     let statistics = null;
     if (params.aggregations?.includeStats && products.length > 0) {
       statistics = {
-        averagePrice: products.reduce((sum, p) => sum + p.currentPrice, 0) / products.length,
+        averagePrice: products.length > 0 
+          ? products.reduce((sum, p) => sum + p.currentPrice, 0) / products.length 
+          : 0,
         priceRange: {
           min: Math.min(...products.map(p => p.currentPrice)),
           max: Math.max(...products.map(p => p.currentPrice))
         },
-        averageRating: products.reduce((sum, p) => sum + (p.stars || 0), 0) / products.length,
+        averageRating: products.length > 0 
+          ? products.reduce((sum, p) => sum + (p.stars || 0), 0) / products.length 
+          : 0,
         availabilityDistribution: products.reduce((acc, p) => {
           acc[p.availability] = (acc[p.availability] || 0) + 1;
           return acc;

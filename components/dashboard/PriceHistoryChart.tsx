@@ -212,7 +212,9 @@ export function PriceHistoryChart({ productId, onClose }: PriceHistoryChartProps
     const currentPrice = prices[prices.length - 1];
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const avgPrice = prices.reduce((sum: number, price: number) => sum + price, 0) / prices.length;
+    const avgPrice = prices.length > 0 
+      ? prices.reduce((sum: number, price: number) => sum + price, 0) / prices.length 
+      : 0;
     const firstPrice = prices[0];
     const priceChange = currentPrice - firstPrice;
     const priceChangePercentage = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;

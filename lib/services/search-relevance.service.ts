@@ -512,7 +512,9 @@ export class SearchRelevanceService {
         userId,
         abTestGroup,
         resultCount: results.length,
-        averageScore: results.reduce((sum, p) => sum + p.relevanceScore.totalScore, 0) / results.length,
+        averageScore: results.length > 0 
+          ? results.reduce((sum, p) => sum + p.relevanceScore.totalScore, 0) / results.length 
+          : 0,
         scoreDistribution: this.calculateScoreDistribution(results),
         topBrands: this.getTopBrands(results, 5),
         topCategories: this.getTopCategories(results, 5)

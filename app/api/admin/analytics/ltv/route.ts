@@ -208,10 +208,14 @@ async function calculateBasicLTV(planFilter?: string | null, detailed: boolean =
     if (planUsers.length === 0) return;
 
     const totalLTV = planUsers.reduce((sum, u) => sum + u.currentLTV, 0);
-    const averageLTV = totalLTV / planUsers.length;
-    const averageLifespan = planUsers.reduce((sum, u) => sum + u.monthsActive, 0) / planUsers.length;
+    const averageLTV = planUsers.length > 0 ? totalLTV / planUsers.length : 0;
+    const averageLifespan = planUsers.length > 0 
+      ? planUsers.reduce((sum, u) => sum + u.monthsActive, 0) / planUsers.length 
+      : 0;
     const activeUsers = planUsers.filter(u => u.isActive).length;
-    const churnRate = ((planUsers.length - activeUsers) / planUsers.length) * 100;
+    const churnRate = planUsers.length > 0 
+      ? ((planUsers.length - activeUsers) / planUsers.length) * 100 
+      : 0;
 
     byPlan[plan] = {
       userCount: planUsers.length,
@@ -236,9 +240,9 @@ async function calculateBasicLTV(planFilter?: string | null, detailed: boolean =
   const cohorts = Object.keys(cohortData).map(month => {
     const users = cohortData[month];
     const totalLTV = users.reduce((sum, u) => sum + u.currentLTV, 0);
-    const averageLTV = totalLTV / users.length;
+    const averageLTV = users.length > 0 ? totalLTV / users.length : 0;
     const activeUsers = users.filter(u => u.isActive).length;
-    const retentionRate = (activeUsers / users.length) * 100;
+    const retentionRate = users.length > 0 ? (activeUsers / users.length) * 100 : 0;
 
     return {
       month,
@@ -255,10 +259,14 @@ async function calculateBasicLTV(planFilter?: string | null, detailed: boolean =
 
   // Summary metrics
   const totalLTV = ltvData.reduce((sum, u) => sum + u.currentLTV, 0);
-  const averageLTV = totalLTV / ltvData.length;
-  const averageLifespan = ltvData.reduce((sum, u) => sum + u.monthsActive, 0) / ltvData.length;
+  const averageLTV = ltvData.length > 0 ? totalLTV / ltvData.length : 0;
+  const averageLifespan = ltvData.length > 0 
+    ? ltvData.reduce((sum, u) => sum + u.monthsActive, 0) / ltvData.length 
+    : 0;
   const activeUsers = ltvData.filter(u => u.isActive).length;
-  const overallChurnRate = ((ltvData.length - activeUsers) / ltvData.length) * 100;
+  const overallChurnRate = ltvData.length > 0 
+    ? ((ltvData.length - activeUsers) / ltvData.length) * 100 
+    : 0;
 
   const result: any = {
     summary: {
