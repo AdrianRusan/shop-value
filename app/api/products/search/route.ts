@@ -6,6 +6,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { redis } from '@/lib/upstash';
 import * as Sentry from '@sentry/nextjs';
 import { ProductCacheService, enhancedCacheTTL } from '@/lib/cache';
+import { searchRelevanceService, SearchRelevanceOptions, ScoredProduct } from '@/lib/services/search-relevance.service';
 
 // Rate limiting - more generous for search functionality
 const ratelimit = new Ratelimit({
@@ -29,6 +30,14 @@ const searchSchema = z.object({
   includeOutOfStock: z.boolean().default(true),
   currency: z.enum(['RON', 'EUR', 'USD']).optional(),
   discountMin: z.number().min(0).max(100).optional(), // Minimum discount percentage
+  // Enhanced relevance scoring parameters
+  userId: z.string().optional(),
+  userTier: z.enum(['free', 'premium', 'enterprise']).optional(),
+  abTestGroup: z.enum(['control', 'experiment_a', 'experiment_b']).optional(),
+  includePersonalization: z.boolean().default(false),
+  includeFreshness: z.boolean().default(true),
+  includeFuzzyMatching: z.boolean().default(true),
+  includeSynonyms: z.boolean().default(true),
 });
 
 type SearchParams = z.infer<typeof searchSchema>;
@@ -140,30 +149,86 @@ function buildSortOptions(sortBy: string, hasTextSearch: boolean) {
   return sortOptions;
 }
 
-// Helper function to calculate relevance score
-function calculateRelevanceScore(product: any, query?: string) {
-  let score = 0;
-
-  if (query) {
-    const searchQuery = query.toLowerCase();
-    const title = product.title?.toLowerCase() || '';
-    const brand = product.brand?.toLowerCase() || '';
-    const description = product.description?.toLowerCase() || '';
-
-    // Exact title match gets highest score
-    if (title.includes(searchQuery)) score += 10;
-    // Brand match gets high score
-    if (brand.includes(searchQuery)) score += 8;
-    // Description match gets lower score
-    if (description.includes(searchQuery)) score += 3;
+// Helper function to determine A/B test group for user
+function determineABTestGroup(userId?: string): 'control' | 'experiment_a' | 'experiment_b' {
+  if (!userId) return 'control';
+  
+  // Simple hash-based distribution for consistent assignment
+  const hash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const group = hash % 3;
+  
+  switch (group) {
+    case 0: return 'control';
+    case 1: return 'experiment_a';
+    case 2: return 'experiment_b';
+    default: return 'control';
   }
+}
 
-  // Add popularity-based scoring
-  score += (product.analytics?.popularityScore || 0) * 0.1;
-  score += (product.analytics?.trackingCount || 0) * 0.05;
-  score += (product.stars || 0) * 0.5;
+// Helper function to calculate enhanced relevance score
+async function calculateEnhancedRelevanceScore(
+  products: any[],
+  searchOptions: SearchRelevanceOptions
+): Promise<ScoredProduct[]> {
+  const scoredProducts: ScoredProduct[] = [];
+  
+  for (const product of products) {
+    const relevanceScore = await searchRelevanceService.calculateRelevanceScore(
+      product,
+      searchOptions
+    );
+    
+    const searchMetadata = {
+      matchedTerms: extractMatchedTerms(product, searchOptions.query || ''),
+      highlightedText: highlightSearchTerms(product.title || '', searchOptions.query || ''),
+      relevanceRank: 0 // Will be set after sorting
+    };
+    
+    scoredProducts.push({
+      ...product,
+      relevanceScore,
+      searchMetadata
+    });
+  }
+  
+  // Sort by relevance and assign ranks
+  const sortedProducts = searchRelevanceService.sortByRelevance(scoredProducts);
+  sortedProducts.forEach((product, index) => {
+    product.searchMetadata.relevanceRank = index + 1;
+  });
+  
+  return sortedProducts;
+}
 
-  return score;
+// Helper function to extract matched terms
+function extractMatchedTerms(product: any, query: string): string[] {
+  const searchTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+  const title = product.title?.toLowerCase() || '';
+  const brand = product.brand?.toLowerCase() || '';
+  const description = product.description?.toLowerCase() || '';
+  
+  const matchedTerms: string[] = [];
+  
+  searchTerms.forEach(term => {
+    if (title.includes(term) || brand.includes(term) || description.includes(term)) {
+      matchedTerms.push(term);
+    }
+  });
+  
+  return matchedTerms;
+}
+
+// Helper function to highlight search terms in text
+function highlightSearchTerms(text: string, query: string): string {
+  const searchTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+  let highlightedText = text;
+  
+  searchTerms.forEach(term => {
+    const regex = new RegExp(`(${term})`, 'gi');
+    highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+  });
+  
+  return highlightedText;
 }
 
 // Helper function to generate cache key for search results
@@ -219,6 +284,14 @@ export async function GET(request: NextRequest) {
       includeOutOfStock: searchParams.get('includeOutOfStock') !== 'false',
       currency: searchParams.get('currency') || undefined,
       discountMin: searchParams.get('discountMin') ? parseFloat(searchParams.get('discountMin')!) : undefined,
+      // Enhanced relevance scoring parameters
+      userId: searchParams.get('userId') || undefined,
+      userTier: searchParams.get('userTier') || undefined,
+      abTestGroup: searchParams.get('abTestGroup') || undefined,
+      includePersonalization: searchParams.get('includePersonalization') === 'true',
+      includeFreshness: searchParams.get('includeFreshness') !== 'false',
+      includeFuzzyMatching: searchParams.get('includeFuzzyMatching') !== 'false',
+      includeSynonyms: searchParams.get('includeSynonyms') !== 'false',
     };
 
     const validation = searchSchema.safeParse(rawParams);
@@ -350,21 +423,32 @@ export async function GET(request: NextRequest) {
     const facetsResult = await facetsPromise;
     const facets = facetsResult[0] || {};
 
-    // Enhance products with relevance scores and additional data
-    const enhancedProducts = products.map(product => ({
+    // Enhance products with relevance scores and additional data using new relevance service
+    const searchRelevanceOptions: SearchRelevanceOptions = {
+      query: params.query || '',
+      userId: params.userId,
+      userTier: params.userTier,
+      abTestGroup: params.abTestGroup || determineABTestGroup(params.userId),
+      includePersonalization: params.includePersonalization,
+      includeFreshness: params.includeFreshness,
+      includeFuzzyMatching: params.includeFuzzyMatching,
+      includeSynonyms: params.includeSynonyms
+    };
+
+    const enhancedProducts = await calculateEnhancedRelevanceScore(products, searchRelevanceOptions);
+    
+    // Add additional product metadata
+    const finalProducts = enhancedProducts.map(product => ({
       ...product,
-      relevanceScore: calculateRelevanceScore(product, params.query),
-      priceChangePercentage: product.currentPrice && product.originalPrice ? 
-        ((product.currentPrice - product.originalPrice) / product.originalPrice) * 100 : 0,
-      savings: product.originalPrice - product.currentPrice,
-      isOnSale: product.currentPrice < product.originalPrice,
-      trackingCount: product.analytics?.trackingCount || 0
+      priceChangePercentage: (product as any).currentPrice && (product as any).originalPrice ? 
+        (((product as any).currentPrice - (product as any).originalPrice) / (product as any).originalPrice) * 100 : 0,
+      savings: (product as any).originalPrice - (product as any).currentPrice,
+      isOnSale: (product as any).currentPrice < (product as any).originalPrice,
+      trackingCount: (product as any).analytics?.trackingCount || 0
     }));
 
-    // Sort by relevance score if using custom relevance
-    if (params.sortBy === 'relevance' && !hasTextSearch) {
-      enhancedProducts.sort((a, b) => b.relevanceScore - a.relevanceScore);
-    }
+    // Products are already sorted by relevance from calculateEnhancedRelevanceScore
+    // No need for additional sorting when using relevance
 
     // Prepare pagination info
     const pagination = {
@@ -376,9 +460,17 @@ export async function GET(request: NextRequest) {
       hasPrev: params.page > 1
     };
 
+    // Track search analytics for A/B testing and improvement
+    await searchRelevanceService.trackSearchAnalytics(
+      params.query || '',
+      enhancedProducts,
+      params.userId,
+      params.abTestGroup || determineABTestGroup(params.userId)
+    );
+
     // Prepare response data
     const responseData = {
-      results: enhancedProducts,
+      results: finalProducts,
       pagination,
       facets: {
         categories: facets.categories || [],
@@ -404,7 +496,16 @@ export async function GET(request: NextRequest) {
         },
         sorting: params.sortBy,
         totalResults: totalCount,
-        responseTime: Date.now()
+        responseTime: Date.now(),
+        abTestGroup: params.abTestGroup || determineABTestGroup(params.userId),
+        relevanceMetrics: {
+          averageScore: enhancedProducts.reduce((sum, p) => sum + p.relevanceScore.totalScore, 0) / enhancedProducts.length,
+          scoreDistribution: enhancedProducts.reduce((acc, p) => {
+            const score = Math.floor(p.relevanceScore.totalScore / 25) * 25;
+            acc[`${score}-${score + 24}`] = (acc[`${score}-${score + 24}`] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)
+        }
       }
     };
 
@@ -412,7 +513,7 @@ export async function GET(request: NextRequest) {
     await productCache.cacheProductSearch(
       params.query || '', 
       params, 
-      enhancedProducts
+      finalProducts
     );
 
     return NextResponse.json({
