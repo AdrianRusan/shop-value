@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Authentication - require admin role
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ 
         success: false, 

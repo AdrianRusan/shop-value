@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
   try {
     // Check authentication and admin role
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ 
         success: false, 
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     // Check authentication and admin role
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ 
         success: false, 

@@ -9,7 +9,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   // Check authentication
-  const { userId } = auth();
+  const { userId } = await auth();
   
   if (!userId) {
     redirect('/sign-in');

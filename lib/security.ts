@@ -249,7 +249,7 @@ export const createSecurityMiddleware = (options: {
       // Authentication check
       if (options.requireAuth) {
         const { auth } = await import('@clerk/nextjs/server');
-        const { userId } = auth();
+        const { userId } = await auth();
         
         if (!userId) {
           return NextResponse.json({

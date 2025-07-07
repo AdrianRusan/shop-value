@@ -39,7 +39,7 @@ interface UserSubscriptionDoc {
 export async function POST(request: NextRequest): Promise<NextResponse<DeleteAccountResponse>> {
   try {
     // Check authentication
-    const { userId } = auth();
+    const { userId } = await auth();
     
     if (!userId) {
       return NextResponse.json(
