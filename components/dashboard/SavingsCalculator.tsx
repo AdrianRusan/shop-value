@@ -121,16 +121,53 @@ export function SavingsCalculator() {
         categoryData[category].savings += savings;
         categoryData[category].count += 1;
 
-        // Monthly trend (last 6 months)
-        const addedDate = new Date(item.addedAt);
-        const monthKey = addedDate.toLocaleDateString('ro-RO', { 
-          month: 'short', 
-          year: 'numeric' 
-        });
-        if (!monthlyData[monthKey]) {
-          monthlyData[monthKey] = 0;
+        // Monthly trend based on actual price changes from price history
+        const priceHistory = product.priceHistory || [];
+        if (priceHistory.length > 0) {
+          // Find the most recent price change where savings occurred
+          const currentPrice = product.currentPrice;
+          const originalPrice = product.originalPrice;
+          
+          // Look for the date when the current discounted price was first recorded
+          const discountEntry = priceHistory
+            .filter(entry => entry.price <= currentPrice && entry.price < originalPrice)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+          
+          if (discountEntry) {
+            const changeDate = new Date(discountEntry.date);
+            // Use a more reliable date formatting approach
+            const monthKey = changeDate.toLocaleDateString('en-US', { 
+              month: 'short', 
+              year: 'numeric' 
+            });
+            if (!monthlyData[monthKey]) {
+              monthlyData[monthKey] = 0;
+            }
+            monthlyData[monthKey] += savings;
+          } else {
+            // Fallback to addedAt if no price history available
+            const addedDate = new Date(item.addedAt);
+            const monthKey = addedDate.toLocaleDateString('en-US', { 
+              month: 'short', 
+              year: 'numeric' 
+            });
+            if (!monthlyData[monthKey]) {
+              monthlyData[monthKey] = 0;
+            }
+            monthlyData[monthKey] += savings;
+          }
+        } else {
+          // Fallback to addedAt if no price history available
+          const addedDate = new Date(item.addedAt);
+          const monthKey = addedDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            year: 'numeric' 
+          });
+          if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = 0;
+          }
+          monthlyData[monthKey] += savings;
         }
-        monthlyData[monthKey] += savings;
       });
 
       // Calculate potential future savings (based on historical data)
@@ -155,28 +192,18 @@ export function SavingsCalculator() {
         }))
         .sort((a, b) => b.savings - a.savings);
 
-      // Convert month strings back to dates for proper chronological sorting
+      // Convert monthlyData to monthlyTrend array and sort chronologically
       const monthlyTrend = Object.entries(monthlyData)
-        .map(([month, savings]) => {
-          // Parse the Romanian month string back to a date for sorting
-          // month format is like "ian. 2024", "feb. 2024", etc.
-          const [monthName, year] = month.split(' ');
-          const monthMap: { [key: string]: number } = {
-            'ian.': 0, 'feb.': 1, 'mar.': 2, 'apr.': 3, 'mai': 4, 'iun.': 5,
-            'iul.': 6, 'aug.': 7, 'sep.': 8, 'oct.': 9, 'nov.': 10, 'dec.': 11
-          };
-          const monthIndex = monthMap[monthName] ?? 0;
-          const dateForSorting = new Date(parseInt(year), monthIndex, 1);
-          
-          return { 
-            month, 
-            savings, 
-            dateForSorting 
-          };
-        })
-        .sort((a, b) => a.dateForSorting.getTime() - b.dateForSorting.getTime()) // Sort chronologically
-        .slice(-6) // Take the last 6 months chronologically
-        .map(({ month, savings }) => ({ month, savings })); // Remove the helper date
+        .map(([month, savings]) => ({
+          month,
+          savings
+        }))
+        .sort((a, b) => {
+          // Parse dates for proper chronological sorting
+          const dateA = new Date(a.month + ' 1'); // Add day for proper parsing
+          const dateB = new Date(b.month + ' 1');
+          return dateA.getTime() - dateB.getTime();
+        });
 
       const averageDiscountPercentage = totalOriginalValue > 0 
         ? (totalSavings / totalOriginalValue) * 100 
