@@ -1,146 +1,162 @@
 {
-  "tasks": [
-    {
-      "id": "1.1",
-      "title": "Database Architecture Enhancement",
-      "description": "Enhance MongoDB schema with proper indexing and validation",
-      "status": "pending",
-      "priority": "high",
-      "dependencies": [],
-      "details": "Implement proper indexing for Product schema, add compound indexes for performance, and implement tenant isolation at database level",
-      "testStrategy": "Test database queries performance and validate schema constraints",
-      "subtasks": [
-        {
-          "id": "1.1.1",
-          "title": "Add compound indexes to Product schema",
-          "status": "pending"
-        },
-        {
-          "id": "1.1.2", 
-          "title": "Implement tenant isolation",
-          "status": "pending"
-        }
-      ]
-    },
-    {
-      "id": "1.2",
-      "title": "Authentication System Implementation",
-      "description": "Implement complete authentication and authorization system",
-      "status": "pending",
-      "priority": "high",
-      "dependencies": [],
-      "details": "Integrate Clerk or Auth0 for enterprise-grade authentication with role-based access control",
-      "testStrategy": "Test authentication flows, role-based access, and security measures",
-      "subtasks": [
-        {
-          "id": "1.2.1",
-          "title": "Set up Clerk authentication",
-          "status": "pending"
-        },
-        {
-          "id": "1.2.2",
-          "title": "Implement role-based access control",
-          "status": "pending"
-        }
-      ]
-    },
-    {
-      "id": "1.3",
-      "title": "API Security Implementation",
-      "description": "Implement comprehensive API security measures",
-      "status": "pending",
-      "priority": "high",
-      "dependencies": ["1.2"],
-      "details": "Add rate limiting, input validation, CSRF protection, and security headers to all API endpoints",
-      "testStrategy": "Test rate limiting, validate input sanitization, and verify security headers",
-      "subtasks": [
-        {
-          "id": "1.3.1",
-          "title": "Implement rate limiting with Upstash Redis",
-          "status": "pending"
-        },
-        {
-          "id": "1.3.2",
-          "title": "Add input validation with Zod",
-          "status": "pending"
-        },
-        {
-          "id": "1.3.3",
-          "title": "Add security headers middleware",
-          "status": "pending"
-        }
-      ]
-    },
-    {
-      "id": "1.4",
-      "title": "Real-time Price Updates with WebSocket",
-      "description": "Implement real-time price updates using WebSocket connections",
-      "status": "done",
-      "priority": "medium",
-      "dependencies": ["1.1", "1.2"],
-      "details": "Set up WebSocket server for real-time price updates, implement client-side connection management, and add real-time notifications for price changes",
-      "testStrategy": "Test WebSocket connection stability, message delivery, and real-time UI updates",
-      "subtasks": [
-        {
-          "id": "1.4.1",
-          "title": "Set up Socket.IO server",
-          "status": "done"
-        },
-        {
-          "id": "1.4.2",
-          "title": "Implement client-side WebSocket connection",
-          "status": "done"
-        },
-        {
-          "id": "1.4.3",
-          "title": "Add real-time price update notifications",
-          "status": "done"
-        }
-      ]
-    },
-    {
-      "id": "1.5",
-      "title": "Subscription Management System",
-      "description": "Implement SaaS subscription management with Stripe",
-      "status": "done",
-      "priority": "high",
-      "dependencies": ["1.2"],
-      "details": "Integrate Stripe for payment processing, implement subscription tiers, and add usage tracking",
-      "testStrategy": "Test payment flows, subscription management, and usage limits",
-      "subtasks": [
-        {
-          "id": "1.5.1",
-          "title": "Integrate Stripe payment processing",
-          "status": "done"
-        },
-        {
-          "id": "1.5.2",
-          "title": "Implement subscription tiers",
-          "status": "done"
-        }
-      ]
-    },
-    {
-      "id": "1.6",
-      "title": "Queue-Based Scraping Service",
-      "description": "Refactor scraping to use queue-based architecture with Redis",
-      "status": "pending",
-      "priority": "medium",
-      "dependencies": ["1.1"],
-      "details": "Replace direct scraping with BullMQ queue system, implement job processing, and add error handling",
-      "testStrategy": "Test queue processing, job retry mechanisms, and error handling",
-      "subtasks": [
-        {
-          "id": "1.6.1",
-          "title": "Set up BullMQ with Redis",
-          "status": "pending"
-        },
-        {
-          "id": "1.6.2",
-          "title": "Implement job processors",
-          "status": "pending"
-        }
-      ]
+  "master": {
+    "tasks": [
+      {
+        "id": "1.1",
+        "title": "Database Architecture Enhancement",
+        "description": "Enhance MongoDB schema with proper indexing and validation",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Implement proper indexing for Product schema, add compound indexes for performance, and implement tenant isolation at database level",
+        "testStrategy": "Test database queries performance and validate schema constraints",
+        "subtasks": [
+          {
+            "id": "1.1.1",
+            "title": "Add compound indexes to Product schema",
+            "status": "pending"
+          },
+          {
+            "id": "1.1.2",
+            "title": "Implement tenant isolation",
+            "status": "pending"
+          }
+        ]
+      },
+      {
+        "id": "1.2",
+        "title": "Authentication System Implementation",
+        "description": "Implement complete authentication and authorization system",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "Integrate Clerk or Auth0 for enterprise-grade authentication with role-based access control",
+        "testStrategy": "Test authentication flows, role-based access, and security measures",
+        "subtasks": [
+          {
+            "id": "1.2.1",
+            "title": "Set up Clerk authentication",
+            "status": "pending"
+          },
+          {
+            "id": "1.2.2",
+            "title": "Implement role-based access control",
+            "status": "pending"
+          }
+        ]
+      },
+      {
+        "id": "1.3",
+        "title": "API Security Implementation",
+        "description": "Implement comprehensive API security measures",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "1.2"
+        ],
+        "details": "Add rate limiting, input validation, CSRF protection, and security headers to all API endpoints",
+        "testStrategy": "Test rate limiting, validate input sanitization, and verify security headers",
+        "subtasks": [
+          {
+            "id": "1.3.1",
+            "title": "Implement rate limiting with Upstash Redis",
+            "status": "pending"
+          },
+          {
+            "id": "1.3.2",
+            "title": "Add input validation with Zod",
+            "status": "pending"
+          },
+          {
+            "id": "1.3.3",
+            "title": "Add security headers middleware",
+            "status": "pending"
+          }
+        ]
+      },
+      {
+        "id": "1.4",
+        "title": "Real-time Price Updates with WebSocket",
+        "description": "Implement real-time price updates using WebSocket connections",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          "1.1",
+          "1.2"
+        ],
+        "details": "Set up WebSocket server for real-time price updates, implement client-side connection management, and add real-time notifications for price changes",
+        "testStrategy": "Test WebSocket connection stability, message delivery, and real-time UI updates",
+        "subtasks": [
+          {
+            "id": "1.4.1",
+            "title": "Set up Socket.IO server",
+            "status": "done"
+          },
+          {
+            "id": "1.4.2",
+            "title": "Implement client-side WebSocket connection",
+            "status": "done"
+          },
+          {
+            "id": "1.4.3",
+            "title": "Add real-time price update notifications",
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "id": "1.5",
+        "title": "Subscription Management System",
+        "description": "Implement SaaS subscription management with Stripe",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "1.2"
+        ],
+        "details": "Integrate Stripe for payment processing, implement subscription tiers, and add usage tracking",
+        "testStrategy": "Test payment flows, subscription management, and usage limits",
+        "subtasks": [
+          {
+            "id": "1.5.1",
+            "title": "Integrate Stripe payment processing",
+            "status": "done"
+          },
+          {
+            "id": "1.5.2",
+            "title": "Implement subscription tiers",
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "id": "1.6",
+        "title": "Queue-Based Scraping Service",
+        "description": "Refactor scraping to use queue-based architecture with Redis",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "1.1"
+        ],
+        "details": "Replace direct scraping with BullMQ queue system, implement job processing, and add error handling",
+        "testStrategy": "Test queue processing, job retry mechanisms, and error handling",
+        "subtasks": [
+          {
+            "id": "1.6.1",
+            "title": "Set up BullMQ with Redis",
+            "status": "pending"
+          },
+          {
+            "id": "1.6.2",
+            "title": "Implement job processors",
+            "status": "pending"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-07T05:41:20.100Z",
+      "updated": "2025-07-07T05:41:20.100Z",
+      "description": "Tasks for master context"
     }
-  ]
+  }
 }
