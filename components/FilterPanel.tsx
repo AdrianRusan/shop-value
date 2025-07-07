@@ -156,14 +156,16 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     }, [values]);
 
     const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newMin = Math.min(parseInt(e.target.value), localValues[1]);
+      const parsedValue = parseInt(e.target.value);
+      const newMin = isNaN(parsedValue) ? min : Math.min(parsedValue, localValues[1]);
       const newValues: [number, number] = [newMin, localValues[1]];
       setLocalValues(newValues);
       onChange(newValues);
     };
 
     const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newMax = Math.max(parseInt(e.target.value), localValues[0]);
+      const parsedValue = parseInt(e.target.value);
+      const newMax = isNaN(parsedValue) ? max : Math.max(parsedValue, localValues[0]);
       const newValues: [number, number] = [localValues[0], newMax];
       setLocalValues(newValues);
       onChange(newValues);
