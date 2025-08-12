@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exchangeRateService } from '@/lib/currency/exchange-rates';
 import { createAPIResponse, createAPIError } from '@/lib/api-framework';
 import { z } from 'zod';
+import pLimit from 'p-limit';
 
 // Validation schemas
 const ConversionRequestSchema = z.object({
@@ -306,9 +307,10 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(response, { status: statusCode });
         }
 
-        // Perform batch conversion
+        // Perform batch conversion with concurrency control
+        const limit = pLimit(5); // Limit to 5 concurrent requests
         const conversions = await Promise.all(
-          validTargets.map(async (target) => {
+          validTargets.map(target => limit(async () => {
             try {
               return await exchangeRateService.convertCurrency(amount, from, target.toUpperCase());
             } catch (error) {
@@ -323,7 +325,7 @@ export async function POST(request: NextRequest) {
                 error: error instanceof Error ? error.message : 'Conversion failed',
               };
             }
-          })
+          }))
         );
 
         const response = createAPIResponse({

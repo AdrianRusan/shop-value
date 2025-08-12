@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSecurityMiddleware } from '@/lib/security';
+import { createSecureHandler } from '@/lib/security';
 import { createSecurityAuditor, getLatestAuditResult, getSecurityMetrics } from '@/lib/security-audit';
 import * as Sentry from '@sentry/nextjs';
 
@@ -11,8 +11,8 @@ const auditRequestSchema = z.object({
   severity_filter: z.enum(['all', 'critical', 'high', 'medium']).default('all'),
 });
 
-// Secure middleware configuration
-const secureMiddleware = createSecurityMiddleware({
+// Secure handler configuration
+const withSecurity = createSecureHandler({
   rateLimit: 'sensitive',
   requireAuth: true,
   validateInput: auditRequestSchema,
@@ -176,9 +176,9 @@ async function runPenetrationTest() {
   return penTestResults;
 }
 
-// Apply security middleware to all methods  
-export const GET = auditHandler;
-export const POST = auditHandler;
+// Apply security wrapper to handlers
+export const GET = withSecurity(auditHandler);
+export const POST = withSecurity(auditHandler);
 
 // Explicitly handle unsupported methods
 export const PUT = () => NextResponse.json({ error: 'Method not allowed' }, { status: 405 });

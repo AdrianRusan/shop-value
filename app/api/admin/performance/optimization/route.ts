@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { connectToDB } from '@/lib/mongoose';
+import User from '@/lib/models/user.model';
 import EnhancedPerformanceOptimizer from '@/lib/performance/enhanced-optimizer';
 import { createAPIResponse, createAPIError } from '@/lib/api-framework';
+import { z } from 'zod';
 
 // Initialize the optimizer
 const optimizer = EnhancedPerformanceOptimizer.getInstance();
+
+// Validation schema for PerformanceOptimizationConfig
+const performanceConfigSchema = z.object({
+  enableAdaptiveCaching: z.boolean().optional(),
+  enableQueryOptimization: z.boolean().optional(),
+  enablePreloading: z.boolean().optional(),
+  enableResourceCompression: z.boolean().optional(),
+  enableCDNCaching: z.boolean().optional(),
+  cacheStrategy: z.enum(['aggressive', 'balanced', 'conservative']).optional(),
+  monitoringInterval: z.number().int().min(30000).max(3600000).optional(), // 30s to 1h
+}).strict();
 
 // GET /api/admin/performance/optimization - Get optimization dashboard
 export async function GET(request: NextRequest) {
@@ -22,16 +36,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode });
     }
 
-    // TODO: Add admin role check
-    // const user = await getUserRole(userId);
-    // if (user.role !== 'admin') {
-    //   const { response, statusCode } = createAPIError(
-    //     'FORBIDDEN',
-    //     'Admin access required',
-    //     { requestId }
-    //   );
-    //   return NextResponse.json(response, { status: statusCode });
-    // }
+    // Check admin role with error handling
+    try {
+      await connectToDB();
+      const user = await User.findOne({ clerkId: userId });
+      if (!user || user.role !== 'admin') {
+        const { response, statusCode } = createAPIError(
+          'FORBIDDEN',
+          'Admin access required',
+          { requestId }
+        );
+        return NextResponse.json(response, { status: statusCode });
+      }
+    } catch (roleError) {
+      console.error('Error checking user role:', roleError);
+      const { response, statusCode } = createAPIError(
+        'INTERNAL_ERROR',
+        'Failed to verify admin access',
+        { requestId, details: roleError instanceof Error ? roleError.message : 'Role verification failed' }
+      );
+      return NextResponse.json(response, { status: statusCode });
+    }
 
     // Get optimization dashboard data
     const dashboardData = await optimizer.getOptimizationDashboard();
@@ -72,6 +97,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response, { status: statusCode });
     }
 
+    // Check admin role with error handling
+    try {
+      await connectToDB();
+      const user = await User.findOne({ clerkId: userId });
+      if (!user || user.role !== 'admin') {
+        const { response, statusCode } = createAPIError(
+          'FORBIDDEN',
+          'Admin access required',
+          { requestId }
+        );
+        return NextResponse.json(response, { status: statusCode });
+      }
+    } catch (roleError) {
+      console.error('Error checking user role:', roleError);
+      const { response, statusCode } = createAPIError(
+        'INTERNAL_ERROR',
+        'Failed to verify admin access',
+        { requestId, details: roleError instanceof Error ? roleError.message : 'Role verification failed' }
+      );
+      return NextResponse.json(response, { status: statusCode });
+    }
+
     const body = await request.json();
     const { action, config } = body;
 
@@ -84,18 +131,50 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'configure':
-        // Update optimizer configuration
-        if (config) {
-          optimizer.updateConfig(config);
-          result = { 
-            message: 'Configuration updated successfully',
-            config: optimizer.getConfig()
-          };
-        } else {
+        // Update optimizer configuration with validation
+        if (!config) {
           const { response, statusCode } = createAPIError(
             'VALIDATION_FAILED',
             'Configuration data required',
             { requestId }
+          );
+          return NextResponse.json(response, { status: statusCode });
+        }
+
+        // Validate configuration against schema
+        const validation = performanceConfigSchema.safeParse(config);
+        if (!validation.success) {
+          const { response, statusCode } = createAPIError(
+            'VALIDATION_FAILED',
+            'Invalid configuration format',
+            { 
+              requestId,
+              details: validation.error.errors.map(err => ({
+                field: err.path.join('.'),
+                message: err.message,
+                code: err.code,
+              }))
+            }
+          );
+          return NextResponse.json(response, { status: statusCode });
+        }
+
+        // Safely update configuration with error handling
+        try {
+          optimizer.updateConfig(validation.data);
+          result = { 
+            message: 'Configuration updated successfully',
+            config: optimizer.getConfig()
+          };
+        } catch (updateError) {
+          console.error('Error updating optimizer configuration:', updateError);
+          const { response, statusCode } = createAPIError(
+            'INTERNAL_ERROR',
+            'Failed to update configuration',
+            { 
+              requestId, 
+              details: updateError instanceof Error ? updateError.message : 'Configuration update failed' 
+            }
           );
           return NextResponse.json(response, { status: statusCode });
         }
@@ -148,6 +227,28 @@ export async function PUT(request: NextRequest) {
         'UNAUTHORIZED',
         'Authentication required',
         { requestId }
+      );
+      return NextResponse.json(response, { status: statusCode });
+    }
+
+    // Check admin role with error handling
+    try {
+      await connectToDB();
+      const user = await User.findOne({ clerkId: userId });
+      if (!user || user.role !== 'admin') {
+        const { response, statusCode } = createAPIError(
+          'FORBIDDEN',
+          'Admin access required',
+          { requestId }
+        );
+        return NextResponse.json(response, { status: statusCode });
+      }
+    } catch (roleError) {
+      console.error('Error checking user role:', roleError);
+      const { response, statusCode } = createAPIError(
+        'INTERNAL_ERROR',
+        'Failed to verify admin access',
+        { requestId, details: roleError instanceof Error ? roleError.message : 'Role verification failed' }
       );
       return NextResponse.json(response, { status: statusCode });
     }

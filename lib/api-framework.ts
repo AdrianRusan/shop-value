@@ -6,6 +6,15 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { redis } from './upstash';
 import { performance } from 'perf_hooks';
 
+// Cache User model import for performance optimization
+let cachedUserModel: any = null;
+const getUserModel = async () => {
+  if (!cachedUserModel) {
+    cachedUserModel = (await import('./models/user.model')).default;
+  }
+  return cachedUserModel;
+};
+
 // Standard API Response Types
 export interface APISuccessResponse<T = any> {
   success: true;
@@ -266,7 +275,7 @@ export async function withAuth(context: RequestContext): Promise<{
     // Get user role from database (simplified)
     let userRole = 'user';
     try {
-      const User = (await import('./models/user.model')).default;
+      const User = await getUserModel();
       const user = await User.findOne({ clerkId: userId }).select('role');
       if (user?.role) {
         userRole = user.role;
@@ -482,7 +491,18 @@ export function createAPIHandler(config: APIHandlerConfig = {}) {
         }
 
         // Role-based authorization
-        if (config.requiredRole && userRole) {
+        if (config.requiredRole && config.requireAuth) {
+          // If a role is required but userRole is undefined, return unauthorized
+          if (!userRole) {
+            const { response, statusCode } = createAPIError(
+              'FORBIDDEN',
+              'User role is required but not found',
+              { requestId: context.requestId }
+            );
+            return NextResponse.json(response, { status: statusCode });
+          }
+          
+          // Only call withRole when we have a defined role
           const roleResult = withRole(config.requiredRole, userRole, context.requestId);
           if (!roleResult.success && roleResult.error) {
             return NextResponse.json(
@@ -608,43 +628,56 @@ async function trackAPIRequest(
   statusCode: number
 ): Promise<void> {
   try {
-    // Store metrics in Redis
+    // Store metrics in Redis with proper TTL to prevent memory growth
     const date = new Date().toISOString().split('T')[0];
     const hour = new Date().getHours();
     
-    await Promise.all([
-      // Daily metrics
-      redis.hincrby(`api:metrics:daily:${date}`, 'requests', 1),
-      redis.hincrby(`api:metrics:daily:${date}`, 'response_time', responseTime),
-      redis.hincrby(`api:metrics:daily:${date}`, `status_${statusCode}`, 1),
-      
-      // Hourly metrics
-      redis.hincrby(`api:metrics:hourly:${date}:${hour}`, 'requests', 1),
-      redis.hincrby(`api:metrics:hourly:${date}:${hour}`, 'response_time', responseTime),
-      
-      // Endpoint-specific metrics
-      redis.hincrby(`api:metrics:endpoint:${context.path}`, 'requests', 1),
-      redis.hincrby(`api:metrics:endpoint:${context.path}`, 'response_time', responseTime),
-    ]);
+    const dailyKey = `api:metrics:daily:${date}`;
+    const hourlyKey = `api:metrics:hourly:${date}:${hour}`;
+    const endpointKey = `api:metrics:endpoint:${context.path}`;
+    
+    // Use Redis pipeline for atomic operations with TTL
+    const pipeline = redis.pipeline();
+    
+    // Daily metrics (90 days TTL)
+    pipeline.hincrby(dailyKey, 'requests', 1);
+    pipeline.hincrby(dailyKey, 'response_time', responseTime);
+    pipeline.hincrby(dailyKey, `status_${statusCode}`, 1);
+    pipeline.expire(dailyKey, 90 * 24 * 60 * 60); // 90 days in seconds
+    
+    // Hourly metrics (7 days TTL)
+    pipeline.hincrby(hourlyKey, 'requests', 1);
+    pipeline.hincrby(hourlyKey, 'response_time', responseTime);
+    pipeline.expire(hourlyKey, 7 * 24 * 60 * 60); // 7 days in seconds
+    
+    // Endpoint-specific metrics (90 days TTL)
+    pipeline.hincrby(endpointKey, 'requests', 1);
+    pipeline.hincrby(endpointKey, 'response_time', responseTime);
+    pipeline.expire(endpointKey, 90 * 24 * 60 * 60); // 90 days in seconds
+    
+    // Execute all operations atomically
+    await pipeline.exec();
   } catch (error) {
     console.warn('Failed to track API metrics:', error);
   }
 }
 
 // Create method not allowed handler
-export function createMethodNotAllowedHandler(allowedMethods: string[]): NextResponse {
-  const { response, statusCode } = createAPIError(
-    'METHOD_NOT_ALLOWED',
-    `Method not allowed. Allowed methods: ${allowedMethods.join(', ')}`,
-    { requestId: crypto.randomUUID() }
-  );
+export function createMethodNotAllowedHandler(allowedMethods: string[]) {
+  return function () {
+    const { response, statusCode } = createAPIError(
+      'METHOD_NOT_ALLOWED',
+      `Method not allowed. Allowed methods: ${allowedMethods.join(', ')}`,
+      { requestId: crypto.randomUUID() }
+    );
 
-  return NextResponse.json(response, { 
-    status: statusCode,
-    headers: {
-      'Allow': allowedMethods.join(', '),
-    },
-  });
+    return NextResponse.json(response, { 
+      status: statusCode,
+      headers: {
+        'Allow': allowedMethods.join(', '),
+      },
+    });
+  };
 }
 
 // Pagination helper

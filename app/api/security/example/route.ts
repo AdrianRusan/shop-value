@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { 
-  createSecurityMiddleware, 
+  createSecureHandler, 
   xssProtection, 
   dbSecurity,
   verifyWebhookSignature
@@ -23,8 +23,8 @@ const exampleSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-// Secure middleware configuration
-const secureMiddleware = createSecurityMiddleware({
+// Secure handler configuration
+const withSecurity = createSecureHandler({
   rateLimit: 'api',
   requireAuth: true,
   validateInput: exampleSchema,
@@ -105,9 +105,9 @@ export const GET = async (request: NextRequest) => {
   });
 };
 
-export const POST = secureHandler;
+export const POST = withSecurity(secureHandler);
 
-export const PUT = secureHandler;
+export const PUT = withSecurity(secureHandler);
 
 export const DELETE = async (request: NextRequest) => {
   // Example delete with additional security checks

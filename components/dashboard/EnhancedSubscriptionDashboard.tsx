@@ -135,12 +135,17 @@ export function EnhancedSubscriptionDashboard({ mongoUser, className = '' }: Sub
         method: 'POST',
       });
 
+      if (!response.ok) {
+        console.error('Failed to create customer portal session: HTTP', response.status);
+        return;
+      }
+
       const data = await response.json();
       
-      if (data.url) {
+      if (data && data.url) {
         window.location.href = data.url;
       } else {
-        console.error('Failed to create customer portal session');
+        console.error('Failed to create customer portal session: Invalid response data', data);
       }
     } catch (error) {
       console.error('Error creating customer portal session:', error);

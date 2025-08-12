@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { FilterQuery } from 'mongoose';
 import { 
   createAPIHandler,
   commonSchemas,
@@ -9,7 +10,53 @@ import {
   createMethodNotAllowedHandler,
 } from '@/lib/api-framework';
 import User from '@/lib/models/user.model';
-import Alert from '@/lib/models/alert.model';
+import Alert, { IAlert } from '@/lib/models/alert.model';
+
+// Helper function to safely extract alert ID from URL path
+function extractAlertIdFromPath(path: string): string | undefined {
+  try {
+    // Safely construct a URL with a base to handle relative paths
+    const url = new URL(path, 'http://localhost');
+    
+    // Validate that url.pathname exists
+    if (!url.pathname) {
+      console.warn(`[extractAlertIdFromPath] URL pathname is missing for path: ${path}`);
+      return undefined;
+    }
+    
+    const pathSegments = url.pathname.split('/').filter(segment => segment.length > 0);
+    
+    // Get the last path segment (alert ID)
+    const rawAlertId = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : undefined;
+    
+    if (!rawAlertId) {
+      console.warn(`[extractAlertIdFromPath] No path segments found for path: ${path}`);
+      return undefined;
+    }
+    
+    // Decode the alert ID to handle URL-encoded characters
+    let alertId: string;
+    try {
+      alertId = decodeURIComponent(rawAlertId);
+    } catch (decodeError) {
+      console.warn(`[extractAlertIdFromPath] Failed to decode URI component "${rawAlertId}" for path: ${path}`, decodeError);
+      return undefined;
+    }
+    
+    // Validate that alertId is a non-empty string after trimming
+    const trimmedAlertId = alertId.trim();
+    if (!trimmedAlertId) {
+      console.warn(`[extractAlertIdFromPath] Alert ID is empty after trimming for path: ${path}`);
+      return undefined;
+    }
+    
+    return trimmedAlertId;
+  } catch (error) {
+    // Log the original path for debugging and return undefined if URL construction fails
+    console.error(`[extractAlertIdFromPath] Failed to parse URL from path: ${path}`, error);
+    return undefined;
+  }
+}
 
 // Enhanced validation schemas using the standardized framework
 const alertQuerySchema = z.object({
@@ -43,7 +90,7 @@ async function getUserAlerts(
   userId: string,
   filters: z.infer<typeof alertQuerySchema>
 ) {
-  const query: any = { userId };
+  const query: FilterQuery<IAlert> = { userId };
 
   // Apply filters
   if (filters.productId) {
@@ -240,14 +287,17 @@ export const PUT = createAPIHandler({
   const { userId, validatedData } = context;
   
   // Extract alertId from URL (in a real implementation, this would come from route params)
-  const url = new URL(context.path);
-  const alertId = url.pathname.split('/').pop();
+  const alertId = extractAlertIdFromPath(context.path);
   
   if (!alertId) {
+    console.warn(`[PUT /api/alerts] Failed to extract alert ID from path: ${context.path}`);
     const { response, statusCode } = createAPIError(
       'INVALID_REQUEST',
-      'Alert ID is required',
-      { requestId: context.requestId }
+      'Invalid or missing alert ID in URL path',
+      { 
+        requestId: context.requestId,
+        details: { path: context.path }
+      }
     );
     throw { response, statusCode };
   }
@@ -281,14 +331,17 @@ export const DELETE = createAPIHandler({
   const { userId } = context;
   
   // Extract alertId from URL
-  const url = new URL(context.path);
-  const alertId = url.pathname.split('/').pop();
+  const alertId = extractAlertIdFromPath(context.path);
   
   if (!alertId) {
+    console.warn(`[DELETE /api/alerts] Failed to extract alert ID from path: ${context.path}`);
     const { response, statusCode } = createAPIError(
       'INVALID_REQUEST',
-      'Alert ID is required',
-      { requestId: context.requestId }
+      'Invalid or missing alert ID in URL path',
+      { 
+        requestId: context.requestId,
+        details: { path: context.path }
+      }
     );
     throw { response, statusCode };
   }
@@ -314,6 +367,6 @@ export const DELETE = createAPIHandler({
 });
 
 // Handle unsupported methods
-export const PATCH = () => createMethodNotAllowedHandler(['GET', 'POST', 'PUT', 'DELETE']);
-export const HEAD = () => createMethodNotAllowedHandler(['GET', 'POST', 'PUT', 'DELETE']);
-export const OPTIONS = () => createMethodNotAllowedHandler(['GET', 'POST', 'PUT', 'DELETE']); 
+export const PATCH = createMethodNotAllowedHandler(['GET', 'POST', 'PUT', 'DELETE']);
+export const HEAD = createMethodNotAllowedHandler(['GET', 'POST', 'PUT', 'DELETE']);
+export const OPTIONS = createMethodNotAllowedHandler(['GET', 'POST', 'PUT', 'DELETE']); 

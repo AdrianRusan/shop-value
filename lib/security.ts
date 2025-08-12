@@ -643,6 +643,98 @@ export const createSecurityMiddleware = (options: {
   };
 };
 
+// Helper: map security error codes to HTTP status
+function mapSecurityCodeToStatus(code?: string): number {
+  switch (code) {
+    case 'AUTH_REQUIRED':
+      return 401;
+    case 'IP_BLACKLISTED':
+      return 403;
+    case 'RATE_LIMIT_EXCEEDED':
+      return 429;
+    case 'PAYLOAD_TOO_LARGE':
+      return 413;
+    case 'CSRF_INVALID':
+      return 403;
+    case 'SECURITY_ERROR':
+      return 500;
+    default:
+      return 400;
+  }
+}
+
+// High-order wrapper that applies security checks and optional input validation
+export const createSecureHandler = (options: {
+  rateLimit?: 'api' | 'scraping' | 'email' | 'sensitive';
+  requireAuth?: boolean;
+  validateInput?: z.ZodSchema<any>;
+  corsEnabled?: boolean;
+  maxRequestSize?: number;
+  csrfProtection?: boolean;
+  ipAccessControl?: boolean;
+}) => {
+  const middleware = createSecurityMiddleware(options);
+
+  return function <TValidated = any>(
+    handler: (request: NextRequest, validatedData?: TValidated) => Promise<Response | NextResponse>
+  ) {
+    return async function (request: NextRequest): Promise<NextResponse> {
+      const result = await middleware(request);
+
+      if (!result.success) {
+        const status = mapSecurityCodeToStatus(result.code);
+        const errorBody = {
+          success: false,
+          error: result.error || 'Security check failed',
+          code: result.code || 'SECURITY_ERROR',
+        } as const;
+        return NextResponse.json(errorBody, { status });
+      }
+
+      // Optional request body validation
+      let validatedData: any;
+      if (options.validateInput && request.method !== 'GET' && request.method !== 'HEAD') {
+        try {
+          const body = await request.json().catch(() => undefined);
+          const parsed = options.validateInput.safeParse(body);
+          if (!parsed.success) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: 'Invalid request data',
+                code: 'VALIDATION_FAILED',
+                details: parsed.error.errors.map(err => ({
+                  field: err.path.join('.'),
+                  message: err.message,
+                  code: err.code,
+                })),
+              },
+              { status: 400 }
+            );
+          }
+          validatedData = parsed.data;
+        } catch {
+          return NextResponse.json(
+            { success: false, error: 'Invalid JSON body', code: 'INVALID_REQUEST' },
+            { status: 400 }
+          );
+        }
+      }
+
+      const response = await handler(request, validatedData);
+
+      // Propagate any headers set by middleware (e.g., rate limiting)
+      if (result.headers && response instanceof NextResponse) {
+        for (const [key, value] of Object.entries(result.headers)) {
+          response.headers.set(key, String(value));
+        }
+      }
+
+      return response as NextResponse;
+    };
+  };
+};
+
 // Initialize environment validation on module load
 // Skip during build time when environment variables may not be available
 if (process.env.NODE_ENV === 'production' && !process.env.BUILDING && process.env.NEXT_PHASE !== 'phase-production-build') {

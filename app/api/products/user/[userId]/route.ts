@@ -9,6 +9,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { redis } from '@/lib/upstash';
 import * as Sentry from '@sentry/nextjs';
 import { userCache, productCache, cacheInvalidation } from '@/lib/cache';
+import Decimal from 'decimal.js';
 
 // Rate limiting
 const ratelimit = new Ratelimit({
@@ -133,13 +134,30 @@ export async function GET(
       trackingQuery.isActive = false;
     }
 
-    // Get tracked products with populated product data using optimized aggregation
+    // PERFORMANCE OPTIMIZATION: Get tracked products with optimized aggregation pipeline
+    // Key optimizations:
+    // 1. Apply $match, $sort, $skip, $limit at tracking level BEFORE expensive $lookup operations
+    // 2. Pagination is applied to ~20 tracking records instead of after expensive operations
+    // 3. Price change percentage computed in $lookup projection instead of post-lookup $addFields
+    // 4. Price history slicing optimized to only get recent entries
+    // 5. Uses compound indexes: userId + deletedAt + sortField for efficient sorting/pagination
     const trackingAggregation: any[] = [
-      // Match user's trackings
+      // Match user's trackings first (uses indexes)
       {
         $match: trackingQuery
       },
-      // Lookup product details
+      // Sort at tracking level for efficient pagination
+      {
+        $sort: { [sortBy]: sortOrder }
+      },
+      // Apply pagination early to reduce documents for expensive operations
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      },
+      // Now perform lookup only on paginated results
       {
         $lookup: {
           from: 'products',
@@ -149,7 +167,7 @@ export async function GET(
           pipeline: [
             // Filter products by category if specified
             ...(category ? [{ $match: { category: new RegExp(category, 'i') } }] : []),
-            // Project only needed fields for performance
+            // Project only essential fields and compute priceChangePercentage in projection
             {
               $project: {
                 title: 1,
@@ -161,9 +179,34 @@ export async function GET(
                 image: 1,
                 isOutOfStock: 1,
                 url: 1,
-                priceHistory: { $slice: ['$priceHistory', -5] }, // Last 5 price points only
                 lastScrapedAt: 1,
-                updatedAt: 1
+                updatedAt: 1,
+                // Get only the most recent price history entries efficiently
+                recentPriceHistory: { $slice: ['$priceHistory', -5] },
+                // Compute price change percentage directly in projection
+                priceChangePercentage: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $ne: ['$currentPrice', null] },
+                        { $ne: ['$originalPrice', null] },
+                        { $gt: ['$originalPrice', 0] }
+                      ]
+                    },
+                    then: {
+                      $multiply: [
+                        {
+                          $divide: [
+                            { $subtract: ['$currentPrice', '$originalPrice'] },
+                            '$originalPrice'
+                          ]
+                        },
+                        100
+                      ]
+                    },
+                    else: 0
+                  }
+                }
               }
             }
           ]
@@ -176,44 +219,19 @@ export async function GET(
           preserveNullAndEmptyArrays: false // Filter out trackings without valid products
         }
       },
-      // Add computed fields
+      // Flatten the computed priceChangePercentage to root level
       {
         $addFields: {
-          priceChangePercentage: {
-            $cond: {
-              if: {
-                $and: [
-                  { $ne: ['$product.currentPrice', null] },
-                  { $ne: ['$product.originalPrice', null] },
-                  { $gt: ['$product.originalPrice', 0] }
-                ]
-              },
-              then: {
-                $multiply: [
-                  {
-                    $divide: [
-                      { $subtract: ['$product.currentPrice', '$product.originalPrice'] },
-                      '$product.originalPrice'
-                    ]
-                  },
-                  100
-                ]
-              },
-              else: 0
-            }
-          }
+          priceChangePercentage: '$product.priceChangePercentage',
+          // Rename recentPriceHistory back to priceHistory for backward compatibility
+          'product.priceHistory': '$product.recentPriceHistory'
         }
       },
-      // Sort the results
+      // Clean up temporary fields
       {
-        $sort: { [sortBy]: sortOrder }
-      },
-      // Pagination
-      {
-        $skip: skip
-      },
-      {
-        $limit: limit
+        $project: {
+          'product.recentPriceHistory': 0
+        }
       }
     ];
 
@@ -236,7 +254,18 @@ export async function GET(
         totalTracked: totalCount,
         activeTracked: trackedProducts.filter((t: any) => t.isActive).length,
         averagePriceChange: trackedProducts.length > 0 
-          ? trackedProducts.reduce((acc: number, p: any) => acc + (p.priceChangePercentage || 0), 0) / trackedProducts.length 
+          ? (() => {
+              // Use precise decimal arithmetic to avoid floating-point precision errors
+              const sum = trackedProducts.reduce((acc: InstanceType<typeof Decimal>, p: any) => {
+                // Validate that priceChangePercentage is numeric, default to 0 if not
+                const priceChange = typeof p.priceChangePercentage === 'number' && !isNaN(p.priceChangePercentage) 
+                  ? p.priceChangePercentage 
+                  : 0;
+                return acc.plus(new Decimal(priceChange));
+              }, new Decimal(0));
+              
+              return sum.dividedBy(new Decimal(trackedProducts.length)).toNumber();
+            })()
           : 0
       }
     };

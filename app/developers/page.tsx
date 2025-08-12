@@ -256,6 +256,79 @@ axios(config)
     }
   };
 
+  // Validate and sanitize API path
+  const validateApiPath = (path: string): string => {
+    // Check if path is a string
+    if (typeof path !== 'string') {
+      throw new Error('Invalid path: must be a string');
+    }
+
+    // Trim whitespace
+    const trimmedPath = path.trim();
+
+    // Check if path starts with /
+    if (!trimmedPath.startsWith('/')) {
+      throw new Error('Invalid path: must start with /');
+    }
+
+    // Check for protocol injection (://)
+    if (trimmedPath.includes('://')) {
+      throw new Error('Invalid path: protocol injection detected');
+    }
+
+    // Check for double slashes (except at the start)
+    if (trimmedPath.includes('//')) {
+      throw new Error('Invalid path: double slashes not allowed');
+    }
+
+    // Check for backslashes (Windows path separators)
+    if (trimmedPath.includes('\\')) {
+      throw new Error('Invalid path: backslashes not allowed');
+    }
+
+    // Check for control characters (0x00-0x1F, 0x7F)
+    if (/[\x00-\x1F\x7F]/.test(trimmedPath)) {
+      throw new Error('Invalid path: control characters not allowed');
+    }
+
+    // Check for spaces in path (should be percent-encoded)
+    if (trimmedPath.includes(' ')) {
+      throw new Error('Invalid path: spaces must be percent-encoded');
+    }
+
+    // Additional security: check for common injection patterns
+    const dangerousPatterns = [
+      '../',     // Directory traversal
+      '..\\',    // Windows directory traversal
+      '%2e%2e',  // URL-encoded ..
+      '%2f',     // URL-encoded /
+      '%5c',     // URL-encoded \
+    ];
+
+    const lowerPath = trimmedPath.toLowerCase();
+    for (const pattern of dangerousPatterns) {
+      if (lowerPath.includes(pattern)) {
+        throw new Error(`Invalid path: dangerous pattern detected: ${pattern}`);
+      }
+    }
+
+    // Validate path segments
+    const segments = trimmedPath.split('/').filter(segment => segment.length > 0);
+    for (const segment of segments) {
+      // Check for empty segments (would create double slashes)
+      if (segment.length === 0) {
+        throw new Error('Invalid path: empty path segments not allowed');
+      }
+      
+      // Check for relative path components
+      if (segment === '.' || segment === '..') {
+        throw new Error('Invalid path: relative path components not allowed');
+      }
+    }
+
+    return trimmedPath;
+  };
+
   // Test API endpoint
   const testEndpoint = async () => {
     if (!selectedEndpoint) return;
@@ -265,20 +338,28 @@ axios(config)
 
     try {
       const { path, method, params, body, auth } = selectedEndpoint;
-      let url = path;
+      
+      // Validate and sanitize the path
+      const validatedPath = validateApiPath(path);
+      
+      // Construct URL using URL constructor with a known base
+      const baseUrl = 'https://api.shopvalue.com';
+      let url: URL;
+      
+      try {
+        url = new URL(validatedPath, baseUrl);
+      } catch (error) {
+        throw new Error('Invalid path: failed to construct valid URL');
+      }
       
       // Add query parameters for GET requests
       if (method === 'GET' && params) {
-        const queryParams = new URLSearchParams();
         params.forEach(param => {
           const value = testingData[param.name];
           if (value) {
-            queryParams.append(param.name, value);
+            url.searchParams.append(param.name, String(value));
           }
         });
-        if (queryParams.toString()) {
-          url += `?${queryParams.toString()}`;
-        }
       }
 
       const requestOptions: RequestInit = {
@@ -294,7 +375,7 @@ axios(config)
         requestOptions.body = JSON.stringify({ ...body, ...testingData });
       }
 
-      const response = await fetch(url, requestOptions);
+      const response = await fetch(url.toString(), requestOptions);
       const result = await response.json();
       
       setTestResult({

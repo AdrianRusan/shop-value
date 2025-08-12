@@ -32,17 +32,37 @@ export function DashboardContent({ clerkUser, mongoUser }: DashboardContentProps
 
   // Check for dark mode preference
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Check if we're running in a browser environment
+    if (typeof window === 'undefined') return;
+    
+    let savedTheme: string | null = null;
+    try {
+      savedTheme = localStorage.getItem('theme');
+    } catch (error) {
+      console.warn('Failed to access localStorage:', error);
+      savedTheme = null;
+    }
+    
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDarkMode(savedTheme === 'dark' || (!savedTheme && prefersDark));
   }, []);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
+    if (typeof window === 'undefined') return;
+    
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', newMode);
+    
+    try {
+      localStorage.setItem('theme', newMode ? 'dark' : 'light');
+    } catch (error) {
+      console.warn('Failed to save theme preference:', error);
+    }
+    
+    if (document && document.documentElement) {
+      document.documentElement.classList.toggle('dark', newMode);
+    }
   };
 
   const tabs = [

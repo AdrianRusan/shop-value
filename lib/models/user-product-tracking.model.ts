@@ -129,13 +129,27 @@ const userProductTrackingSchema = new mongoose.Schema<IUserProductTracking>({
   toObject: { virtuals: true }
 });
 
-// Compound indexes for performance
+// Optimized compound indexes for performance
 userProductTrackingSchema.index({ userId: 1, productId: 1 }, { unique: true });
 userProductTrackingSchema.index({ userId: 1, isActive: 1 });
 userProductTrackingSchema.index({ productId: 1, isActive: 1 });
 userProductTrackingSchema.index({ userId: 1, addedAt: -1 });
 userProductTrackingSchema.index({ isPublic: 1, productId: 1 });
 userProductTrackingSchema.index({ deletedAt: 1 }, { sparse: true });
+
+// Additional optimized indexes for the GET route aggregation pipeline
+// Supports userId + isActive + deletedAt filtering with optimal sorting
+userProductTrackingSchema.index({ userId: 1, isActive: 1, deletedAt: 1 });
+userProductTrackingSchema.index({ userId: 1, deletedAt: 1, addedAt: -1 });
+userProductTrackingSchema.index({ userId: 1, deletedAt: 1, addedAt: 1 });
+
+// Support different sorting patterns for the optimized pipeline
+userProductTrackingSchema.index({ userId: 1, deletedAt: 1, updatedAt: -1 });
+userProductTrackingSchema.index({ userId: 1, deletedAt: 1, updatedAt: 1 });
+
+// Additional compound index for cursor-based pagination when sorting by _id
+userProductTrackingSchema.index({ userId: 1, deletedAt: 1, _id: 1 });
+userProductTrackingSchema.index({ userId: 1, deletedAt: 1, _id: -1 });
 
 // Pre-save middleware
 userProductTrackingSchema.pre('save', async function(next) {

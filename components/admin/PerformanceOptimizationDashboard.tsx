@@ -84,6 +84,104 @@ export function PerformanceOptimizationDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showConfig, setShowConfig] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Input validation helper
+  const validateMonitoringInterval = (value: string): { isValid: boolean; validatedValue?: number; error?: string } => {
+    // Parse the input value
+    const numValue = parseInt(value, 10);
+    
+    // Check if parsing was successful and value is a valid number
+    if (!Number.isInteger(numValue) || Number.isNaN(numValue)) {
+      return { isValid: false, error: 'Please enter a valid number' };
+    }
+    
+    // Define valid range based on HTML attributes
+    const minValue = 10000; // 10 seconds
+    const maxValue = 300000; // 5 minutes
+    const stepValue = 10000; // 10 second increments
+    
+    // Validate range
+    if (numValue < minValue || numValue > maxValue) {
+      return { 
+        isValid: false, 
+        error: `Value must be between ${minValue} and ${maxValue} milliseconds` 
+      };
+    }
+    
+    // Validate step (should be divisible by step value)
+    if ((numValue - minValue) % stepValue !== 0) {
+      return { 
+        isValid: false, 
+        error: `Value must be in ${stepValue}ms increments (${minValue}, ${minValue + stepValue}, ${minValue + stepValue * 2}, etc.)` 
+      };
+    }
+    
+    return { isValid: true, validatedValue: numValue };
+  };
+
+  // Handle monitoring interval change with validation
+  const handleMonitoringIntervalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    const validation = validateMonitoringInterval(inputValue);
+    
+    if (validation.isValid && validation.validatedValue !== undefined) {
+      // Clear any previous validation errors
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.monitoringInterval;
+        return newErrors;
+      });
+      
+      // Update config with validated value
+      updateConfig({ monitoringInterval: validation.validatedValue });
+    } else {
+      // Set validation error
+      setValidationErrors(prev => ({
+        ...prev,
+        monitoringInterval: validation.error || 'Invalid input'
+      }));
+      
+      // Optionally revert to previous valid value or set a safe default
+      // For now, we won't update the config and let the user correct the input
+    }
+  };
+
+  // Fetch configuration data
+  const fetchConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/performance/optimization/config');
+      const data = await response.json();
+
+      if (data.success) {
+        setConfig(data.data);
+      } else {
+        console.error('Failed to fetch configuration:', data.error?.message);
+        // Set default config if fetch fails
+        setConfig({
+          enableAdaptiveCaching: true,
+          enableQueryOptimization: true,
+          enablePreloading: false,
+          enableResourceCompression: true,
+          enableCDNCaching: false,
+          cacheStrategy: 'balanced',
+          monitoringInterval: 30000, // Default to 30 seconds
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching configuration:', error);
+      // Set default config if fetch fails
+      setConfig({
+        enableAdaptiveCaching: true,
+        enableQueryOptimization: true,
+        enablePreloading: false,
+        enableResourceCompression: true,
+        enableCDNCaching: false,
+        cacheStrategy: 'balanced',
+        monitoringInterval: 30000, // Default to 30 seconds
+      });
+    }
+  };
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -154,6 +252,7 @@ export function PerformanceOptimizationDashboard() {
   // Initialize component
   useEffect(() => {
     fetchDashboardData();
+    fetchConfig();
 
     // Set up auto-refresh
     let interval: NodeJS.Timeout;
@@ -572,12 +671,25 @@ export function PerformanceOptimizationDashboard() {
                     <input
                       type="number"
                       value={config.monitoringInterval}
-                      onChange={(e) => updateConfig({ monitoringInterval: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      onChange={handleMonitoringIntervalChange}
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${
+                        validationErrors.monitoringInterval 
+                          ? 'border-red-500 dark:border-red-400' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                       min="10000"
                       max="300000"
                       step="10000"
                     />
+                    {validationErrors.monitoringInterval && (
+                      <div className="mt-1 flex items-center text-sm text-red-600 dark:text-red-400">
+                        <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                        <span>{validationErrors.monitoringInterval}</span>
+                      </div>
+                    )}
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Valid range: 10,000 - 300,000 ms (10s - 5min) in 10s increments
+                    </div>
                   </div>
                 </div>
               </div>

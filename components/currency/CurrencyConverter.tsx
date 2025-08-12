@@ -60,6 +60,8 @@ export function CurrencyConverter({
   const [conversion, setConversion] = useState<ConversionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showFromDropdown, setShowFromDropdown] = useState(false);
   const [showToDropdown, setShowToDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,14 +71,62 @@ export function CurrencyConverter({
   useEffect(() => {
     const fetchCurrencies = async () => {
       try {
+        setIsLoadingCurrencies(true);
+        setFetchError(null);
+        
         const response = await fetch('/api/currency?action=currencies');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.success) {
           setCurrencies(data.data.currencies);
+          setFetchError(null);
+        } else {
+          throw new Error(data.error?.message || 'Failed to fetch currencies');
         }
       } catch (error) {
         console.error('Failed to fetch currencies:', error);
+        setFetchError(error instanceof Error ? error.message : 'Unable to load currencies. Please check your connection and try again.');
+        setCurrencies([]); // Safe fallback to empty array
+      } finally {
+        setIsLoadingCurrencies(false);
+      }
+    };
+
+    fetchCurrencies();
+  }, []);
+
+  // Retry function for currency fetching
+  const retryCurrencyFetch = useCallback(() => {
+    const fetchCurrencies = async () => {
+      try {
+        setIsLoadingCurrencies(true);
+        setFetchError(null);
+        
+        const response = await fetch('/api/currency?action=currencies');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setCurrencies(data.data.currencies);
+          setFetchError(null);
+        } else {
+          throw new Error(data.error?.message || 'Failed to fetch currencies');
+        }
+      } catch (error) {
+        console.error('Failed to fetch currencies:', error);
+        setFetchError(error instanceof Error ? error.message : 'Unable to load currencies. Please check your connection and try again.');
+        setCurrencies([]); // Safe fallback to empty array
+      } finally {
+        setIsLoadingCurrencies(false);
       }
     };
 
@@ -431,7 +481,38 @@ export function CurrencyConverter({
           )}
         </div>
 
+        {/* Currency Loading/Error State */}
+        {isLoadingCurrencies && (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Loading currencies...</span>
+            </div>
+          </div>
+        )}
+
+        {fetchError && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+                  {fetchError}
+                </p>
+                <button
+                  onClick={retryCurrencyFetch}
+                  disabled={isLoadingCurrencies}
+                  className="text-sm bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded transition-colors disabled:cursor-not-allowed"
+                >
+                  {isLoadingCurrencies ? 'Retrying...' : 'Retry'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Converter */}
+        {!isLoadingCurrencies && !fetchError && (
         <div className="space-y-4">
           {/* From Currency */}
           <div>
@@ -530,6 +611,7 @@ export function CurrencyConverter({
             </motion.div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

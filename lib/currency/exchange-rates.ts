@@ -431,7 +431,19 @@ export class ExchangeRateService {
       const currencyInfo = SUPPORTED_CURRENCIES[code];
       if (currencyInfo) {
         // Convert rate to be relative to base currency
-        const convertedRate = baseCurrency === 'USD' ? rate : rate / fallbackRates[baseCurrency];
+        let convertedRate: number;
+        if (baseCurrency === 'USD') {
+          convertedRate = rate;
+        } else {
+          const baseCurrencyRate = fallbackRates[baseCurrency];
+          // Validate base currency rate to prevent division by zero
+          if (!Number.isFinite(baseCurrencyRate) || baseCurrencyRate === 0) {
+            console.warn(`[Currency] Invalid fallback rate for base currency ${baseCurrency}: ${baseCurrencyRate}, using 1.0`);
+            convertedRate = rate; // Fallback to USD rate
+          } else {
+            convertedRate = rate / baseCurrencyRate;
+          }
+        }
         
         result[code] = {
           code,
@@ -455,8 +467,9 @@ export class ExchangeRateService {
     toCurrency: string
   ): Promise<ConversionResult> {
     try {
-      if (amount <= 0) {
-        throw new Error('Amount must be positive');
+      // Validate input amount is finite and positive
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error('Amount must be a positive finite number');
       }
 
       if (fromCurrency === toCurrency) {
@@ -479,6 +492,15 @@ export class ExchangeRateService {
 
       if (!fromRate || !toRate) {
         throw new Error(`Exchange rate not available for ${fromCurrency} or ${toCurrency}`);
+      }
+
+      // Validate rates are finite non-zero numbers to prevent division by zero and NaN/Infinity propagation
+      if (!Number.isFinite(fromRate) || fromRate === 0) {
+        throw new Error(`Invalid exchange rate for ${fromCurrency}: ${fromRate}`);
+      }
+      
+      if (!Number.isFinite(toRate) || toRate === 0) {
+        throw new Error(`Invalid exchange rate for ${toCurrency}: ${toRate}`);
       }
 
       // Convert: amount * (toRate / fromRate)

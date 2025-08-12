@@ -41,13 +41,38 @@ export function RealTimePriceNotification({
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [filter, setFilter] = useState<'all' | 'price-update' | 'status-change'>('all');
+  type FilterType = 'all' | 'price-update' | 'status-change';
+  const [filter, setFilter] = useState<FilterType>('all');
   const [soundEnabled, setSoundEnabled] = useState(enableSound);
   const [isMinimized, setIsMinimized] = useState(false);
   const [showToastNotification, setShowToastNotification] = useState<NotificationItem | null>(null);
+  
+  // Refs for timeout management and component mount state
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Map to store auto-read timer IDs by notification ID for proper cleanup
+  const autoReadTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const isMountedRef = useRef(true);
 
   // Audio notifications
   const soundRef = useRef<{ [key: string]: Howl }>({});
+  
+  // Cleanup effect for component unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      
+      // Clear toast timeout
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      
+      // Clear all auto-read timeouts
+      autoReadTimeoutRef.current.forEach((timeout) => {
+        clearTimeout(timeout);
+      });
+      autoReadTimeoutRef.current.clear();
+    };
+  }, []);
   
   // Initialize audio
   useEffect(() => {
@@ -59,6 +84,18 @@ export function RealTimePriceNotification({
         connection: new Howl({ src: ['/audio/connection.mp3'], volume: 0.3 }),
       };
     }
+
+    // Cleanup function to unload Howl instances
+    return () => {
+      if (soundRef.current) {
+        Object.values(soundRef.current).forEach(howl => {
+          if (howl) {
+            howl.unload();
+          }
+        });
+        soundRef.current = {};
+      }
+    };
   }, [soundEnabled]);
 
   const {
@@ -103,12 +140,37 @@ export function RealTimePriceNotification({
       priority,
     };
 
-    setNotifications(prev => [notification, ...prev.slice(0, maxNotifications - 1)]);
+    setNotifications(prev => {
+      const oldNotifications = prev.slice(0, maxNotifications - 1);
+      const removedNotifications = prev.slice(maxNotifications - 1);
+      
+      // Clear timers for notifications that will be removed
+      removedNotifications.forEach(removedNotification => {
+        const timeout = autoReadTimeoutRef.current.get(removedNotification.id);
+        if (timeout) {
+          clearTimeout(timeout);
+          autoReadTimeoutRef.current.delete(removedNotification.id);
+        }
+      });
+      
+      return [notification, ...oldNotifications];
+    });
     setUnreadCount(prev => prev + 1);
 
     // Show toast notification
     setShowToastNotification(notification);
-    setTimeout(() => setShowToastNotification(null), 5000);
+    
+    // Clear any existing toast timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    
+    // Set new toast timeout
+    toastTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        setShowToastNotification(null);
+      }
+    }, 5000);
 
     // Play sound notification
     if (soundEnabled && soundRef.current) {
@@ -157,12 +219,19 @@ export function RealTimePriceNotification({
 
     // Auto-mark as read after delay for non-urgent notifications
     if (priority !== 'urgent') {
-      setTimeout(() => {
-        setNotifications(prev => 
-          prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
+      const autoReadTimeout = setTimeout(() => {
+        if (isMountedRef.current) {
+          setNotifications(prev => 
+            prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+          );
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+        // Remove from timeout tracking after auto-read
+        autoReadTimeoutRef.current.delete(notification.id);
       }, 10000);
+      
+      // Store timeout ID for proper cleanup when manually read or component unmounts
+      autoReadTimeoutRef.current.set(notification.id, autoReadTimeout);
     }
   }, [soundEnabled, enableDesktopNotifications, maxNotifications]);
 
@@ -219,6 +288,14 @@ export function RealTimePriceNotification({
       prev.map(n => {
         if (n.id === id && !n.read) {
           setUnreadCount(count => Math.max(0, count - 1));
+          
+          // Clear any pending auto-read timeout for this notification
+          const autoReadTimeout = autoReadTimeoutRef.current.get(id);
+          if (autoReadTimeout) {
+            clearTimeout(autoReadTimeout);
+            autoReadTimeoutRef.current.delete(id);
+          }
+          
           return { ...n, read: true };
         }
         return n;
@@ -228,12 +305,24 @@ export function RealTimePriceNotification({
 
   // Mark all as read
   const markAllAsRead = useCallback(() => {
+    // Clear all auto-read timeouts
+    autoReadTimeoutRef.current.forEach((timeout) => {
+      clearTimeout(timeout);
+    });
+    autoReadTimeoutRef.current.clear();
+    
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   }, []);
 
   // Clear all notifications
   const clearAll = useCallback(() => {
+    // Clear all auto-read timeouts
+    autoReadTimeoutRef.current.forEach((timeout) => {
+      clearTimeout(timeout);
+    });
+    autoReadTimeoutRef.current.clear();
+    
     setNotifications([]);
     setUnreadCount(0);
   }, []);
@@ -448,7 +537,13 @@ export function RealTimePriceNotification({
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowToastNotification(null)}
+                  onClick={() => {
+                    if (toastTimeoutRef.current) {
+                      clearTimeout(toastTimeoutRef.current);
+                      toastTimeoutRef.current = null;
+                    }
+                    setShowToastNotification(null);
+                  }}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -581,14 +676,16 @@ export function RealTimePriceNotification({
 
                 {/* Filter Tabs */}
                 <div className="flex space-x-1 bg-white dark:bg-gray-700 rounded-lg p-1">
-                  {[
-                    { key: 'all', label: 'All', count: notifications.length },
-                    { key: 'price-update', label: 'Prices', count: notifications.filter(n => n.type === 'price-update').length },
-                    { key: 'status-change', label: 'Status', count: notifications.filter(n => n.type === 'status-change').length },
-                  ].map(({ key, label, count }) => (
+                  {(
+                    [
+                      { key: 'all', label: 'All', count: notifications.length },
+                      { key: 'price-update', label: 'Prices', count: notifications.filter(n => n.type === 'price-update').length },
+                      { key: 'status-change', label: 'Status', count: notifications.filter(n => n.type === 'status-change').length },
+                    ] as const satisfies readonly { key: FilterType; label: string; count: number }[]
+                  ).map(({ key, label, count }) => (
                     <button
                       key={key}
-                      onClick={() => setFilter(key as any)}
+                      onClick={() => setFilter(key)}
                       className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
                         filter === key
                           ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
