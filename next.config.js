@@ -32,6 +32,22 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'stockwatch-hotfix.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: 'm.media-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images-na.ssl-images-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i5.walmartimages.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'target.scene7.com',
       }
     ]
   }

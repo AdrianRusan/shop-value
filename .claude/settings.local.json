@@ -13,7 +13,14 @@
       "Bash(mkdir:*)",
       "Bash(npx tsx:*)",
       "Bash(grep:*)",
-      "mcp__filesystem__create_directory"
+      "mcp__filesystem__create_directory",
+      "Bash(npm run dev:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npx tsc:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

@@ -1,13 +1,13 @@
 import Image from "next/image"
 import Link from "next/link"
-import SearchModal from "./SearchModal";
 import ThemeSwitch from "./ThemeSwitch";
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 const Navbar = () => {
 
   return (
     <header className="w-full border-b-2">
-      <nav className="nav text-white flex justify-between max-sm:flex-col max-sm:gap-5">
+      <nav className="nav text-white flex justify-between items-center max-sm:flex-col max-sm:gap-5">
         <div className="flex items-center justify-between max-sm:w-full">
           <Link
             href="/"
@@ -21,8 +21,8 @@ const Navbar = () => {
               priority
             />
             <p className="nav-logo dark:text-white-200">
-              Shop
-              <span className="text-primary">Value</span>
+              Stock
+              <span className="text-primary">Watch</span>
             </p>
           </Link>
 
@@ -31,16 +31,39 @@ const Navbar = () => {
           </div>
         </div>
 
-        <div className="flex justify-end max-sm:justify-start w-full md:w-1/2">
-          <SearchModal />
-        </div>
+        <div className="flex items-center gap-6">
+          <Link
+            href='/pricing'
+            className="text-base text-black dark:text-white-200 hover:text-primary transition-colors font-semibold"
+          >
+            Pricing
+          </Link>
 
-        <Link
-          href={'/produse'}
-          className="text-base text-black dark:text-white-200 hover:scale-110 font-bold"
-        >
-          Produse
-        </Link>
+          <SignedOut>
+            <Link
+              href='/sign-in'
+              className="text-base text-black dark:text-white-200 hover:text-primary transition-colors font-semibold"
+            >
+              Sign In
+            </Link>
+            <Link
+              href='/sign-up'
+              className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+            >
+              Get Started
+            </Link>
+          </SignedOut>
+          
+          <SignedIn>
+            <Link
+              href='/dashboard'
+              className="text-base text-black dark:text-white-200 hover:text-primary transition-colors font-semibold"
+            >
+              Dashboard
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+        </div>
 
         <div className="flex gap-5 justify-center max-sm:hidden">
           <ThemeSwitch />

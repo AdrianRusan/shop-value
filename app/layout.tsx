@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
+import { ClerkProvider } from '@clerk/nextjs'
 import ThemeProvider from './theme-provider';
 import Navbar from '@/components/Navbar';
 
@@ -43,16 +44,18 @@ export default function RootLayout({
 }) {
 
   return (
-    <ThemeProvider>
-      <html lang="ro">
-        <body className={`${inter.className} dark:bg-black`}>
-          <main className='max-w-10xl mx-auto'>
-            <Navbar />
-            {children}
-            <Analytics />
-          </main>
-        </body>
-      </html>
-    </ThemeProvider>
+    <ClerkProvider>
+      <ThemeProvider>
+        <html lang="en">
+          <body className={`${inter.className} dark:bg-black`}>
+            <main className='max-w-10xl mx-auto'>
+              <Navbar />
+              {children}
+              <Analytics />
+            </main>
+          </body>
+        </html>
+      </ThemeProvider>
+    </ClerkProvider>
   )
 }
