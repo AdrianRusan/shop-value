@@ -33,11 +33,19 @@ export async function scrapeAllRetailers(input: string): Promise<MultiRetailerPr
     // Use Amazon title to search other retailers
     const searchQuery = amazonData.title;
 
+    // Use UPC for more accurate matching if available
+    const upc = amazonData.upc;
+    if (upc) {
+      console.log(`[Orchestrator] UPC found: ${upc} - will use for precise matching`);
+    } else {
+      console.log('[Orchestrator] No UPC available - will use title-based search (less reliable)');
+    }
+
     // Scrape Walmart and Target in parallel for efficiency
     console.log('[Orchestrator] Scraping Walmart and Target in parallel...');
     const [walmartData, targetData] = await Promise.allSettled([
-      scrapeWalmart(searchQuery),
-      scrapeTarget(searchQuery)
+      scrapeWalmart(searchQuery, upc),
+      scrapeTarget(searchQuery, upc)
     ]);
 
     // Extract results from settled promises

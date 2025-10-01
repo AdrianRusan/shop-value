@@ -112,7 +112,51 @@ export async function scrapeAmazon(asin: string): Promise<ProductData | null> {
       imageUrl = imageUrl.split('._')[0] + '.jpg';
     }
 
-    console.log(`[Amazon] Successfully scraped ASIN ${asin}: "${title}" - $${price}`);
+    // Extract UPC/EAN for cross-retailer matching
+    let upc: string | null = null;
+
+    // Method 1: Look for UPC in table rows
+    $('tr').each((i, row) => {
+      const label = $(row).find('th').text().trim();
+      const value = $(row).find('td').text().trim();
+      if (label && (label.includes('UPC') || label.includes('EAN'))) {
+        // Clean the UPC (remove special characters, keep only digits)
+        upc = value.replace(/[^0-9]/g, '');
+        return false; // break
+      }
+    });
+
+    // Method 2: Look in Product Information bullets
+    if (!upc) {
+      $('#detailBullets_feature_div li').each((i, li) => {
+        const text = $(li).text();
+        if (text.includes('UPC') || text.includes('EAN')) {
+          const match = text.match(/(?:UPC|EAN)[:\s]+([0-9\s]+)/i);
+          if (match) {
+            upc = match[1].replace(/\s/g, '');
+            return false; // break
+          }
+        }
+      });
+    }
+
+    // Method 3: Look in detailed specs sections
+    if (!upc) {
+      $('#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr').each((i, row) => {
+        const label = $(row).find('th').text().trim();
+        const value = $(row).find('td').text().trim();
+        if (label && (label.toLowerCase().includes('upc') || label.toLowerCase().includes('ean'))) {
+          upc = value.replace(/[^0-9]/g, '');
+          return false; // break
+        }
+      });
+    }
+
+    if (upc) {
+      console.log(`[Amazon] Successfully scraped ASIN ${asin}: "${title}" - $${price} (UPC: ${upc})`);
+    } else {
+      console.log(`[Amazon] Successfully scraped ASIN ${asin}: "${title}" - $${price} (No UPC found)`);
+    }
 
     return {
       asin,
@@ -120,7 +164,8 @@ export async function scrapeAmazon(asin: string): Promise<ProductData | null> {
       price,
       available,
       imageUrl,
-      url
+      url,
+      upc
     };
 
   } catch (error: any) {

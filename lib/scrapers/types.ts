@@ -5,6 +5,7 @@ export interface ProductData {
   available: boolean;
   imageUrl: string;
   url: string;
+  upc?: string | null;
 }
 
 export interface MultiRetailerPrices {

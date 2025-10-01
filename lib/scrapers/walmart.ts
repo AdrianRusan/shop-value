@@ -3,18 +3,25 @@ import * as cheerio from 'cheerio';
 import { ProductData } from './types';
 
 /**
- * Scrape Walmart product data by search query
- * @param searchQuery Product title or search term
+ * Scrape Walmart product data by UPC or search query
+ * @param searchQuery Product UPC code or title/search term
+ * @param upc Optional UPC code for more accurate matching
  * @returns ProductData or null if scraping fails
  */
-export async function scrapeWalmart(searchQuery: string): Promise<ProductData | null> {
+export async function scrapeWalmart(searchQuery: string, upc?: string | null): Promise<ProductData | null> {
   try {
-    // Walmart search URL
-    const searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(searchQuery)}`;
+    // Prioritize UPC search over title search for accuracy
+    const searchTerm = upc || searchQuery;
+    const searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(searchTerm)}`;
 
-    console.log(`[Walmart] Searching for: "${searchQuery}"`);
+    if (upc) {
+      console.log(`[Walmart] Searching by UPC: "${upc}"`);
+    } else {
+      console.log(`[Walmart] Searching by title: "${searchQuery}"`);
+    }
 
-    const response = await axios.get(searchUrl, {
+    // Configure request with BrightData proxy if available
+    const config: any = {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -27,7 +34,23 @@ export async function scrapeWalmart(searchQuery: string): Promise<ProductData | 
         'Sec-Fetch-Site': 'none'
       },
       timeout: 15000
-    });
+    };
+
+    // Add BrightData proxy if credentials are available
+    if (process.env.BRIGHTDATA_USERNAME && process.env.BRIGHTDATA_PASSWORD) {
+      config.proxy = {
+        host: 'brd.superproxy.io',
+        port: 22225,
+        auth: {
+          username: process.env.BRIGHTDATA_USERNAME,
+          password: process.env.BRIGHTDATA_PASSWORD
+        },
+        protocol: 'http'
+      };
+      console.log(`[Walmart] Using BrightData proxy`);
+    }
+
+    const response = await axios.get(searchUrl, config);
 
     const $ = cheerio.load(response.data);
 
