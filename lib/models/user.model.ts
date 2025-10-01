@@ -195,7 +195,7 @@ const preferencesSchema = new mongoose.Schema({
     },
     priceAlerts: {
       type: Boolean,
-      default: false // Only available for paid plans
+      default: true // Enable by default for all users
     },
     weeklyReport: {
       type: Boolean,
