@@ -12,7 +12,8 @@
       "mcp__filesystem__write_file",
       "Bash(mkdir:*)",
       "Bash(npx tsx:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "mcp__filesystem__create_directory"
     ],
     "deny": [],
     "ask": []
