@@ -9,7 +9,10 @@
       "Bash(rm:*)",
       "mcp__filesystem__edit_file",
       "mcp__filesystem__read_multiple_files",
-      "mcp__filesystem__write_file"
+      "mcp__filesystem__write_file",
+      "Bash(mkdir:*)",
+      "Bash(npx tsx:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
