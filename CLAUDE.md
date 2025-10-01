@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ShopValue is a Romanian price tracking SaaS application built with Next.js 14 (App Router), TypeScript, MongoDB, and a comprehensive tech stack designed for automation, scalability, and minimal maintenance. The goal is €2-5K MRR with <2 hours/week maintenance.
+StockWatch is a retail arbitrage price tracking SaaS application built with Next.js 14 (App Router), TypeScript, MongoDB, and a comprehensive tech stack designed for automation, scalability, and minimal maintenance. The goal is $2-5K MRR with <2 hours/week maintenance.
 
 **Revenue Model:**
 - Free: 5 products, daily checks
-- Pro: €19.99/month, 50 products, 4x daily checks, price history
-- Enterprise: €49.99/month, unlimited products, API access, hourly checks
+- Pro: $19.99/month, 50 products, 4x daily checks, price history
+- Enterprise: $49.99/month, unlimited products, API access, hourly checks
 
 **Target Metrics:**
-- 1,000+ users by month 6
+- 100+ users by month 6
 - 15% trial-to-paid conversion rate
 - <200ms API response time
 - >95% scraping success rate
@@ -184,7 +184,7 @@ return data;
   currentPrice: number;
   originalPrice: number;
   currency: string;
-  source: string;               // 'flip.ro', 'emag.ro', etc.
+  source: string;               // 'walmart.com', 'target.com', etc.
   isActive: boolean;
   lastChecked: Date;
   priceHistory: [{ price, date }];
@@ -516,6 +516,6 @@ if (!result) {
 - **NO CSS Modules** - Only Tailwind utility classes
 - **NO custom auth** - Only Clerk
 - **NO manual subscriptions** - Only Stripe webhooks
-- All business metrics must be tracked for €2-5K MRR goal
+- All business metrics must be tracked for $2-5K MRR goal
 - Scraping resilience is critical - always implement fallbacks
 - GDPR compliance is mandatory (consent tracking, data export)

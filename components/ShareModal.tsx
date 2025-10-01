@@ -103,7 +103,7 @@ const ShareModal = () => {
                         <FacebookShareButton
                           url={currentURL}
                           quote={'next-share is a social share buttons for your next React apps.'}
-                          hashtag={'#shopvalue'}
+                          hashtag={'#stockwatch'}
                         >
                           <FacebookIcon size={48} round />
                         </FacebookShareButton>

@@ -15,23 +15,23 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'shop-value.vercel.app',
+        hostname: 'stockwatch.vercel.app',
       },
       {
         protocol: 'https',
-        hostname: 'shop-value-feature1.vercel.app',
+        hostname: 'stockwatch-feature1.vercel.app',
       },
       {
         protocol: 'https',
-        hostname: 'shop-value-develop.vercel.app',
+        hostname: 'stockwatch-develop.vercel.app',
       },
       {
         protocol: 'https',
-        hostname: 'shop-value-release.vercel.app',
+        hostname: 'stockwatch-release.vercel.app',
       },
       {
         protocol: 'https',
-        hostname: 'shop-value-hotfix.vercel.app',
+        hostname: 'stockwatch-hotfix.vercel.app',
       }
     ]
   }

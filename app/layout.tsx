@@ -8,31 +8,31 @@ import Navbar from '@/components/Navbar';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://shop-value.vercel.app/'),
-  applicationName: "ShopValue",
-  title: 'ShopValue - Evidenta Preturilor la Produsele Flip',
+  metadataBase: new URL('https://stockwatch.vercel.app/'),
+  applicationName: "StockWatch",
+  title: 'StockWatch - Retail Arbitrage Price Tracking',
   alternates: {
-    canonical: 'https://shop-value.vercel.app/',
+    canonical: 'https://stockwatch.vercel.app/',
     languages: {
-      "ro-RO": "https://shop-value.vercel.app/",
+      "en-US": "https://stockwatch.vercel.app/",
     },
   },
-  description: 'ShopValue - Urmareste evolutia preturilor la produsele Flip si gaseste cele mai bune oferte.',
+  description: 'StockWatch - Track retail prices for Amazon FBA arbitrage opportunities.',
   openGraph: {
-    url: 'https://shop-value.vercel.app/',
-    title: 'ShopValue - Evidenta Preturilor la Produsele Flip',
-    description: 'ShopValue - Urmărește evoluția prețurilor la produsele Flip și găsește cele mai bune oferte.',
+    url: 'https://stockwatch.vercel.app/',
+    title: 'StockWatch - Retail Arbitrage Price Tracking',
+    description: 'StockWatch - Track retail prices for Amazon FBA arbitrage opportunities.',
     images: [
       {
-        url: 'https://shop-value.vercel.app/assets/images/shopvalue-homepage.jpg',
+        url: 'https://stockwatch.vercel.app/assets/images/stockwatch-homepage.jpg',
         width: 1901,
         height: 1051,
-        alt: 'ShopValue - Acasă',
+        alt: 'StockWatch - Home',
       }
     ],
     type: 'website',
-    siteName: 'ShopValue',
-    locale: 'ro_RO',
+    siteName: 'StockWatch',
+    locale: 'en_US',
   },
 }
 

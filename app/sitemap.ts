@@ -1,7 +1,7 @@
 import { getAllProducts } from '@/lib/actions';
 
 export default async function sitemap() {
-  const baseUrl = 'https://shop-value.vercel.app';
+  const baseUrl = 'https://stockwatch.vercel.app';
 
   const products = await getAllProducts();
 

@@ -26,10 +26,10 @@ export async function generateEmailBody(
 
   switch (type) {
     case Notification.WELCOME:
-      subject = `Ați început monitorizarea prețului pentru <b>${shortenedTitle}</b>`;
+      subject = `You started tracking the price for <b>${shortenedTitle}</b>`;
       body = `
         <div>
-          <h2>Bun venit la ShopValue 🚀</h2>
+          <h2>Welcome to StockWatch 🚀</h2>
           <p>Ați început monitorizarea produsului <b>${product.title}</b>.</p>
           <p>Iată un exemplu de email pe care îl veți primi cu actualizări:</p>
           <div style="border: 1px solid #ccc; padding: 10px; background-color: #f8f8f8;">
@@ -85,7 +85,7 @@ const transporter = nodemailer.createTransport({
   service: 'hotmail',
   port: 2525,
   auth: {
-    user: 'shopvaluetest@outlook.com',
+    user: 'stockwatch@outlook.com',
     pass: process.env.EMAIL_PASSWORD,
   },
   maxConnections: 1,
@@ -96,7 +96,7 @@ export const sendEmail = async (
   sendTo: string[]
 ) => {
   const mailOptions = {
-    from: 'shopvaluetest@outlook.com',
+    from: 'stockwatch@outlook.com',
     to: sendTo,
     html: emailContent.body,
     subject: emailContent.subject,

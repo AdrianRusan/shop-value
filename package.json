@@ -1,6 +1,7 @@
 {
-  "name": "shopvalue",
+  "name": "stockwatch",
   "version": "0.1.0",
+  "description": "Retail arbitrage price tracking for Amazon sellers",
   "private": true,
   "scripts": {
     "dev": "next dev",

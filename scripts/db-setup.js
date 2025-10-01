@@ -242,7 +242,7 @@ async function seedDevelopmentData() {
     const sampleUsers = [
       {
         clerkId: 'dev_admin_001',
-        email: 'admin@shopvalue.ro',
+        email: 'admin@stockwatch.com',
         firstName: 'Admin',
         lastName: 'User',
         role: 'admin',
