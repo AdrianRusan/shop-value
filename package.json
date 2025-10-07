@@ -34,7 +34,7 @@
     "next": "14.2.30",
     "next-share": "^0.27.0",
     "next-themes": "^0.3.0",
-    "nodemailer": "^6.9.15",
+    "nodemailer": "^7.0.7",
     "react": "^18",
     "react-chartjs-2": "^5.2.0",
     "react-device-detect": "^2.2.3",
