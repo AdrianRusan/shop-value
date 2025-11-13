@@ -1,6 +1,8 @@
-import ProductCard from '@/components/ProductCard';
-import {getProductByBrand } from '@/lib/actions';
-import { Product } from '@/types';
+import { getProductByBrand } from '@/lib/actions';
+import { ProductListing } from '@/components/ProductListing';
+
+// Revalidate every hour
+export const revalidate = 3600;
 
 type Props = {
   params: {
@@ -11,19 +13,7 @@ type Props = {
 const BrandsPage = async ({ params }: Props) => {
   const allProducts = await getProductByBrand(params.brand);
 
-  return (
-    <>
-      {allProducts && allProducts?.length > 0 && (
-        <section className="trending-section ">
-          <div className={`flex flex-wrap gap-x-8 md:gap-x-24 lg:gap-x-7 xl:gap-x-16 gap-y-16 justify-start`}>
-          {allProducts?.map((product: Product) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
-          </div>
-        </section>
-      )}  
-    </>
-  )
+  return <ProductListing products={allProducts || []} emptyMessage={`Nu s-au găsit produse pentru marca ${params.brand}`} />;
 }
 
 export default BrandsPage

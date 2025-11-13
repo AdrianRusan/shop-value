@@ -79,10 +79,17 @@ export async function getProductById(productId: string): Promise<Product | null>
   }
 }
 
+// Helper function to escape regex special characters
+function escapeRegex(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export async function getProductByTitle(productTitle: string) {
   try {
     await connectToDB();
-    const searchRegex = new RegExp(productTitle, 'i');
+    // Sanitize input to prevent ReDoS attacks
+    const sanitizedTitle = escapeRegex(productTitle.substring(0, 100));
+    const searchRegex = new RegExp(sanitizedTitle, 'i');
 
     const products = await ProductModel.find({
       title: { $regex: searchRegex },
@@ -99,10 +106,12 @@ export async function getProductByTitle(productTitle: string) {
   }
 }
 
-export async function getProductByBrand(productBrand: string) {
+export async function getProductByBrand(productBrand: string, limit: number = 50) {
   try {
     await connectToDB();
-    const searchRegex = new RegExp(productBrand, 'i');
+    // Sanitize input to prevent ReDoS attacks
+    const sanitizedBrand = escapeRegex(productBrand.substring(0, 100));
+    const searchRegex = new RegExp(sanitizedBrand, 'i');
 
     const products = await ProductModel.find({
       brand: { $regex: searchRegex },
@@ -110,7 +119,8 @@ export async function getProductByBrand(productBrand: string) {
       .select(
         'title image source category brand productModel isOutOfStock originalPrice currentPrice currency'
       )
-      .lean();
+      .lean()
+      .limit(limit);
 
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
@@ -118,12 +128,18 @@ export async function getProductByBrand(productBrand: string) {
   }
 }
 
-export async function getProductByModel(productModel: string) {
+export async function getProductByModel(productModel: string, limit: number = 50) {
   try {
     await connectToDB();
 
     // Split the productModel into individual words and create a regex to match any of them
-    const searchTerms = productModel.split(' ');
+    // Sanitize each term to prevent ReDoS attacks
+    const searchTerms = productModel
+      .substring(0, 100)
+      .split(' ')
+      .map(term => escapeRegex(term))
+      .filter(term => term.length > 0);
+
     const searchRegex = new RegExp(searchTerms.join('|'), 'i');
 
     const products = await ProductModel.find({
@@ -132,7 +148,8 @@ export async function getProductByModel(productModel: string) {
       .select(
         'title image source category brand productModel isOutOfStock originalPrice currentPrice currency'
       )
-      .lean();
+      .lean()
+      .limit(limit);
 
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
@@ -144,7 +161,16 @@ export async function searchProducts(searchTerm: string) {
   try {
     await connectToDB();
 
-    const searchTerms = searchTerm.split(' ');
+    // Sanitize search terms to prevent ReDoS attacks
+    const searchTerms = searchTerm
+      .substring(0, 100)
+      .split(' ')
+      .map(term => escapeRegex(term))
+      .filter(term => term.length > 0);
+
+    if (searchTerms.length === 0) {
+      return { searchTerm, brands: [], brandModelObjects: [], topSearchedProducts: [] };
+    }
 
     const brands = await ProductModel.distinct('brand', {
       brand: { $regex: new RegExp(searchTerms.join('|'), 'i') },
@@ -185,11 +211,18 @@ export async function searchProducts(searchTerm: string) {
   }
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+export async function getAllProducts(limit: number = 50, skip: number = 0): Promise<Product[]> {
   try {
     await connectToDB();
 
-    const products = await ProductModel.find().lean();
+    const products = await ProductModel.find()
+      .select(
+        'title image source category brand productModel isOutOfStock originalPrice currentPrice currency priceHistory'
+      )
+      .lean()
+      .limit(limit)
+      .skip(skip)
+      .sort({ updatedAt: -1 });
 
     // Convert to proper Product type
     return products.map(product => ({

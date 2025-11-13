@@ -12,6 +12,9 @@ import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
 import { Metadata } from "next";
 
+// Revalidate every 30 minutes (prices change frequently)
+export const revalidate = 1800;
+
 type Props = {
   params: {
     brand: string,
@@ -92,8 +95,49 @@ const ProductDetails = async ({ params }: Props) => {
   let differentPrices = true;
   if (product.lowestPrice === product.highestPrice) differentPrices = false;
 
+  // Generate JSON-LD structured data for SEO
+  const productUrl = `${protocol}://${domain}/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    image: product.image,
+    description: product.description || product.title,
+    brand: {
+      '@type': 'Brand',
+      name: product.brand,
+    },
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: product.currency || 'RON',
+      price: product.currentPrice,
+      availability: product.isOutOfStock
+        ? 'https://schema.org/OutOfStock'
+        : 'https://schema.org/InStock',
+      priceValidUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      seller: {
+        '@type': 'Organization',
+        name: product.source === 'flip' ? 'Flip.ro' : product.source,
+      },
+    },
+    ...(product.stars && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: product.stars,
+        reviewCount: product.reviewsCount || 1,
+      },
+    }),
+  };
+
   return (
-    <div className="product-container">
+    <>
+      {/* JSON-LD structured data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="product-container">
       <div className="flex gap-1 xl:gap-28 xl:flex-row flex-col min-h-[calc(100vh-167.5px)] xl:min-h-[calc(100vh-72px)] items-center justify-center">
         <div className="product-image xl:mb-24 object-contain">
           {product.source === 'flip' && (
@@ -265,6 +309,7 @@ const ProductDetails = async ({ params }: Props) => {
 
       <SimilarSection id={params.id} />
     </div>
+    </>
   );
 }
 

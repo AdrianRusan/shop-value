@@ -21,14 +21,26 @@ export const useTheme = () => {
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState('light');
 
+  // Initialize theme from localStorage or system preference
   useEffect(() => {
-    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
-    setTheme(systemPrefersDark ? 'dark' : 'light');
+    // Check localStorage first
+    const storedTheme = localStorage.getItem('theme');
 
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      setTheme(storedTheme);
+    } else {
+      // Fall back to system preference if no stored theme
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setTheme(systemPrefersDark ? 'dark' : 'light');
+    }
+
+    // Listen for system theme changes (only if user hasn't set a preference)
     const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const updateTheme = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? 'dark' : 'light');
+      // Only auto-update if user hasn't manually set a theme
+      if (!localStorage.getItem('theme')) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
     };
     darkModeMediaQuery.addEventListener("change", updateTheme);
 
@@ -37,6 +49,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
+  // Apply theme class to document
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -46,9 +59,9 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-
-    localStorage.setItem('theme', theme === 'light' ? 'dark' : 'light');
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
   };
 
   return (

@@ -15,8 +15,19 @@ async function updateProductWithLimiter(product: Product) {
   return limiter.schedule(() => updateProductDetails(product));
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Authentication: Verify Vercel Cron Secret
+    const authHeader = request.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     await connectToDB();
     const products = await fetchProducts();
     if (!products) throw new Error('No product fetched');

@@ -2,6 +2,11 @@ import HeroCarousel from "@/components/HeroCarousel"
 import Searchbar from "@/components/Searchbar"
 import Image from "next/image"
 import TrendingSection from "@/components/TrendingSection"
+import { Suspense } from "react"
+import { TrendingSectionSkeleton } from "@/components/LoadingSkeleton"
+
+// Revalidate every hour
+export const revalidate = 3600;
 
 const Home = async () => {
 
@@ -36,7 +41,9 @@ const Home = async () => {
         </div>
       </section>
 
-      <TrendingSection />
+      <Suspense fallback={<TrendingSectionSkeleton />}>
+        <TrendingSection />
+      </Suspense>
     </>
   )
 }

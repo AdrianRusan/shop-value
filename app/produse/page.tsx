@@ -1,24 +1,13 @@
-import ProductCard from '@/components/ProductCard';
 import { getAllProducts } from '@/lib/actions';
-import { Product } from '@/types';
+import { ProductListing } from '@/components/ProductListing';
+
+// Revalidate every hour
+export const revalidate = 3600;
 
 const ProductsPage = async () => {
-
   const allProducts = await getAllProducts();
 
-  return (
-    <>
-      {allProducts && allProducts?.length > 0 && (
-        <section className="trending-section ">
-          <div className={`flex flex-wrap gap-x-8 md:gap-x-24 lg:gap-x-7 xl:gap-x-16 gap-y-16 justify-start`}>
-          {allProducts?.map((product: Product) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
-          </div>
-        </section>
-      )}  
-    </>
-  )
+  return <ProductListing products={allProducts} emptyMessage="Nu există produse disponibile" />;
 }
 
 export default ProductsPage

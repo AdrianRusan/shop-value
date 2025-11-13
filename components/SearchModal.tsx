@@ -25,18 +25,22 @@ const SearchModal = () => {
   const [defaultSuggestions, setDefaultSuggestions] = useState<Array<{ brand: string; model: string }>>([
     { brand: '', model: '' },
   ]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const debounceDelay = 250;
-  let debounceTimer: NodeJS.Timeout | null = null;
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (searchInput.length >= 2) {
+        setIsLoading(true);
         try {
           const productsData = await searchProducts(searchInput);
           setSuggestions(productsData || {});
         } catch (error) {
           console.error('Error fetching suggestions:', error);
+        } finally {
+          setIsLoading(false);
         }
       } else {
         setSuggestions({});
@@ -56,19 +60,19 @@ const SearchModal = () => {
       })();
     }
 
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
-    debounceTimer = setTimeout(() => {
+    debounceTimerRef.current = setTimeout(() => {
       if (searchInput !== '') {
         fetchData();
       }
     }, debounceDelay);
 
     return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
     };
   }, [searchInput]);
@@ -155,7 +159,11 @@ const SearchModal = () => {
 
   return (
     <>
-      <button onClick={openModal} className='searchbar-top gap-2 text-[#415985] dark:text-[#A7B5B9]'>
+      <button
+        onClick={openModal}
+        className='searchbar-top gap-2 text-[#415985] dark:text-[#A7B5B9]'
+        aria-label='Deschide modalul de căutare produse'
+      >
         <ThemedIcon alt='search' />
         Caută produsul dorit...
       </button>
@@ -188,9 +196,13 @@ const SearchModal = () => {
               <div className='dialog-content'>
                 <div className='flex flex-col'>
                   <div className='flex justify-between items-center gap-5'>
-                    <form className='flex flex-col w-full' onSubmit={handleSubmit} name='track-product'>
+                    <form className='flex flex-col w-full' onSubmit={handleSubmit} name='track-product' role='search'>
                       <div className='dialog-input_container flex items-center'>
-                        <button onClick={() => handleSearchSubmit()}>
+                        <button
+                          type="submit"
+                          onClick={() => handleSearchSubmit()}
+                          aria-label='Caută produse'
+                        >
                           <ThemedIcon alt='search'/>
                         </button>
                         <input
@@ -202,28 +214,41 @@ const SearchModal = () => {
                           placeholder='Caută...'
                           className='dark:bg-slate-800 dialog-input dark:text-white-200'
                           autoComplete='on'
+                          aria-label='Câmp de căutare produse'
                         />
                       </div>
                     </form>
-                    <Image
-                      src='/assets/icons/x-close.svg'
-                      alt='close'
-                      width={0}
-                      height={0}
+                    <button
                       onClick={closeModal}
-                      className='cursor-pointer w-auto h-auto'
-                    />
+                      className='cursor-pointer'
+                      aria-label='Închide modalul de căutare'
+                    >
+                      <Image
+                        src='/assets/icons/x-close.svg'
+                        alt='close'
+                        width={24}
+                        height={24}
+                      />
+                    </button>
                   </div>
 
                   <div className='mt-3 space-y-4 dark:text-white'>
                     <h3>Sugestii de Căutare:</h3>
-                    {!suggestions.brandModelObjects ? renderDefaultSuggestions() : null}
-                    {suggestions.brands && suggestions.brands.length > 0
-                      ? renderBrandSuggestions(suggestions.brands[0])
-                      : null}
-                    {suggestions.brandModelObjects && suggestions.brandModelObjects.length > 0
-                      ? renderModelSuggestions(suggestions.brandModelObjects[0])
-                      : null}
+                    {isLoading ? (
+                      <div className='flex items-center justify-center py-4'>
+                        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+                      </div>
+                    ) : (
+                      <>
+                        {!suggestions.brandModelObjects ? renderDefaultSuggestions() : null}
+                        {suggestions.brands && suggestions.brands.length > 0
+                          ? renderBrandSuggestions(suggestions.brands[0])
+                          : null}
+                        {suggestions.brandModelObjects && suggestions.brandModelObjects.length > 0
+                          ? renderModelSuggestions(suggestions.brandModelObjects[0])
+                          : null}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

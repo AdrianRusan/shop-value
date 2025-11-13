@@ -24,29 +24,29 @@ const isValidFlipProductURL = (url: string) => {
 const Searchbar = () => {
   const [searchPrompt, setSearchPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError('');
 
     const flipLink = isValidFlipProductURL(searchPrompt);
-    
+
     if (!flipLink) {
-      return alert('Please provide a valid link.');
+      setError('Vă rugăm să furnizați un link valid de la Flip.ro');
+      return;
     }
 
     try {
       setIsLoading(true);
 
-      let product
-
       if (flipLink) {
-        for (let i = 0; i < 3; i++) {
-          product = await scrapeAndScoreProductFlip(searchPrompt);
-        }      
+        await scrapeAndScoreProductFlip(searchPrompt);
       }
 
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      setError('A apărut o eroare la căutarea produsului. Vă rugăm să încercați din nou.');
     } finally {
       setIsLoading(false);
     }
@@ -57,11 +57,14 @@ const Searchbar = () => {
       className="flex flex-col mt-12 "
       onSubmit={handleSubmit}
     >
-      <label className='dark:text-white text-sm'>Nu găsești produsul?</label>
+      <label htmlFor="product-url-input" className='dark:text-white text-sm'>Nu găsești produsul?</label>
       <div className='flex flex-wrap gap-4 mt-1 max-sm:flex-col'>
         <input
+          id="product-url-input"
           type="text"
-          aria-label='sadasd'
+          aria-label='Introduceți link-ul produsului'
+          aria-describedby={error ? 'search-error' : undefined}
+          aria-invalid={error ? 'true' : 'false'}
           placeholder="Introduceți link-ul produsului de pe Flip aici..."
           className="searchbar-input dark:text-white-200"
           value={searchPrompt}
@@ -72,11 +75,17 @@ const Searchbar = () => {
         <button
           type="submit"
           className="searchbar-btn"
-          disabled={searchPrompt === ''}
+          disabled={searchPrompt === '' || isLoading}
+          aria-busy={isLoading}
         >
           {isLoading ? 'Căutare...' : 'Caută'}
         </button>
       </div>
+      {error && (
+        <p id="search-error" className="text-red-600 dark:text-red-400 text-sm mt-2" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 };
