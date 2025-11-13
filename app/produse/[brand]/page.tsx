@@ -13,7 +13,19 @@ type Props = {
 const BrandsPage = async ({ params }: Props) => {
   const allProducts = await getProductByBrand(params.brand);
 
-  return <ProductListing products={allProducts || []} emptyMessage={`Nu s-au găsit produse pentru marca ${params.brand}`} />;
+  const breadcrumbs = [
+    { label: 'Acasă', href: '/' },
+    { label: 'Produse', href: '/produse' },
+    { label: params.brand },
+  ];
+
+  return (
+    <ProductListing
+      products={allProducts || []}
+      emptyMessage={`Nu s-au găsit produse pentru marca ${params.brand}`}
+      breadcrumbs={breadcrumbs}
+    />
+  );
 }
 
 export default BrandsPage

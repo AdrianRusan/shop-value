@@ -7,7 +7,18 @@ export const revalidate = 3600;
 const ProductsPage = async () => {
   const allProducts = await getAllProducts();
 
-  return <ProductListing products={allProducts} emptyMessage="Nu există produse disponibile" />;
+  const breadcrumbs = [
+    { label: 'Acasă', href: '/' },
+    { label: 'Produse' },
+  ];
+
+  return (
+    <ProductListing
+      products={allProducts}
+      emptyMessage="Nu există produse disponibile"
+      breadcrumbs={breadcrumbs}
+    />
+  );
 }
 
 export default ProductsPage

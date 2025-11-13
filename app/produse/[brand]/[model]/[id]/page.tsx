@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { getHighestPrice, getLowestPrice } from "@/lib/utils";
 import ProductDescription from "@/components/ProductDescription";
 import { Metadata } from "next";
+import Breadcrumb from "@/components/Breadcrumb";
 
 // Revalidate every 30 minutes (prices change frequently)
 export const revalidate = 1800;
@@ -95,6 +96,15 @@ const ProductDetails = async ({ params }: Props) => {
   let differentPrices = true;
   if (product.lowestPrice === product.highestPrice) differentPrices = false;
 
+  // Generate breadcrumb items
+  const breadcrumbItems = [
+    { label: 'Acasă', href: '/' },
+    { label: 'Produse', href: '/produse' },
+    { label: product.brand, href: `/produse/${product.brand}` },
+    { label: product.productModel || 'Model', href: `/produse/${product.brand}/${product.productModel?.replace(/ /g, '-')}` },
+    { label: product.title.split(',')[0] }, // Current page - no href
+  ];
+
   // Generate JSON-LD structured data for SEO
   const productUrl = `${protocol}://${domain}/produse/${params.brand}/${params.model.replace(/ /g, '-')}/${params.id}`;
   const jsonLd = {
@@ -138,6 +148,7 @@ const ProductDetails = async ({ params }: Props) => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="product-container">
+        <Breadcrumb items={breadcrumbItems} />
       <div className="flex gap-1 xl:gap-28 xl:flex-row flex-col min-h-[calc(100vh-167.5px)] xl:min-h-[calc(100vh-72px)] items-center justify-center">
         <div className="product-image xl:mb-24 object-contain">
           {product.source === 'flip' && (
