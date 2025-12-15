@@ -10,7 +10,7 @@ const TrendingSection = async () => {
 
   if (allProducts && allProducts?.length > 0) {
     sortedProducts = allProducts
-      .filter(product => product.priceHistory.length > 0)
+      .filter(product => product.priceHistory && product.priceHistory.length > 0)
       .sort((a, b) => b.priceHistory.length - a.priceHistory.length)
       .slice(0, Math.min(12, allProducts.length));
   }
