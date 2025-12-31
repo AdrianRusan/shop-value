@@ -6,11 +6,14 @@ import { PriceHistoryItem, Product as ProductType } from '@/types';
 export async function fetchProducts(): Promise<ProductType[]> {
   try {
     const products = await Product.find({}).lean();
-    if (!products.length) throw new Error('No products found');
+    // Return empty array if no products - this is not an error condition
+    if (!products.length) {
+      return [];
+    }
     // Type assertion to convert Mongoose lean results to Product type
     return products.map(product => ({
       ...product,
-      _id: product._id?.toString(), // Convert ObjectId to string
+      _id: product._id?.toString(),
     })) as ProductType[];
   } catch (error) {
     console.error('Error fetching products:', error);
